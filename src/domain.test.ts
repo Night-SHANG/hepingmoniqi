@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld } from './domain.js';
+import * as gameplay from './gameplay.js';
 import type { DamageCommand, WorldModel } from './contracts.js';
 
 const hit = (world: WorldModel, id: string, target = { x: 0, y: 3, z: 5 }, weapon: DamageCommand['weapon'] = 'pulse', power = 1) => world.damage({ id, epoch: world.epoch, target, weapon, power });
@@ -85,7 +86,7 @@ test('cut tree trunk detaches crown without damaging distant cottage or other tr
 });
 test('expanded save schema roundtrips with props and rejects unknown versions',()=>{
  const w=createWorld();hit(w,'yard',{x:13,y:1,z:4},'charge');const s=w.getSnapshot();
- assert.equal((s as any).schemaVersion,6);assert.equal(createWorld().restore(s),true);
+ assert.equal((s as any).schemaVersion,7);assert.equal(createWorld().restore(s),true);
  assert.equal(w.restore({...s,schemaVersion:99} as any),false);
 });
 test('legacy cottage saves migrate explicitly, preserving damage and RP while adding intact yard',()=>{
@@ -93,7 +94,7 @@ test('legacy cottage saves migrate explicitly, preserving damage and RP while ad
  const legacyVoxels=house.map(({group,objectId,...v})=>v);
  const legacy={epoch:9,totalCount:1096,destroyedCount:0,research:37,firstRewardClaimed:false,voxels:legacyVoxels};
  assert.equal(w.restore(legacy),true);const migrated=w.getSnapshot();
- assert.equal(migrated.schemaVersion,6);assert.equal(migrated.research,37);assert.equal(migrated.destroyedCount,0);
+ assert.equal(migrated.schemaVersion,7);assert.equal(migrated.research,37);assert.equal(migrated.destroyedCount,0);
  assert.deepEqual(migrated.voxels.filter(v=>v.group==='house'),house);
  assert.ok(migrated.voxels.some(v=>v.group==='tree'));
  assert.equal(createWorld().restore(migrated),true);
@@ -133,7 +134,7 @@ test('v2 migration preserves earned research and cannot pay an already claimed m
  const w=createWorld();const fresh=w.getSnapshot();const old={...fresh,schemaVersion:2 as const,mapId:undefined,completedMaps:undefined,research:280,firstRewardClaimed:true};
  assert.equal(w.restore(old),true);assert.deepEqual(w.getObjective().completedMaps,['courtyard']);assert.equal(w.getSnapshot().research,280);
  for(const v of [...w.getVoxels()].filter(v=>v.group==='house'))hit(w,`clear-${v.id}`,v.position,'shock',3);
- assert.equal(w.getSnapshot().research,480);assert.equal(w.getSnapshot().schemaVersion,6);
+ assert.equal(w.getSnapshot().research,480);assert.equal(w.getSnapshot().schemaVersion,7);
 });
 test('v2 building-complete migration does not require old whole-yard milestone or mint a reward',()=>{
  const w=createWorld();for(const v of [...w.getVoxels()].filter(v=>v.group==='house')){hit(w,`partial-${v.id}`,v.position,'shock',3);if(w.getObjective().fraction>=.7)break;}
@@ -163,7 +164,7 @@ test('unlocked rocket destroys more timber than grenade at the same intact wall 
 
 
 test('default grenade inventory permits six successful executions and exhaustion does not auto-settle',()=>{
- const w=createWorld();assert.deepEqual(w.getRound(),{budget:6,used:0,startResearch:0,startDestroyed:0,settled:false,loadout:{charge:6,pulse:0,shock:0,echo:0,split:0},remaining:{charge:6,pulse:0,shock:0,echo:0,split:0}});
+ const w=createWorld();assert.deepEqual(w.getRound(),{budget:6,used:0,startResearch:0,startDestroyed:0,settled:false,loadout:{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0},remaining:{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0}});
  for(let i=0;i<6;i++)assert.equal(w.recordShot(),true);
  const exhausted=w.getSnapshot();assert.equal(w.recordShot(),false);assert.deepEqual(w.getSnapshot(),exhausted);
  assert.equal(w.getRound().used,6);assert.equal(w.getRound().settled,false);
@@ -186,7 +187,7 @@ test('settlement is explicit, idempotent, adds no research and rejects later exe
 });
 test('schema 5 reload preserves spent ammo and settlement while retry and map change refill deliberately',()=>{
  const w=createWorld();w.recordShot();w.recordShot();hit(w,'before-save');
- const saved=w.getSnapshot();assert.equal(saved.schemaVersion,6);
+ const saved=w.getSnapshot();assert.equal(saved.schemaVersion,7);
  const restored=createWorld();assert.equal(restored.restore(saved),true);assert.equal(restored.getRound().used,2);
  assert.equal(restored.getRound().startResearch,0);assert.equal(restored.finishRound().researchEarned,saved.research);
  const settled=createWorld();assert.equal(settled.restore(restored.getSnapshot()),true);assert.equal(settled.recordShot(),false);
@@ -236,15 +237,15 @@ test('free damage changes the building but never earns research or unlocks the n
 test('main round starts with a copied mixed loadout and consumes weighted per-type ammunition',()=>{
  const w=createWorld();assert.equal(typeof w.startRound,'function');
  assert.equal(w.restore({...w.getSnapshot(),research:90}),true);
- const loadout={charge:2,pulse:1,shock:1,echo:0,split:0};const before=w.epoch;
+ const loadout={charge:2,pulse:1,shock:1,echo:0,split:0,phase:0};const before=w.epoch;
  assert.equal(w.startRound('courtyard',loadout),true);assert.ok(w.epoch>before);assert.equal(w.getSnapshot().research,90);
  loadout.charge=0;
- assert.deepEqual(w.getRound(),{budget:6,used:0,startResearch:90,startDestroyed:0,settled:false,loadout:{charge:2,pulse:1,shock:1,echo:0,split:0},remaining:{charge:2,pulse:1,shock:1,echo:0,split:0}});
+ assert.deepEqual(w.getRound(),{budget:6,used:0,startResearch:90,startDestroyed:0,settled:false,loadout:{charge:2,pulse:1,shock:1,echo:0,split:0,phase:0},remaining:{charge:2,pulse:1,shock:1,echo:0,split:0,phase:0}});
  assert.equal(w.recordShot('pulse'),true);assert.equal(w.getRound().used,2);
  const pulseSpent=w.getSnapshot();assert.equal(w.recordShot('pulse'),false);assert.deepEqual(w.getSnapshot(),pulseSpent);
  assert.equal(w.recordShot('charge'),true);assert.equal(w.recordShot(),true);assert.equal(w.getRound().used,4);
  assert.equal(w.recordShot('shock'),true);assert.equal(w.getRound().used,6);
- assert.deepEqual(w.getRound().remaining,{charge:0,pulse:0,shock:0,echo:0,split:0});assert.equal(w.getRound().settled,false);
+ assert.deepEqual(w.getRound().remaining,{charge:0,pulse:0,shock:0,echo:0,split:0,phase:0});assert.equal(w.getRound().settled,false);
  const exhausted=w.getSnapshot();for(const id of ['charge','pulse','shock'])assert.equal(w.recordShot(id as any),false);
  assert.deepEqual(w.getSnapshot(),exhausted);assert.equal(hit(w,'late-impact').accepted,true);
 });
@@ -252,40 +253,40 @@ test('failed round setup is atomic for locked scenes, weapons, overcapacity and 
  const w=createWorld();assert.equal(typeof w.startRound,'function');w.recordShot();hit(w,'keep-existing-damage');
  const before=w.getSnapshot();
  for(const [map,loadout] of [
-  ['warehouse',{charge:1,pulse:0,shock:0,echo:0,split:0}], ['bogus',{charge:1,pulse:0,shock:0,echo:0,split:0}],
-  ['courtyard',{charge:0,pulse:1,shock:0,echo:0,split:0}], ['courtyard',{charge:0,pulse:0,shock:1,echo:0,split:0}],
-  ['courtyard',{charge:7,pulse:0,shock:0,echo:0,split:0}], ['courtyard',{charge:-1,pulse:0,shock:0,echo:0,split:0}],
-  ['courtyard',{charge:0,pulse:0,shock:0,echo:0,split:0}], ['courtyard',{charge:1.5,pulse:0,shock:0,echo:0,split:0}],
+  ['warehouse',{charge:1,pulse:0,shock:0,echo:0,split:0,phase:0}], ['bogus',{charge:1,pulse:0,shock:0,echo:0,split:0,phase:0}],
+  ['courtyard',{charge:0,pulse:1,shock:0,echo:0,split:0,phase:0}], ['courtyard',{charge:0,pulse:0,shock:1,echo:0,split:0,phase:0}],
+  ['courtyard',{charge:7,pulse:0,shock:0,echo:0,split:0,phase:0}], ['courtyard',{charge:-1,pulse:0,shock:0,echo:0,split:0,phase:0}],
+  ['courtyard',{charge:0,pulse:0,shock:0,echo:0,split:0,phase:0}], ['courtyard',{charge:1.5,pulse:0,shock:0,echo:0,split:0,phase:0}],
   ['courtyard',null]
  ] as const){assert.equal(w.startRound(map as any,loadout as any),false);assert.deepEqual(w.getSnapshot(),before);}
 });
 test('new main rounds rebuild their scene, preserve research and expand to eight capacity only at 120',()=>{
  const w=createWorld();assert.equal(typeof w.startRound,'function');assert.equal(w.restore({...w.getSnapshot(),research:119}),true);
- assert.equal(w.startRound('courtyard',{charge:6,pulse:0,shock:0,echo:0,split:0}),true);hit(w,'cross-120');
+ assert.equal(w.startRound('courtyard',{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0}),true);hit(w,'cross-120');
  assert.ok(w.getSnapshot().research>=120);assert.equal(w.getRound().budget,6);assert.equal(w.getRound().startResearch,119);
  const research=w.getSnapshot().research;const old=w.epoch;
- assert.equal(w.startRound('warehouse',{charge:4,pulse:1,shock:1,echo:0,split:0}),true);
+ assert.equal(w.startRound('warehouse',{charge:4,pulse:1,shock:1,echo:0,split:0,phase:0}),true);
  assert.ok(w.epoch>old);assert.equal(w.getObjective().mapId,'warehouse');assert.equal(w.getObjective().fraction,0);
  assert.equal(w.getRound().budget,8);assert.equal(w.getRound().used,0);assert.equal(w.getRound().startResearch,research);assert.equal(w.getSnapshot().research,research);
  assert.equal(w.damage({id:'stale',epoch:old,target:{x:0,y:3,z:5},weapon:'charge',power:1}).accepted,false);
 });
 test('research unlocked during a round never changes its selected inventory or start eligibility',()=>{
- const w=createWorld();assert.equal(typeof w.startRound,'function');assert.equal(w.startRound('courtyard',{charge:6,pulse:0,shock:0,echo:0,split:0}),true);
+ const w=createWorld();assert.equal(typeof w.startRound,'function');assert.equal(w.startRound('courtyard',{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0}),true);
  for(const v of [...w.getVoxels()].filter(v=>v.group==='house')){hit(w,`unlock-${v.id}`,v.position,'shock',3);if(w.getSnapshot().research>=90)break;}
  assert.ok(w.getSnapshot().research>=90);assert.equal(w.getRound().startResearch,0);assert.equal(w.getRound().budget,6);
  assert.equal(w.recordShot('pulse'),false);assert.equal(w.recordShot('shock'),false);assert.equal(w.recordShot('bogus' as any),false);
- assert.deepEqual(w.getRound().remaining,{charge:6,pulse:0,shock:0,echo:0,split:0});
- assert.equal(w.startRound('courtyard',{charge:2,pulse:1,shock:1,echo:0,split:0}),true);assert.equal(w.recordShot('shock'),true);
+ assert.deepEqual(w.getRound().remaining,{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0});
+ assert.equal(w.startRound('courtyard',{charge:2,pulse:1,shock:1,echo:0,split:0,phase:0}),true);assert.equal(w.recordShot('shock'),true);
 });
 test('schema 5 deep-owns every inventory boundary and reload never refills selected ammo',()=>{
  const w=createWorld();assert.equal(typeof w.startRound,'function');assert.equal(w.restore({...w.getSnapshot(),research:90}),true);
- assert.equal(w.startRound('courtyard',{charge:2,pulse:1,shock:1,echo:0,split:0}),true);assert.equal(w.recordShot('pulse'),true);
+ assert.equal(w.startRound('courtyard',{charge:2,pulse:1,shock:1,echo:0,split:0,phase:0}),true);assert.equal(w.recordShot('pulse'),true);
  const read=w.getRound();read.loadout!.shock=99;read.remaining!.shock=99;
- const snapshot=w.getSnapshot();assert.equal(snapshot.schemaVersion,6);const saved=structuredClone(snapshot);
+ const snapshot=w.getSnapshot();assert.equal(snapshot.schemaVersion,7);const saved=structuredClone(snapshot);
  snapshot.round!.loadout!.charge=99;snapshot.round!.remaining!.charge=99;
- assert.deepEqual(w.getRound().remaining,{charge:2,pulse:0,shock:1,echo:0,split:0});
+ assert.deepEqual(w.getRound().remaining,{charge:2,pulse:0,shock:1,echo:0,split:0,phase:0});
  const restored=createWorld();assert.equal(restored.restore(saved),true);saved.round!.loadout!.shock=0;saved.round!.remaining!.shock=0;
- assert.deepEqual(restored.getRound().remaining,{charge:2,pulse:0,shock:1,echo:0,split:0});assert.equal(restored.recordShot('pulse'),false);
+ assert.deepEqual(restored.getRound().remaining,{charge:2,pulse:0,shock:1,echo:0,split:0,phase:0});assert.equal(restored.recordShot('pulse'),false);
  assert.equal(restored.recordShot('shock'),true);assert.equal(restored.getRound().used,4);
 });
 test('schema 5 rejects incoherent inventory, locked round allocation and unsupported capacity atomically',()=>{
@@ -297,7 +298,7 @@ test('schema 5 rejects incoherent inventory, locked round allocation and unsuppo
   (s:any)=>s.round.remaining.charge=7,(s:any)=>s.round.remaining.charge=-1,
   (s:any)=>s.round.remaining.charge=1.5,(s:any)=>s.round.remaining.fake=0,
   (s:any)=>s.round.remaining.pulse=1,(s:any)=>s.round.used=1,
-  (s:any)=>{s.round.loadout={charge:4,pulse:1,shock:0,echo:0,split:0};s.round.remaining={charge:4,pulse:1,shock:0,echo:0,split:0};s.research=100;},
+  (s:any)=>{s.round.loadout={charge:4,pulse:1,shock:0,echo:0,split:0,phase:0};s.round.remaining={charge:4,pulse:1,shock:0,echo:0,split:0,phase:0};s.research=100;},
   (s:any)=>s.round.budget=8,(s:any)=>s.round.budget=10,(s:any)=>s.round.budget=12
  ];
  for(const mutate of mutations){const bad=structuredClone(baseline);mutate(bad);assert.equal(w.restore(bad),false);assert.deepEqual(w.getSnapshot(),baseline);}
@@ -308,10 +309,10 @@ test('schema 4 migration preserves spent legacy capacity even after research has
   const old={...fresh,schemaVersion:4 as const,research,round:{budget:6,used,startResearch:research,startDestroyed:0,settled}};
   const w=createWorld();assert.equal(w.restore(old),true);assert.equal(w.getSnapshot().research,research);
   assert.equal(w.getRound().budget,6);assert.equal(w.getRound().used,used);assert.equal(w.getRound().settled,settled);
-  assert.deepEqual(w.getRound().loadout,{charge:6,pulse:0,shock:0,echo:0,split:0});assert.deepEqual(w.getRound().remaining,{charge:6-used,pulse:0,shock:0,echo:0,split:0});
+  assert.deepEqual(w.getRound().loadout,{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0});assert.deepEqual(w.getRound().remaining,{charge:6-used,pulse:0,shock:0,echo:0,split:0,phase:0});
   const reloaded=createWorld();assert.equal(reloaded.restore(w.getSnapshot()),true);assert.deepEqual(reloaded.getRound(),w.getRound());
   let count=0;while(reloaded.recordShot())count++;assert.equal(count,settled?0:6-used);
-  if(research>=120){assert.equal(w.startRound('warehouse',{charge:8,pulse:0,shock:0,echo:0,split:0}),true);assert.equal(w.getRound().budget,8);}
+  if(research>=120){assert.equal(w.startRound('warehouse',{charge:8,pulse:0,shock:0,echo:0,split:0,phase:0}),true);assert.equal(w.getRound().budget,8);}
  }
 });
 
@@ -320,8 +321,8 @@ test('schema 5 migration validates exact old keys before zero-extending without 
  for(const budget of [6,8])for(const settled of [false,true]){
   const legacy:any={...base,schemaVersion:5,research:500,round:{budget,used:2,startResearch:500,startDestroyed:0,settled,loadout:{charge:2,pulse:1,shock:0},remaining:{charge:2,pulse:0,shock:0}}};
   const w=createWorld();assert.equal(w.restore(legacy),true);
-  assert.equal(w.getSnapshot().schemaVersion,6);
-  assert.deepEqual(w.getRound(),{...legacy.round,loadout:{...legacy.round.loadout,echo:0,split:0},remaining:{...legacy.round.remaining,echo:0,split:0}});
+  assert.equal(w.getSnapshot().schemaVersion,7);
+  assert.deepEqual(w.getRound(),{...legacy.round,loadout:{...legacy.round.loadout,echo:0,split:0,phase:0},remaining:{...legacy.round.remaining,echo:0,split:0,phase:0}});
   const reload=createWorld();assert.equal(reload.restore(w.getSnapshot()),true);assert.deepEqual(reload.getRound(),w.getRound());
   for(const field of ['loadout','remaining'])for(const change of ['extra','missing','new']){
    const bad=structuredClone(legacy);if(change==='missing')delete bad.round[field].shock;else bad.round[field][change==='new'?'echo':'extra']=0;
@@ -341,22 +342,88 @@ test('new maps use supported building groups and unlock only at catalog gates',(
 
 test('new tools consume their three-slot allocation once and reload conserves remaining inventory',()=>{
  const w=createWorld();assert.equal(w.restore({...w.getSnapshot(),research:420}),true);
- const loadout={charge:1,pulse:0,shock:0,echo:1,split:2};
+ const loadout={charge:1,pulse:0,shock:0,echo:1,split:2,phase:0};
  assert.equal(w.startRound('tower',loadout),true);assert.equal(w.getRound().budget,10);
  assert.equal(w.recordShot('echo'),true);assert.equal(w.getRound().used,3);assert.equal(w.recordShot('echo'),false);
  assert.equal(w.recordShot('split'),true);assert.equal(w.getRound().used,6);
  const saved=w.getSnapshot(),restored=createWorld();assert.equal(restored.restore(saved),true);
- assert.deepEqual(restored.getRound().remaining,{charge:1,pulse:0,shock:0,echo:0,split:1});
+ assert.deepEqual(restored.getRound().remaining,{charge:1,pulse:0,shock:0,echo:0,split:1,phase:0});
  for(const mutate of [(s:any)=>delete s.round.remaining.echo,(s:any)=>s.round.loadout.other=0,(s:any)=>s.round.remaining.split=2,(s:any)=>s.round.used=5,(s:any)=>s.round.budget=12]){
   const bad=structuredClone(saved);mutate(bad);assert.equal(restored.restore(bad),false);assert.deepEqual(restored.getRound(),w.getRound());
  }
 });
 test('crossing 420 during a round freezes capacity and never silently allocates new tools',()=>{
  const w=createWorld();assert.equal(w.restore({...w.getSnapshot(),research:419}),true);
- const selected={charge:2,pulse:0,shock:0,echo:2,split:0};
+ const selected={charge:2,pulse:0,shock:0,echo:2,split:0,phase:0};
  assert.equal(w.startRound('bridge',selected),true);assert.equal(w.recordShot('echo'),true);
  w.damage({id:'cross-tier',epoch:w.epoch,weapon:'echo',power:1,target:{x:-7,y:2,z:0}});
  assert.ok(w.getSnapshot().research>=420);assert.equal(w.getRound().budget,8);assert.equal(w.recordShot('split'),false);
  const reloaded=createWorld();assert.equal(reloaded.restore(w.getSnapshot()),true);assert.equal(reloaded.getRound().budget,8);
  assert.equal(reloaded.startRound('tower',selected),true);assert.equal(reloaded.getRound().budget,10);assert.deepEqual(reloaded.getRound().remaining,selected);
+});
+
+// Historical snapshots may exceed the new type limit but must retain everything
+// while waiting for an intentional new round, rather than failing restoration.
+test('legacy schema 6 four-type rounds retain damage, research and all remaining ammo',()=>{
+ const source=createWorld();hit(source,'legacy-damage');const original=source.getSnapshot();
+ const loadout={charge:2,pulse:1,shock:1,echo:1,split:0};
+ const saved:any={...original,schemaVersion:6,research:500+original.research,round:{budget:10,used:1,startResearch:500,startDestroyed:0,settled:false,loadout,remaining:{...loadout,charge:1}}};
+ const restored=createWorld();assert.equal(restored.restore(saved),true);
+ assert.equal(restored.getSnapshot().research,saved.research);
+ assert.deepEqual(restored.getVoxels(),saved.voxels);
+ const expected={...saved.round,loadout:{...loadout,phase:0},remaining:{...loadout,charge:1,phase:0}};
+ assert.deepEqual(restored.getRound(),expected);
+ const reload=createWorld();assert.equal(reload.restore(restored.getSnapshot()),true);
+ assert.deepEqual(reload.getRound(),expected);assert.equal(reload.getSnapshot().research,saved.research);
+ assert.equal(typeof gameplay.requiresLoadoutReselection,'function');
+ assert.equal(gameplay.requiresLoadoutReselection(reload.getRound()),true);
+});
+test('legacy over-limit rounds cannot shoot or damage before an explicit valid new round',()=>{
+ const world=createWorld(),base=world.getSnapshot(),loadout={charge:1,pulse:1,shock:1,echo:1,split:0,phase:0};
+ const saved={...base,research:240,round:{budget:8,used:1,startResearch:240,startDestroyed:0,settled:false,loadout,remaining:{...loadout,charge:0}}};
+ assert.equal(world.restore(saved),true);const before=world.getSnapshot();
+ for(const id of ['pulse','shock','echo'] as const)assert.equal(world.recordShot(id),false);
+ assert.equal(hit(world,'blocked-legacy-impact').accepted,false);
+ assert.deepEqual(world.getSnapshot(),before);
+ assert.equal(world.startRound('courtyard',loadout),false);assert.deepEqual(world.getSnapshot(),before);
+ const selected={...loadout,echo:0};assert.equal(world.startRound('courtyard',selected),true);
+ assert.equal(world.getSnapshot().research,240);assert.deepEqual(world.getRound().remaining,selected);
+ assert.equal(world.recordShot('pulse'),true);assert.equal(hit(world,'new-valid-impact').accepted,true);
+});
+test('legacy schema 5 three-type rounds migrate normally and never require reselection',()=>{
+ const base=createWorld().getSnapshot();
+ const old:any={...base,schemaVersion:5,research:120,round:{budget:8,used:2,startResearch:120,startDestroyed:0,settled:false,loadout:{charge:4,pulse:1,shock:1},remaining:{charge:4,pulse:0,shock:1}}};
+ const world=createWorld();assert.equal(world.restore(old),true);
+ assert.equal(typeof gameplay.requiresLoadoutReselection,'function');
+ assert.equal(gameplay.requiresLoadoutReselection(world.getRound()),false);
+ assert.deepEqual(world.getRound().remaining,{charge:4,pulse:0,shock:1,echo:0,split:0,phase:0});
+ assert.equal(world.getSnapshot().research,120);assert.equal(world.recordShot('shock'),true);
+});
+
+test('schema 6 migration requires exactly its five historical keys before zero-extending phase',()=>{
+ const base=createWorld().getSnapshot();
+ const old:any={...base,schemaVersion:6,research:700,round:{budget:10,used:3,startResearch:700,startDestroyed:0,settled:false,loadout:{charge:1,pulse:0,shock:0,echo:1,split:2},remaining:{charge:1,pulse:0,shock:0,echo:0,split:2}}};
+ const world=createWorld();assert.equal(world.restore(old),true);
+ assert.equal(world.getSnapshot().schemaVersion,7);
+ assert.deepEqual(world.getRound().loadout,{charge:1,pulse:0,shock:0,echo:1,split:2,phase:0});
+ assert.deepEqual(world.getRound().remaining,{charge:1,pulse:0,shock:0,echo:0,split:2,phase:0});
+ assert.equal(world.getSnapshot().research,700);assert.equal(world.recordShot('phase'),false);
+ for(const field of ['loadout','remaining'])for(const change of ['extra','missing','new']){
+  const bad=structuredClone(old);if(change==='missing')delete bad.round[field].echo;else bad.round[field][change==='new'?'phase':'extra']=0;
+  assert.equal(world.restore(bad),false);
+ }
+ const badMap={...old,mapId:'cantilever'};assert.equal(world.restore(badMap),false);
+});
+test('phase inventory and cantilever map unlock at 620 research without refilling migrated rounds',()=>{
+ const world=createWorld();assert.equal(world.restore({...world.getSnapshot(),research:619}),true);
+ const phase={charge:1,pulse:0,shock:0,echo:0,split:0,phase:3};
+ const before=world.getSnapshot();assert.equal(world.startRound('courtyard',phase),false);assert.deepEqual(world.getSnapshot(),before);
+ assert.equal(world.loadMap('cantilever'),false);
+ assert.equal(world.restore({...world.getSnapshot(),research:620}),true);
+ assert.equal(world.startRound('cantilever',phase),true);
+ assert.equal(world.getObjective().mapId,'cantilever');assert.equal(world.getRound().budget,10);
+ assert.equal(world.recordShot('phase'),true);assert.equal(world.getRound().used,3);
+ assert.deepEqual(world.getRound().remaining,{...phase,phase:2});
+ const reload=createWorld();assert.equal(reload.restore(world.getSnapshot()),true);assert.deepEqual(reload.getRound(),world.getRound());
+ assert.equal(reload.getSnapshot().schemaVersion,7);assert.equal(reload.getSnapshot().research,620);
 });

@@ -10,13 +10,13 @@ const PREVIEW_SECONDS = 6;
 const PREVIEW_SAMPLE_STEPS = 4;
 const HALF_VOXEL = .4825;
 let initialization: Promise<void> | undefined;
-type Ball = { command: ProjectileCommand; body: RAPIER.RigidBody; collider: RAPIER.Collider; age: number; radius: number; stage?:'parent'|'child'; contacted?:boolean };
-type Simulation = { world:RAPIER.World; events:RAPIER.EventQueue; balls:Map<string,Ball>; byCollider:Map<number,string> };
+type Ball = { command: ProjectileCommand; body: RAPIER.RigidBody; collider: RAPIER.Collider; age: number; radius: number; stage?:'parent'|'child'; contacted?:boolean; phaseHits?:Set<number> };
+type Simulation = { world:RAPIER.World; events:RAPIER.EventQueue; balls:Map<string,Ball>; byCollider:Map<number,string>; voxelByCollider:Map<number,number>; groundHandle:number };
 const finiteVector = (p: Vec3) => p && [p.x,p.y,p.z].every(n => Number.isFinite(n) && Math.abs(n) <= 10000);
 const copy = (p: Vec3):Vec3 => ({x:p.x,y:p.y,z:p.z});
-const isWeapon = (weapon:unknown):weapon is WeaponId => weapon==='pulse' || weapon==='charge' || weapon==='shock' || weapon==='echo' || weapon==='split';
+const isWeapon = (weapon:unknown):weapon is WeaponId => weapon==='pulse' || weapon==='charge' || weapon==='shock' || weapon==='echo' || weapon==='split' || weapon==='phase';
 const isRemote = (command:ProjectileCommand) => command.trigger==='remote';
-const weaponRadius = (weapon:WeaponId) => weapon==='charge'?.27:weapon==='shock'?.3:.2;
+const weaponRadius = (weapon:WeaponId) => weapon==='charge'?.27:weapon==='shock'?.3:weapon==='phase'?.28:.2;
 
 /** Shared by the live launch and its independent Rapier preview. */
 function launchVelocity(command:ProjectileCommand):Vec3 {
@@ -42,8 +42,9 @@ function createBall(world:RAPIER.World,command:ProjectileCommand,velocity?:Vec3,
  // Preserve the mature round rocket/grenade CCD shapes. Packages use a real
  // oriented box matching the model footprint instead of pretending to be a ball.
  const shape=command.weapon==='shock' ? RAPIER.ColliderDesc.cuboid(.725*radius,.51*radius,.24*radius) : RAPIER.ColliderDesc.ball(radius);
+ if(command.weapon==='phase')shape.setSensor(true); // This entity alone passes through structures; all terrain remains solid.
  const collider=world.createCollider(shape.setRestitution(child?.48:command.weapon==='charge'?.42:isRemote(command)?.25:0).setFriction(.8).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),body);
- return {command:{...command,origin:copy(o),target:copy(command.target)},body,collider,age:0,radius,stage:command.weapon==='split'?(child?'child':'parent'):undefined};
+ return {command:{...command,origin:copy(o),target:copy(command.target)},body,collider,age:0,radius,stage:command.weapon==='split'?(child?'child':'parent'):undefined,phaseHits:command.weapon==='phase'?new Set<number>():undefined};
 }
 function removeBall(simulation:Simulation,ball:Ball) {
  simulation.byCollider.delete(ball.collider.handle);
@@ -63,14 +64,15 @@ function splitParent(simulation:Simulation,command:ProjectileCommand,position:Ve
 }
 function simulateStep(simulation:Simulation):{detonations:Detonation[];contacts:Map<string,Vec3>;ended:Map<string,Vec3>} {
  const {world,events,balls,byCollider}=simulation;
+ const phaseOrigins=new Map([...balls.values()].filter(ball=>ball.phaseHits).map(ball=>[ball.command.id,copy(ball.body.translation())]));
  world.step(events);
  for(const ball of balls.values())ball.age+=STEP;
  const contacts=new Map<string,Vec3>();
  events.drainCollisionEvents((first,second,started)=>{
-  if(!started)return;
+  if(!started || [first,second].some(handle=>balls.get(byCollider.get(handle)??'')?.phaseHits))return;
   for(const handle of [first,second]){
    const id=byCollider.get(handle),ball=id===undefined?undefined:balls.get(id);
-   if(!ball)continue;
+   if(!ball || ball.phaseHits)continue;
    contacts.set(ball.command.id,copy(ball.body.translation()));
    if((ball.command.weapon==='charge' || isRemote(ball.command)) && !ball.contacted){
     // Stylized soft casing absorbs lateral impact energy, preserving the starter
@@ -82,6 +84,30 @@ function simulateStep(simulation:Simulation):{detonations:Detonation[];contacts:
  });
  const detonations:Detonation[]=[],ended=new Map<string,Vec3>();
  for(const ball of [...balls.values()]){
+  if(ball.phaseHits){
+   const origin=phaseOrigins.get(ball.command.id)!,position=copy(ball.body.translation());
+   const displacement={x:position.x-origin.x,y:position.y-origin.y,z:position.z-origin.z};
+   // A continuous sphere sweep covers the distance the actual gravity-driven body
+   // travelled this solver step. Filters exclude only this entity's prior hits,
+   // never remove/disable terrain or change another projectile's collisions.
+   while(balls.has(ball.command.id)){
+    const hit=world.castShape(origin,{x:0,y:0,z:0,w:1},displacement,new RAPIER.Ball(ball.radius),0,1,true,undefined,undefined,ball.collider,ball.body,collider=>{
+     if(collider.handle===simulation.groundHandle)return true;
+     const voxelId=simulation.voxelByCollider.get(collider.handle);
+     return !isRemote(ball.command)&&voxelId!==undefined&&!ball.phaseHits!.has(voxelId);
+    });
+    if(!hit)break;
+    const center={x:origin.x+displacement.x*hit.time_of_impact,y:origin.y+displacement.y*hit.time_of_impact,z:origin.z+displacement.z*hit.time_of_impact};
+    const contact=copy(hit.witness1);
+    if(!contacts.has(ball.command.id))contacts.set(ball.command.id,contact);
+    if(hit.collider.handle===simulation.groundHandle){ended.set(ball.command.id,center);removeBall(simulation,ball);break;}
+    const index=ball.phaseHits.size;ball.phaseHits.add(simulation.voxelByCollider.get(hit.collider.handle)!);
+    detonations.push({id:`${ball.command.id}:phase:${index}`,epoch:ball.command.epoch,position:contact,weapon:'phase',power:ball.command.power,reason:'impact',age:ball.age});
+    if(ball.phaseHits.size===3){ended.set(ball.command.id,center);removeBall(simulation,ball);}
+   }
+   if(balls.has(ball.command.id)&&(ball.age>=MAX_LIFETIME || position.y < -100 || Math.hypot(position.x,position.z)>300)){ended.set(ball.command.id,position);removeBall(simulation,ball);}
+   continue;
+  }
   if(isRemote(ball.command))continue; // Armed remote ordnance survives until manual detonation/reset.
   if(ball.command.weapon==='split' && ball.stage!=='child' && (ball.age+1e-9>=.65 || contacts.has(ball.command.id))){
    const position=copy(ball.body.translation()),velocity=copy(ball.body.linvel());
@@ -107,12 +133,13 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
  world.integrationParameters.maxCcdSubsteps = 4;
  const events = new RAPIER.EventQueue(true);
  // Physics substrate top is -.5; the scene's selectable island surface is y=0.
- world.createCollider(RAPIER.ColliderDesc.cuboid(27,.5,22).setTranslation(0,-1,0).setFriction(.85));
+ const groundCollider=world.createCollider(RAPIER.ColliderDesc.cuboid(27,.5,22).setTranslation(0,-1,0).setFriction(.85));
  const terrain = new Map<number,{collider:RAPIER.Collider;position:Vec3}>();
  const balls = new Map<string,Ball>();
  const packages = new Map<string,{command:AttachedCommand;position:Vec3;normal:Vec3;age:number}>();
  const byCollider = new Map<number,string>();
- const simulation:Simulation={world,events,balls,byCollider};
+ const voxelByCollider=new Map<number,number>();
+ const simulation:Simulation={world,events,balls,byCollider,voxelByCollider,groundHandle:groundCollider.handle};
  const launched = new Set<string>();
  const emitters=new Map<string,{base:Detonation;elapsed:number;next:number;normal?:Vec3}>();
  function activateEcho(base:Detonation,normal?:Vec3):Detonation {
@@ -137,15 +164,15 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
    ids.add(voxel.id);
    const prior=terrain.get(voxel.id), p=voxel.position;
    if(prior && prior.position.x===p.x && prior.position.y===p.y && prior.position.z===p.z)continue;
-   if(prior)world.removeCollider(prior.collider,true);
+   if(prior){voxelByCollider.delete(prior.collider.handle);world.removeCollider(prior.collider,true);}
    const collider=world.createCollider(RAPIER.ColliderDesc.cuboid(HALF_VOXEL,HALF_VOXEL,HALF_VOXEL).setTranslation(p.x,p.y,p.z).setFriction(.75));
-   terrain.set(voxel.id,{collider,position:copy(p)});
+   terrain.set(voxel.id,{collider,position:copy(p)});voxelByCollider.set(collider.handle,voxel.id);
   }
-  for(const [id,entry] of terrain)if(!ids.has(id)){world.removeCollider(entry.collider,true);terrain.delete(id);}
+  for(const [id,entry] of terrain)if(!ids.has(id)){voxelByCollider.delete(entry.collider.handle);world.removeCollider(entry.collider,true);terrain.delete(id);}
   for(const [id,pack] of packages)if(pack.command.surface.voxelId!==null && !ids.has(pack.command.surface.voxelId))packages.delete(id);
  }
  function commandIds(id:string,weapon:WeaponId):string[]{
-  return weapon==='split'?[id,...[0,1,2].map(i=>`${id}:child:${i}`)]:weapon==='echo'?[id,...[0,1,2].map(i=>`${id}:echo:${i}`)]:[id];
+  return weapon==='phase'?[id,...[0,1,2].map(i=>`${id}:phase:${i}`)]:weapon==='split'?[id,...[0,1,2].map(i=>`${id}:child:${i}`)]:weapon==='echo'?[id,...[0,1,2].map(i=>`${id}:echo:${i}`)]:[id];
  }
  function idsAvailable(id:string,weapon:WeaponId){return commandIds(id,weapon).every(candidate=>candidate.length<=160 && !launched.has(candidate));}
  function reserveIds(id:string,weapon:WeaponId){for(const candidate of commandIds(id,weapon))launched.add(candidate);}
@@ -167,12 +194,12 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   try{
    const previewBalls=new Map<string,Ball>(),previewByCollider=new Map<number,string>();
    for(const [id,ball] of balls){
-    const cloned={...ball,body:previewWorld.getRigidBody(ball.body.handle),collider:previewWorld.getCollider(ball.collider.handle)};
+    const cloned={...ball,phaseHits:ball.phaseHits?new Set(ball.phaseHits):undefined,body:previewWorld.getRigidBody(ball.body.handle),collider:previewWorld.getCollider(ball.collider.handle)};
     previewBalls.set(id,cloned);previewByCollider.set(cloned.collider.handle,id);
    }
    const ball=createBall(previewWorld,command);
    previewBalls.set(command.id,ball);previewByCollider.set(ball.collider.handle,command.id);
-   const copied:Simulation={world:previewWorld,events:previewEvents,balls:previewBalls,byCollider:previewByCollider};
+   const copied:Simulation={world:previewWorld,events:previewEvents,balls:previewBalls,byCollider:previewByCollider,voxelByCollider:new Map(voxelByCollider),groundHandle:groundCollider.handle};
    const points:Vec3[]=[copy(command.origin)];
    for(let index=1;index<=Math.round(PREVIEW_SECONDS/STEP);index++){
     const {contacts,ended}=simulateStep(copied);
@@ -212,7 +239,14 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   const result:Detonation[]=[];
   for(const pack of packages.values())if(pack.command.epoch===epoch && (pack.command.surface.voxelId===null || terrain.has(pack.command.surface.voxelId))){
    const weapon=pack.command.weapon??'shock';
-   if(weapon==='split')splitParent(simulation,{id:pack.command.id,epoch,weapon,power:pack.command.power,origin:pack.position,target:pack.position},pack.position,{x:0,y:0,z:0},pack.normal);
+   if(weapon==='phase'){
+    const direction=pack.command.surface.voxelId===null?{x:0,y:1,z:0}:{x:-pack.normal.x,y:-pack.normal.y,z:-pack.normal.z};
+    // Placement starts one radius outside the actual face so the first witness
+    // is its real surface, rather than an initially overlapping sensor center.
+    const position={x:pack.command.surface.position.x+pack.normal.x*(weaponRadius('phase')+.01),y:pack.command.surface.position.y+pack.normal.y*(weaponRadius('phase')+.01),z:pack.command.surface.position.z+pack.normal.z*(weaponRadius('phase')+.01)};
+    const ball=createBall(world,{id:pack.command.id,epoch,weapon,power:pack.command.power,origin:position,target:{x:position.x+direction.x,y:position.y+direction.y,z:position.z+direction.z},trigger:'automatic'},{x:direction.x*18,y:direction.y*18,z:direction.z*18});
+    balls.set(ball.command.id,ball);byCollider.set(ball.collider.handle,ball.command.id);
+   }else if(weapon==='split')splitParent(simulation,{id:pack.command.id,epoch,weapon,power:pack.command.power,origin:pack.position,target:pack.position},pack.position,{x:0,y:0,z:0},pack.normal);
    else {
     const event:Detonation={id:pack.command.id,epoch,position:copy(pack.position),weapon,power:pack.command.power,reason:'remote',age:pack.age};
     result.push(weapon==='echo'?activateEcho(event,pack.normal):event);
@@ -220,6 +254,7 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   }
   packages.clear();
   for(const ball of [...balls.values()])if(isRemote(ball.command)){
+   if(ball.phaseHits){ball.command={...ball.command,trigger:'automatic'};continue;}
    const position=copy(ball.body.translation()),velocity=copy(ball.body.linvel());
    if(ball.command.weapon==='split')splitParent(simulation,ball.command,position,velocity);
    else {
@@ -259,5 +294,5 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
    ...[...packages.values()].map(pack=>({id:pack.command.id,stage:pack.command.weapon==='split'?'parent' as const:pack.command.weapon==='echo'?'emitter' as const:undefined,position:copy(pack.position),radius:weaponRadius(pack.command.weapon??'shock'),weapon:pack.command.weapon??'shock',age:pack.age,fuseRemaining:null,trigger:'remote' as const,state:'attached' as const,normal:copy(pack.normal),hostVoxelId:pack.command.surface.voxelId,velocity:{x:0,y:0,z:0}}))
   ];
  }
- return {syncVoxels,launch,preview,attach,detonateAttached,step,getProjectiles,getPendingWorkCount,reset,dispose(){if(disposed)return;disposed=true;balls.clear();packages.clear();emitters.clear();byCollider.clear();terrain.clear();launched.clear();events.free();world.free();}};
+ return {syncVoxels,launch,preview,attach,detonateAttached,step,getProjectiles,getPendingWorkCount,reset,dispose(){if(disposed)return;disposed=true;balls.clear();packages.clear();emitters.clear();byCollider.clear();voxelByCollider.clear();terrain.clear();launched.clear();events.free();world.free();}};
 }

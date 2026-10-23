@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation, projectileModelKey, WEAPON_MODEL_KEYS, type WeaponModelKey } from './weapon-models';
+import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createPhaseHitVisual, createWeaponGeometry, projectileOrientation, projectileModelKey, WEAPON_MODEL_KEYS, type WeaponModelKey } from './weapon-models';
 import { effectFrameDeltas, clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
 import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
@@ -185,6 +185,8 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const pulse = new THREE.Mesh(new THREE.RingGeometry(.93,1,64),pulseMaterial);pulse.rotation.x=-Math.PI/2;scene.add(pulse);
   const flash = new THREE.PointLight(0xffa446,0,18,2);scene.add(flash);
   let pulseAge=10, timeScale=1, target:Vec3|null=null;
+  const phaseHits:ReturnType<typeof createPhaseHitVisual>[]=[];
+  const clearPhaseHits=()=>{for(const hit of phaseHits)hit.dispose();phaseHits.length=0;};
   const raycaster = new THREE.Raycaster();const pointer=new THREE.Vector2();
   let down:{x:number;y:number;time:number;id:number}|null=null;let dragged=false;
   const pointers=new Set<number>();
@@ -231,6 +233,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const {motion:dt,age:effectAge}=effectFrameDeltas(elapsed,timeScale);
     chips=advanceEffectAges(chips,effectAge);
     pulseAge+=effectAge;
+    for(let i=phaseHits.length-1;i>=0;i--)if(!phaseHits[i].advance(effectAge)){phaseHits[i].dispose();phaseHits.splice(i,1);}
     // New detonations must begin at age zero and be rendered before any aging.
     options.onFrame?.(elapsed*timeScale);
     chips.forEach((c,i)=>{
@@ -253,8 +256,8 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   return {
     setProjectiles:updateProjectiles,
     setTrajectory:trajectory.setPreview,
-    clearEffects(){({chips,pulseAge}=clearedVisualEffects(chips,pulseAge));debris.count=0;pulse.visible=false;flash.intensity=0;},
-    hasActiveEffects(){return !disposed&&hasActiveVisualEffects(pulseAge,chips);},
+    clearEffects(){clearPhaseHits();({chips,pulseAge}=clearedVisualEffects(chips,pulseAge));debris.count=0;pulse.visible=false;flash.intensity=0;},
+    hasActiveEffects(){return !disposed&&(hasActiveVisualEffects(pulseAge,chips)||phaseHits.length>0);},
     getRenderedProjectileCount(){return [...projectileMeshes.values()].reduce((count,pool)=>count+pool.mesh.count,0);},
     getAimSurface(){return copyLiveAimSurface(aimSurface,live);},
     getLaunchOrigin(point){
@@ -268,7 +271,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
       return {x:origin.x,y:origin.y,z:origin.z};
     },
     setVoxels(voxels){
-      if(voxels.length>live.length){chips=[];debris.count=0;pulseAge=10;}
+      if(voxels.length>live.length){clearPhaseHits();chips=[];debris.count=0;pulseAge=10;}
       live=voxels;
       if(house){scene.remove(house);house.dispose();}
       house=new THREE.InstancedMesh(box,voxelMat,Math.max(1,voxels.length));house.count=voxels.length;
@@ -285,11 +288,13 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         velocity.y+=4+rand()*6;
         chips.push({p,v:velocity,rotation:new THREE.Vector3(rand(),rand(),rand()),spin:new THREE.Vector3(rand()*4-2,rand()*4-2,rand()*4-2),size:.35+rand()*.5,age:0,life:4+rand()*2,color:v.color});
       }
-      chips=chips.slice(-MAX_DEBRIS);pulse.position.set(point.x,Math.max(.2,point.y-.25),point.z);pulseAge=0;
+      chips=chips.slice(-MAX_DEBRIS);
+      if(weapon==='phase'){const hit=createPhaseHitVisual(point);phaseHits.push(hit);scene.add(hit.object);return;}
+      pulse.position.set(point.x,Math.max(.2,point.y-.25),point.z);pulseAge=0;
       pulseMaterial.color.setHex(weapon==='shock'||weapon==='echo'?0x79deff:0xffbf68);flash.position.set(point.x,point.y+1,point.z);
     },
     setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){clearPhaseHits();trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

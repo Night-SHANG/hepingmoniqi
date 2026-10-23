@@ -61,3 +61,18 @@ export function towerVoxels():Voxel[] {
  for(let x=-3;x<=3;x++)for(const z of [-3,3])put(x,15,z,'glass');
  return finish();
 }
+
+/** 悬臂观景台: one offset mast, counterweight and a broad unsupported-side deck. */
+export function cantileverVoxels():Voxel[] {
+ const {put,finish}=builder('cantilever',50000);
+ for(let x=-8;x<=-4;x++)for(let z=-2;z<=2;z++)put(x,0,z,'stone');
+ for(let y=1;y<=10;y++)put(-6,y,0,'metal');
+ for(let x=-8;x<=10;x++)put(x,10,0,'metal');
+ for(let x=-8;x<=-5;x++)for(let z=-1;z<=1;z++)for(let y=10;y<=12;y++)put(x,y,z,'stone');
+ for(let x=2;x<=10;x++)for(let z=-4;z<=4;z++)put(x,10,z,'wood');
+ for(let x=2;x<=10;x++)for(const z of [-4,4])put(x,11,z,'glass');
+ for(let z=-3;z<=3;z++)put(10,11,z,'glass');
+ for(const x of [4,9])for(const z of [-3,3])for(let y=11;y<=14;y++)put(x,y,z,'metal');
+ for(let x=4;x<=9;x++)for(let z=-3;z<=3;z++)put(x,14,z,'roof');
+ return finish();
+}

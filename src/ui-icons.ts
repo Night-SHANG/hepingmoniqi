@@ -1,21 +1,6 @@
-import {createWorld} from './domain';
-import type {MapId} from './contracts';
-import {MAPS} from './content-catalog';
-const cache=new Map<MapId,string>();
-/** Isometric projection of the actual map voxels, not an illustrative mockup. */
-export function scenePreview(map:MapId):string{
- const cached=cache.get(map);if(cached)return cached;
- const model=createWorld();model.loadMap(map,true);
- const voxels=[...model.getVoxels()].sort((a,b)=>(a.position.x+a.position.z-b.position.x-b.position.z)||a.position.y-b.position.y);
- const project=(x:number,y:number,z:number)=>[(x-z)*.866,(x+z)*.5-y];
- const points=voxels.flatMap(v=>{const {x,y,z}=v.position;return [project(x-.5,y-.5,z-.5),project(x+.5,y+.5,z+.5),project(x-.5,y+.5,z+.5),project(x+.5,y-.5,z-.5)];});
- const minX=Math.min(...points.map(p=>p[0]))-2,maxX=Math.max(...points.map(p=>p[0]))+2,minY=Math.min(...points.map(p=>p[1]))-2,maxY=Math.max(...points.map(p=>p[1]))+2;
- const faces=voxels.map(v=>{const{x,y,z}=v.position,c='#'+v.color.toString(16).padStart(6,'0');const p=(dx:number,dy:number,dz:number)=>project(x+dx,y+dy,z+dz).map(n=>n.toFixed(2)).join(',');return `<g fill="${c}"><polygon points="${p(-.5,.5,-.5)} ${p(.5,.5,-.5)} ${p(.5,.5,.5)} ${p(-.5,.5,.5)}"/><polygon points="${p(.5,.5,-.5)} ${p(.5,-.5,-.5)} ${p(.5,-.5,.5)} ${p(.5,.5,.5)}"/><polygon points="${p(-.5,.5,.5)} ${p(.5,.5,.5)} ${p(.5,-.5,.5)} ${p(-.5,-.5,.5)}"/><polygon fill="#000" opacity=".2" points="${p(.5,.5,-.5)} ${p(.5,-.5,-.5)} ${p(.5,-.5,.5)} ${p(.5,.5,.5)}"/></g>`;}).join('');
- const svg=`<svg viewBox="${minX} ${minY} ${maxX-minX} ${maxY-minY}" role="img" aria-label="${MAPS[map].name}的真实体素结构预览">${faces}</svg>`;cache.set(map,svg);return svg;
-}
-
 /** Hand-authored filled, faceted inventory art. Separate from the real-world preview. */
 export const toolArtwork={
+ phase:'<path d="m16 3 11 6 3 12-10 10-13-5-5-12z" fill="#644ab3"/><path d="m16 3 11 6-9 7-16-2z" fill="#b8a3f7"/><path d="m18 16 12 5-10 10-2-15z" fill="#362d72"/><path d="m5 20 24-8m-20 15 19-7" stroke="#86efff" stroke-width="3"/><path d="m23 8 7 2-5 5" fill="none" stroke="#e0fbff" stroke-width="2"/>',
  charge:'<path d="m10 3 11 1 3 6-5 3-9-3z" fill="#a8b6b7"/><path d="m21 4 5 3 2 10-3 1-3-10z" fill="#566a73"/><path d="m8 11 12-2 7 7-2 11-12 4-9-7z" fill="#536e31"/><path d="m8 11 12-2 7 7-13 3z" fill="#9dac55"/><path d="m14 19 13-3-2 11-12 4z" fill="#354d26"/><path d="m5 18 9 4 12-4v4l-12 4-9-4z" fill="#dbbb4d"/><path d="m8 12 3 1-1 7-3-1zm6 1 3-1v7l-3 1zm6-1 3 2-1 4-3 1z" fill="#bbc278"/>',
  pulse:'<path d="m20 3 8-1-1 9-6 1z" fill="#ff8a37"/><path d="m20 3 8-1-5 6z" fill="#ffc176"/><path d="m20 8 5 5-12 13-6-6z" fill="#d8e4ed"/><path d="m23 11 2 2-12 13-2-3z" fill="#728d9f"/><path d="m16 12 5 5-4 4-5-5z" fill="#f59132"/><path d="m8 17-6 6 5 1 3-5zm7 7-2 6 6-3 1-7z" fill="#e46a2d"/><path d="m6 23 5 5-4 1-4-4z" fill="#465b70"/><path d="m4 27-3 4 5-2z" fill="#ffd976"/>',
  shock:'<path d="m3 11 19-4 8 6-19 5z" fill="#718495"/><path d="m3 11 8 7v12l-8-6z" fill="#3a4d60"/><path d="m11 18 19-5v12l-19 5z" fill="#263c54"/><path d="m8 10 4-1 8 6-4 1v13l-4 1V18zM20 8l3 1 6 5-3 1v11l-4 1V16z" fill="#a58a60"/><path d="m16 18 7-2v6l-7 2z" fill="#ef8735"/><path d="m17 8 2-1V3l5-1v2l-3 1v4z" fill="#9cafbb"/><path d="m22 1 4-1v4l-4 1z" fill="#ffad45"/>',

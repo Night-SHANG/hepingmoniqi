@@ -2,16 +2,16 @@
 export type Vec3 = { x: number; y: number; z: number };
 export type MaterialId = 'wood' | 'stone' | 'roof' | 'glass' | 'metal' | 'foliage';
 /** Stable IDs: pulse=rocket, charge=grenade, shock=remote package. */
-export type WeaponId = 'pulse' | 'charge' | 'shock' | 'echo' | 'split';
+export type WeaponId = 'pulse' | 'charge' | 'shock' | 'echo' | 'split' | 'phase';
 /** Inventory counts; capacity is weighted separately by weaponCost. */
 export type Loadout = Record<WeaponId,number>;
-export type MapId = 'courtyard' | 'warehouse' | 'bridge' | 'tower';
+export type MapId = 'courtyard' | 'warehouse' | 'bridge' | 'tower' | 'cantilever';
 export interface AimSurface { position:Vec3; normal:Vec3; voxelId:number|null; }
 export interface ObjectiveState { mapId:MapId; title:string; total:number; destroyed:number; fraction:number; goal:number; complete:boolean; completedMaps:MapId[]; }
 export interface Voxel { id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
 export interface DamageCommand { reward?:boolean; id: string; epoch: number; target: Vec3; weapon: WeaponId; power: number; }
 export interface DamageResult { accepted: boolean; removed: Voxel[]; detached: Voxel[]; newlyDestroyed: number; researchEarned: number; destruction: number; }
-export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
+export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6 | 7; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
 export interface RoundState { budget:number; used:number; startResearch:number; startDestroyed:number; settled:boolean; loadout?:Loadout; remaining?:Loadout; }
 export interface RoundResult { used:number; budget:number; destruction:number; researchEarned:number; }
 export interface WorldModel {

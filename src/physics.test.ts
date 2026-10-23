@@ -307,3 +307,134 @@ test('derived effect ids fit the domain limit and overlong parents reject atomic
   }
  }
 });
+
+// Passage tests use hand-positioned live colliders, not the selected aim point.
+test('phase follows gravity through three distinct structural contacts and ends before a fourth',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,12),voxel(2,8),voxel(3,4),voxel(4,1)],1);
+  assert.equal(p.launch({...shot('passage','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0}}),true);
+  const initial=p.getProjectiles()[0],events:Detonation[]=[];
+  assert.equal(initial.radius,.28);assert.equal(p.getPendingWorkCount!(),1);
+  for(let i=0;i<360;i++){
+   const next=p.step(1/120);events.push(...next);
+   if(next.length&&events.length<3)assert.equal(p.getPendingWorkCount!(),1);
+  }
+  assert.equal(events.length,3);assert.deepEqual(events.map(e=>e.id),['passage:phase:0','passage:phase:1','passage:phase:2']);
+  for(const [i,y] of [12,8,4].entries()){
+   assert.equal(events[i].weapon,'phase');assert.equal(events[i].reason,'impact');
+   assert.ok(Math.abs(events[i].position.y-(y+.4825))<.002,JSON.stringify(events[i]));
+   assert.ok(Math.abs(events[i].position.x)<.002&&Math.abs(events[i].position.z)<.002);
+   assert.notDeepEqual(events[i].position,{x:0,y:12,z:0});
+   if(i)assert.ok(events[i].age>events[i-1].age);
+  }
+  assert.equal(p.getPendingWorkCount!(),0);assert.deepEqual(p.getProjectiles(),[]);assert.deepEqual(advance(p,3),[]);
+ }finally{p.dispose();}
+});
+test('phase cannot repeatedly spend its hits inside the same voxel or disable terrain for another tool',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8)],1);assert.equal(p.launch(shot('single-voxel','phase')),true);
+  assert.equal(advance(p,2).length,1);assert.equal(p.getPendingWorkCount!(),0);
+  assert.equal(p.launch(shot('normal-after','pulse')),true);const normal=advance(p,2);assert.equal(normal.length,1);assert.ok(normal[0].position.y>8.4825);
+ }finally{p.dispose();}
+});
+test('phase crosses removed roof geometry without a hit at the old selected point',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,12),voxel(2,4)],1);p.syncVoxels([voxel(2,4)],1);
+  assert.equal(p.launch({...shot('hole-passage','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0}}),true);
+  const events=advance(p,3);assert.equal(events.length,1);assert.ok(events[0].position.y<5);
+ }finally{p.dispose();}
+});
+test('phase stops on the actual substrate without inventing structural damage and expires on a miss',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.launch(shot('phase-ground','phase')),true);assert.deepEqual(advance(p,3),[]);assert.equal(p.getPendingWorkCount!(),0);
+  assert.equal(p.launch({...shot('phase-miss','phase'),origin:{x:40,y:20,z:40},target:{x:40,y:10,z:40},trigger:'remote'}),true);
+  assert.deepEqual(advance(p,13),[]);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('remote phase flies without structural damage then activates in place without resetting its velocity or charging another entity',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,12),voxel(2,8),voxel(3,4),voxel(4,1)],1);
+  assert.equal(p.launch({...shot('remote-phase','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0},trigger:'remote'}),true);
+  assert.deepEqual(advance(p,.55),[]);const waiting=p.getProjectiles()[0];assert.ok(waiting.position.y<12);assert.equal(waiting.trigger,'remote');
+  assert.deepEqual(p.detonateAttached(),[]);const active=p.getProjectiles()[0];
+  assert.deepEqual(active.position,waiting.position);assert.deepEqual(active.velocity,waiting.velocity);assert.equal(active.trigger,'automatic');assert.equal(p.getPendingWorkCount!(),1);
+  assert.deepEqual(p.detonateAttached(),[]);const events=advance(p,3);assert.equal(events.length,3);assert.ok(events.every(e=>e.position.y<9));
+  assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('placed phase releases inward through its real host face and ground placement releases upward',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8),voxel(2,4),voxel(3,1)],1);assert.equal(p.attach({...attached('placed-phase'),weapon:'phase'}),true);
+  assert.deepEqual(advance(p,13),[]);assert.deepEqual(p.detonateAttached(),[]);assert.equal(p.getProjectiles().length,1);assert.equal(p.getProjectiles()[0].state,'flying');assert.ok(p.getProjectiles()[0].velocity!.y<0);
+  const events=advance(p,2);assert.equal(events.length,3);assert.ok(events[0].position.y>8);
+  p.syncVoxels([],1);assert.equal(p.attach(ground('ground-phase','phase')),true);assert.deepEqual(p.detonateAttached(),[]);assert.ok(p.getProjectiles()[0].velocity!.y>0);assert.deepEqual(advance(p,3),[]);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('phase preview never mutates live hit deduplication and reset clears all old contacts',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,12),voxel(2,4)],1);assert.equal(p.launch({...shot('live-phase','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0}}),true);
+  let first:Detonation[]=[];for(let i=0;i<120&&!first.length;i++)first=p.step(1/120);assert.equal(first.length,1);
+  const before=p.getProjectiles();const preview=p.preview({...shot('phase-preview','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0}});assert.ok(preview.impact);assert.deepEqual(p.getProjectiles(),before);
+  assert.equal(advance(p,2).length,1,'preview must not consume the live second hit');
+  p.syncVoxels([voxel(1,12),voxel(2,4)],2);assert.deepEqual(advance(p,3),[]);assert.equal(p.getPendingWorkCount!(),0);
+  assert.equal(p.launch({...shot('live-phase','phase'),epoch:2}),true);p.reset!();assert.deepEqual(advance(p,3),[]);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('phase derived event IDs are atomically reserved and stay within 160 characters',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.launch(shot('x'.repeat(153),'phase')),false);assert.equal(p.getPendingWorkCount!(),0);
+  assert.equal(p.attach(ground('taken:phase:1')),true);assert.equal(p.launch(shot('taken','phase')),false);
+  assert.equal(p.launch(shot('y'.repeat(152),'phase')),true);assert.equal(p.launch(shot('y'.repeat(152)+':phase:0')),false);
+  p.reset!();assert.equal(p.launch(shot('taken','phase')),true);
+ }finally{p.dispose();}
+});
+
+test('phase sensor overlap never creates an impact event for another projectile',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.launch(shot('ghost-overlap','phase')),true);assert.equal(p.launch(shot('real-flight','pulse')),true);
+  assert.deepEqual(advance(p,.1),[]);assert.equal(p.getProjectiles().length,2);
+  const events=advance(p,3);assert.equal(events.length,1);assert.equal(events[0].weapon,'pulse');assert.ok(events[0].position.y<0);
+ }finally{p.dispose();}
+});
+test('phase sweep uses its full radius, not a center ray, while a wider gap remains empty',async()=>{
+ for(const [offset,expected] of [[.65,1],[.8,0]]){
+  const p=await createProjectilePhysics();try{
+   p.syncVoxels([voxel(1,8)],1);p.launch({...shot(`edge-${offset}`,'phase'),origin:{x:offset,y:16,z:0},target:{x:offset,y:8,z:0}});
+   assert.equal(advance(p,3).length,expected);
+  }finally{p.dispose();}
+ }
+});
+test('phase continuous sweep catches several structures crossed in one fixed step',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([-4,-2,0,2].map((x,i)=>({...voxel(i,16),position:{x,y:16,z:0}})),1);
+  p.launch({...shot('fast-phase','phase'),origin:{x:-10,y:16,z:0},target:{x:1000,y:16,z:0}});
+  const events=p.step(1/30);assert.equal(events.length,3);assert.ok(events.every(e=>e.position.x<1));assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+
+test('phase remembers a voxel when its gravity arc crosses the same structure a second time',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8)],1);p.launch({...shot('return-through','phase'),origin:{x:0,y:1,z:0},target:{x:0,y:8,z:0}});
+  const events=advance(p,4);assert.equal(events.length,1);assert.ok(events[0].position.y<8);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('phase fixed-step contacts agree at 1fps and 120fps and preserve pause semantics',async()=>{
+ const a=await createProjectilePhysics(),b=await createProjectilePhysics();try{
+  for(const p of [a,b]){p.syncVoxels([voxel(1,12),voxel(2,8),voxel(3,4)],1);p.launch({...shot('phase-clock','phase'),origin:{x:0,y:20,z:0},target:{x:0,y:12,z:0}});}
+  const paused=b.getProjectiles();assert.deepEqual(b.step(0),[]);assert.deepEqual(b.getProjectiles(),paused);
+  assert.deepEqual(b.step(1),advance(a,1));assert.deepEqual(b.getProjectiles(),a.getProjectiles());assert.equal(b.getPendingWorkCount!(),a.getPendingWorkCount!());
+ }finally{a.dispose();b.dispose();}
+});
+test('phase damage events retain one inventory spend while live geometry is removed after each contact',async()=>{
+ const {createWorld}=await import('./domain');const world=createWorld(),p=await createProjectilePhysics();try{
+  const snapshot=world.getSnapshot();assert.equal(world.restore({...snapshot,research:620}),true);
+  assert.equal(world.startRound('courtyard',{charge:0,pulse:0,shock:0,echo:0,split:0,phase:1}),true);
+  p.syncVoxels(world.getVoxels(),world.epoch);
+  assert.equal(p.launch({id:'single-inventory',epoch:world.epoch,weapon:'phase',power:1,origin:{x:3,y:25,z:-3},target:{x:3,y:14,z:-3}}),true);
+  assert.equal(world.recordShot('phase'),true);let hits=0;
+  for(let i=0;i<600;i++)for(const event of p.step(1/120)){
+   hits++;const result=world.damage({id:event.id,epoch:event.epoch,weapon:event.weapon,power:event.power,target:event.position});assert.equal(result.accepted,true);p.syncVoxels(world.getVoxels(),world.epoch);
+  }
+  assert.ok(hits>=1&&hits<=3);assert.equal(world.getRound().used,3);assert.equal(world.getRound().remaining!.phase,0);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});

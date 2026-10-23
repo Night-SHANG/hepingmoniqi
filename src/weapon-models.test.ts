@@ -43,8 +43,8 @@ test('echo front faces attached and emitting surface while free tools follow phy
 });
 test('all weapon and child render paths are explicit, unsupported IDs never become a package',async()=>{
   const {WEAPON_MODEL_KEYS,projectileModelKey}=await import('./weapon-models');
-  assert.deepEqual(WEAPON_MODEL_KEYS,['charge','pulse','shock','echo','split','split-child']);
-  for(const weapon of ['charge','pulse','shock','echo','split'] as const)assert.equal(projectileModelKey({...base,weapon}),weapon);
+  assert.deepEqual(WEAPON_MODEL_KEYS,['charge','pulse','shock','echo','split','split-child','phase']);
+  for(const weapon of ['charge','pulse','shock','echo','split','phase'] as const)assert.equal(projectileModelKey({...base,weapon}),weapon);
   assert.equal(projectileModelKey({...base,weapon:'split',stage:'child'}),'split-child');
   assert.equal(projectileModelKey({...base,weapon:'echo',stage:'emitter'}),'echo');
   assert.throws(()=>createWeaponGeometry('unknown' as never),/Unsupported weapon/);
@@ -80,4 +80,26 @@ test('existing reset camera contains all bridge and tower voxel corners without 
       assert.ok(Math.abs(projected.x)<1&&Math.abs(projected.y)<1&&Math.abs(projected.z)<1,`voxel ${JSON.stringify(p)}, aspect ${aspect}`);
     }
   }
+});
+
+test('phase has its own faceted segmented geometry inside its physical envelope and follows current velocity',()=>{
+ const geometry=createWeaponGeometry('phase'),positions=geometry.getAttribute('position');
+ assert.ok(positions.count>100);assert.ok(geometry.getAttribute('color'));
+ for(let i=0;i<positions.count;i++)assert.ok(Math.hypot(positions.getX(i),positions.getY(i),positions.getZ(i))<=1.000001);
+ const velocity=new THREE.Vector3(2,-3,1).normalize(),rotation=new THREE.Quaternion();
+ const q=projectileOrientation({...base,weapon:'phase',state:'flying',velocity,rotation});
+ assert.ok(new THREE.Vector3(0,1,0).applyQuaternion(q).distanceTo(velocity)<1e-6);
+ const signatures=['charge','pulse','shock','echo','split'].map(w=>{const other=createWeaponGeometry(w as ProjectileView['weapon']);const count=other.getAttribute('position').count;other.dispose();return count;});
+ assert.ok(!signatures.includes(positions.count));geometry.dispose();
+});
+
+test('every phase contact owns an independent visual at its real point and grows only to catalog radius',async()=>{
+ const {createPhaseHitVisual}=await import('./weapon-models');
+ const {TOOLS}=await import('./content-catalog');
+ const point={x:2,y:8.4825,z:1},first=createPhaseHitVisual(point),second=createPhaseHitVisual({x:2,y:4.4825,z:1});
+ point.y=999;assert.deepEqual(first.object.position.toArray(),[2,8.4825,1]);assert.deepEqual(second.object.position.toArray(),[2,4.4825,1]);
+ const initial=first.object.scale.x;assert.equal(first.advance(0),true);assert.equal(first.object.scale.x,initial);
+ assert.equal(first.advance(.25),true);assert.ok(first.object.scale.x>initial);assert.equal(second.object.scale.x,initial);
+ assert.equal(first.advance(.30),false);assert.ok(first.object.scale.x<=TOOLS.phase.radius);assert.equal(first.object.visible,false);
+ assert.equal(second.advance(.1),true);first.dispose();second.dispose();
 });

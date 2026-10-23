@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import {TOOLS} from './content-catalog';
 import type { ProjectileView, Vec3, WeaponId } from './contracts';
-export const WEAPON_MODEL_KEYS = ['charge','pulse','shock','echo','split','split-child'] as const;
+export const WEAPON_MODEL_KEYS = ['charge','pulse','shock','echo','split','split-child','phase'] as const;
 export type WeaponModelKey = typeof WEAPON_MODEL_KEYS[number];
-const MODEL_BY_WEAPON:Record<WeaponId,WeaponModelKey>={charge:'charge',pulse:'pulse',shock:'shock',echo:'echo',split:'split'};
+const MODEL_BY_WEAPON:Record<WeaponId,WeaponModelKey>={charge:'charge',pulse:'pulse',shock:'shock',echo:'echo',split:'split',phase:'phase'};
 export function projectileModelKey(p:Pick<ProjectileView,'weapon'|'stage'>):WeaponModelKey {
  return p.weapon==='split'&&p.stage==='child'?'split-child':MODEL_BY_WEAPON[p.weapon];
 }
@@ -11,7 +12,7 @@ function unsupportedWeapon(weapon:never):never {throw new Error(`Unsupported wea
 /** Original stylized geometry, normalized to roughly one collider radius. */
 export function createWeaponGeometry(weapon:WeaponId,stage:ProjectileView['stage']='parent'):THREE.BufferGeometry {
  const parts:THREE.BufferGeometry[]=[];
- function part(g:THREE.BufferGeometry,c:number,x=0,y=0,z=0){g.translate(x,y,z);const rgb=new THREE.Color(c);const colors=new Float32Array(g.getAttribute('position').count*3);for(let i=0;i<colors.length;i+=3){colors[i]=rgb.r;colors[i+1]=rgb.g;colors[i+2]=rgb.b;}g.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(g);}
+ function part(g:THREE.BufferGeometry,c:number,x=0,y=0,z=0){if(weapon==='phase'&&g.index){const indexed=g;g=g.toNonIndexed();indexed.dispose();}g.translate(x,y,z);const rgb=new THREE.Color(c);const colors=new Float32Array(g.getAttribute('position').count*3);for(let i=0;i<colors.length;i+=3){colors[i]=rgb.r;colors[i+1]=rgb.g;colors[i+2]=rgb.b;}g.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(g);}
  if(weapon==='charge'){
   part(new THREE.CylinderGeometry(.57,.52,1.12,8),0x567349);
   for(const y of [-.37,0,.37])part(new THREE.CylinderGeometry(.60,.60,.07,8),0x293b31,0,y);
@@ -39,6 +40,16 @@ export function createWeaponGeometry(weapon:WeaponId,stage:ProjectileView['stage
    part(new THREE.TorusGeometry(.24,.045,6,20),0x65edff,x,y,.255);
    part(new THREE.TorusGeometry(.12,.025,6,16),0x20cfff,x,y,.26);
   }
+ }else if(weapon==='phase'){
+  // A faceted core and three broken halos read as a passage tool, not a recolored ball.
+  const core=new THREE.OctahedronGeometry(.58);core.scale(.72,1.35,.72);part(core,0xb9ffff);
+  for(const [index,y] of [-.48,0,.48].entries()){
+   for(let i=0;i<3;i++){
+    const ring=new THREE.TorusGeometry(index===1?.83:.65,.075,4,10,Math.PI*.48);
+    ring.rotateZ(i*Math.PI*2/3+index*.3);ring.rotateX(Math.PI/2);part(ring,index===1?0x12c7d9:0x3a728d,0,y);
+   }
+  }
+  part(new THREE.ConeGeometry(.24,.38,4),0x0e526e,0,.82);
  }else if(weapon==='split'){
   if(stage==='child'){
    part(new THREE.SphereGeometry(.77,12,8),0x1c7192);
@@ -61,7 +72,7 @@ export function createWeaponGeometry(weapon:WeaponId,stage:ProjectileView['stage
  }else unsupportedWeapon(weapon);
  const merged=mergeGeometries(parts);for(const p of parts)p.dispose();
  // Preserve existing approved models; new assemblies fit the actual spherical collider.
- if(weapon==='echo'||weapon==='split'){
+ if(weapon==='echo'||weapon==='split'||weapon==='phase'){
   const positions=merged.getAttribute('position');let radius=0;
   for(let i=0;i<positions.count;i++)radius=Math.max(radius,Math.hypot(positions.getX(i),positions.getY(i),positions.getZ(i)));
   merged.scale(1/radius,1/radius,1/radius);
@@ -81,4 +92,20 @@ export function projectileOrientation(p:ProjectileView,previous=new THREE.Quater
 export const ATTACHED_ANNOTATION = Object.freeze({depthTest:false,depthWrite:false,renderOrder:30});
 export function attachedAnnotationPosition(position:Vec3,cameraRotation:THREE.Quaternion):THREE.Vector3 {
  return new THREE.Vector3(1.8,1.25,0).applyQuaternion(cameraRotation).add(new THREE.Vector3(position.x,position.y,position.z));
+}
+
+/** Each passage hit owns its own finite cue, even when several contacts share a frame. */
+export function createPhaseHitVisual(position:Vec3){
+ const object=new THREE.Group();object.position.set(position.x,position.y,position.z);
+ const geometry=new THREE.RingGeometry(.9,1,40);
+ const material=new THREE.MeshBasicMaterial({color:0x71f4f2,transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide});
+ for(const rotation of [0,Math.PI/2]){const ring=new THREE.Mesh(geometry,material);ring.rotation.x=rotation;object.add(ring);}
+ let age=0;
+ const advance=(delta:number)=>{
+  if(Number.isFinite(delta)&&delta>0)age+=delta;
+  const progress=Math.min(1,age/.55);object.scale.setScalar(TOOLS.phase.radius*(.15+.85*progress));
+  material.opacity=.85*(1-progress);object.visible=age<.55;return object.visible;
+ };
+ advance(0);
+ return {object,advance,dispose(){object.removeFromParent();geometry.dispose();material.dispose();}};
 }

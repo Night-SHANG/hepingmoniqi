@@ -17,8 +17,10 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - run: google-chrome --version
       - name: Real WebGL and input acceptance
+        env:
+          QA_BROWSER_CHANNEL: chrome
         run: |
           python3 -m http.server 5191 --bind 127.0.0.1 --directory dist >/tmp/heping-server.log 2>&1 &
           node scripts/browser-check.mjs

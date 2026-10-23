@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import { PNG } from 'pngjs';
 import fs from 'node:fs/promises';
-const browser = await chromium.launch({...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
+const browser = await chromium.launch({...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:process.env.QA_BROWSER_CHANNEL?{channel:process.env.QA_BROWSER_CHANNEL}:{}),headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
 await fs.mkdir('artifacts',{recursive:true});
 async function capture(name) { await page.screenshot({path:`artifacts/${name}.png`}); if(process.env.CI){ const jpg=await page.screenshot({type:'jpeg',quality:35}); if(jpg.length<220000) console.log(`SCREENSHOT_BASE64 ${name} ${jpg.toString('base64')}`); } }

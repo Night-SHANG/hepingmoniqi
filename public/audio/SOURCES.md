@@ -6,4 +6,4 @@ All runtime files are CC0-1.0. Gain is already baked in. Recommended runtime vol
 - wood-impact.wav: 0.330 s, peak -13.4 dBFS. Kenney: https://kenney.nl/assets/impact-sounds. Wood/block impact.
 - blast.wav: 0.777 s, peak -15.0 dBFS. Kenney: https://kenney.nl/assets/sci-fi-sounds. Short stylized generic explosion, not a recording of a nuclear event.
 
-Source licenses and earlier provenance are preserved in source-evidence. Exclude source-evidence from runtime download/precache if desired; retain it in project backups. Physical loudness and subjective comfort depend on device; listening acceptance is not claimed.
+License designation, source URLs, author attribution and SHA-256 hashes are recorded in LICENSE.txt and SOURCES.json. Physical loudness and subjective comfort depend on device; listening acceptance is not claimed.

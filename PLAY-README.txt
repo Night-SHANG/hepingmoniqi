@@ -11,5 +11,6 @@ macOS / Linux：在解压目录运行 python3 serve.py。
 设置：沙盒、静音、慢动作观察。浏览器本地保存，换浏览器或清理网站数据不会保留进度。
 
 这是 E0 小屋首个可玩候选，不含完整八章内容。
-当前通过代码构建和领域测试；真实浏览器截图、设备性能和听感尚待验证。
+已通过构建、10项领域测试和真实 Chromium WebGL/点击/存档/横屏控件检查。
+Android真机性能、触控体验和实际扬声器听感尚未验证。
 Three.js / OrbitControls：MIT。音效为 CC0，见 audio/SOURCES.md。

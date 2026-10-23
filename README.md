@@ -17,3 +17,9 @@ One E0 cottage, not the full eight-chapter concept. Structural support uses a di
 ## Dependencies and assets
 
 Three.js 0.180.0 and OrbitControls: MIT. Vite: MIT. TypeScript: Apache-2.0. Dependency versions are locked in package-lock.json. All initial cottage and environment geometry is authored procedurally within this project. User-provided concept images guided layout and are not embedded in the game. No external fonts or network service is required during gameplay.
+
+## Verified first playable
+
+Runtime commit `f4e0dcd7a0f24b6308766b47b6345c3aaef6a4cd` passed [real Chromium browser QA](https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39893173987): rendered WebGL pixels, drag/aim/fire, saved damage after reload, reset preserving research, sandbox separation, and reachable landscape controls. Ten domain tests and the production build passed. See RELEASE-NOTES.md.
+
+The target platform direction is browser plus Android. This package is the browser slice only, not an APK or a native Windows application. Fully extract the browser ZIP and run START-WINDOWS.bat (requires installed Python 3); it opens a local HTTP server and the default browser.

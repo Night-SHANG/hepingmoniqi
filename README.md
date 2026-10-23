@@ -1,21 +1,21 @@
-# 核平模拟器：小屋试验场 v0.2
+# 核平模拟器：庭院拆除挑战 v0.3
 
 A fictional, unoccupied Three.js destruction sandbox with Rapier projectile physics.
 
 ## Run
 
 Node 22+: `npm ci`, then `npm run dev -- --port 5191`.
-`npm test` runs 24 domain/physics regressions. `npm run build` checks TypeScript and produces the browser package.
+`npm test` runs 41 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
 
 Fully extract the browser ZIP, then run START-WINDOWS.bat with Python 3 installed. It opens a loopback HTTP server and the default browser. macOS/Linux: `python3 serve.py`. Keep the server window open. Direct file:// opening is unsupported.
 
-Drag to orbit, wheel to zoom, click a live object or ground to aim, then 发射 or Space. The aim sets the initial trajectory, not a guaranteed detonation point. Pulse and shock tools explode on physical contact. The delayed charge bounces and explodes three simulated seconds after launch, at its current location. Pause freezes the fuse; slow motion slows it. Repeated shots can enter a previously opened roof hole.
+Drag to orbit, wheel to zoom, click a live object to aim. Start with a spinning grenade (key 1): throw, bounce, then explode after three simulated seconds. Earn 40 research to unlock the direction-oriented contact rocket (key 2), then 90 to unlock the attached remote package (key 3). Place packages on live voxel surfaces and press 遥控引爆; they never use an automatic fuse and cannot attach to background ground. Pause freezes physics and fuses; slow motion slows both. Rockets can enter previously opened roof holes.
 
-Number keys 1–3 select unlocked tools. Reset restores cottage and yard while retaining research. Settings offers a separate sandbox and audio controls. Browser-local progress includes strict migration of the earlier cottage-only save.
+Demolish 70% of the named building, not trees or fences. Courtyard completion opens a result screen and unlocks the warehouse. Retry retains earned unlocks. Free mode provides all tools while isolating its damage and rewards from saved growth. Settings also offers audio controls. Existing browser saves migrate without losing earned research.
 
 ## Current boundaries
 
-One E0 courtyard, not the eight-chapter concept. Its 1897 authoritative voxels include the cottage, trees, fences, planters, workbench, crates and logs. Grass, ground, paths, lake and distant mountains remain background and cannot be excavated. Structural collapse uses discrete connectivity per object. Debris is visual animation; launched projectiles use rigid-body physics. No real weapon engineering is simulated.
+Two compact E0 maps, courtyard and warehouse, not the eight-chapter concept. The courtyard’s 1897 authoritative voxels include the cottage, trees, fences, planters, workbench, crates and logs. Grass, ground, paths, lake and distant mountains remain background and cannot be excavated. Structural collapse uses discrete connectivity per object. Debris is visual animation; launched projectiles use rigid-body physics. No real weapon engineering is simulated.
 
 Browser plus Android is the target direction. This is the browser package only, not an APK or native Windows executable. Android device performance, sustained performance budgets and subjective speaker listening are not yet verified.
 

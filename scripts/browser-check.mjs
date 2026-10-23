@@ -29,7 +29,7 @@ await page.locator('#fire').click();await page.waitForFunction(()=>window.__hepi
 await capture('desktop-damaged');
 await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>window.__heping?.physicsReady,{},{timeout:60000});const afterReload=await state();
 await page.locator('#reset').click();const afterReset=await state();
-await page.locator('#settings').click();await page.locator('#sandbox').check();await page.locator('.done').click();await page.locator('[data-weapon="shock"]').click();
+await page.locator('#settings').click();await page.locator('#sandbox').check();await page.locator('.done').click();await page.locator('[data-weapon="pulse"]').click();
 await page.mouse.click(720,450);let sandboxAim=await page.evaluate(()=>window.__heping.target);
 if(!sandboxAim)for (let y=300;y<=550&&!sandboxAim;y+=30){await page.mouse.click(720,y);sandboxAim=await page.evaluate(()=>window.__heping.target);}
 await page.locator('#fire').click();await page.waitForFunction(()=>window.__heping.lastDetonations().length>0,{},{timeout:60000});const sandboxShot=await state();

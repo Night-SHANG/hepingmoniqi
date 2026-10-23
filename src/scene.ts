@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
+import { createWeaponGeometry, projectileOrientation } from './weapon-models';
+import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
 type Block = { x:number; y:number; z:number; sx:number; sy:number; sz:number; color:number };
 type Chip = { p:THREE.Vector3; v:THREE.Vector3; rotation:THREE.Vector3; spin:THREE.Vector3; size:number; age:number; life:number; color:number };
@@ -113,10 +114,13 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   // Only physics supplies projectile transforms. This renderer never detonates or
   // advances their motion; trails are a bounded visual history of those transforms.
   const MAX_PROJECTILES=48, TRAIL_POINTS=12;
-  const projectileGeometry=new THREE.IcosahedronGeometry(1,1);
-  const projectileMaterial=new THREE.MeshStandardMaterial({roughness:.45,metalness:.3,emissive:0xffa23a,emissiveIntensity:.65});
-  const projectileMesh=new THREE.InstancedMesh(projectileGeometry,projectileMaterial,MAX_PROJECTILES);
-  projectileMesh.count=0;projectileMesh.castShadow=true;projectileMesh.frustumCulled=false;scene.add(projectileMesh);
+  const projectileMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.58,metalness:.25});
+  const projectileMeshes=new Map<WeaponId,THREE.InstancedMesh>();
+  for(const weapon of ['charge','pulse','shock'] as const){const mesh=new THREE.InstancedMesh(createWeaponGeometry(weapon),projectileMaterial,MAX_PROJECTILES);mesh.count=0;mesh.castShadow=true;mesh.frustumCulled=false;scene.add(mesh);projectileMeshes.set(weapon,mesh);}
+  const orientations=new Map<string,THREE.Quaternion>();
+  const flameMaterial=new THREE.MeshBasicMaterial({color:0xffb94f,transparent:true,opacity:.9,depthWrite:false});
+  const flameGeometry=new THREE.ConeGeometry(.22,.85,6);flameGeometry.rotateZ(Math.PI);flameGeometry.translate(0,-1.18,0);
+  const flameMesh=new THREE.InstancedMesh(flameGeometry,flameMaterial,MAX_PROJECTILES);flameMesh.count=0;flameMesh.frustumCulled=false;scene.add(flameMesh);
   const trailMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.72,depthWrite:false});
   const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_PROJECTILES*TRAIL_POINTS);
   trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
@@ -127,15 +131,20 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const updateProjectiles=(views:readonly ProjectileView[])=>{
     const visible=views.slice(0,MAX_PROJECTILES), ids=new Set(visible.map(v=>v.id));
     for(const id of trails.keys())if(!ids.has(id))trails.delete(id);
+    for(const id of orientations.keys())if(!ids.has(id))orientations.delete(id);
+    for(const mesh of projectileMeshes.values())mesh.count=0;flameMesh.count=0;
     for(const id of fuseBadges.keys())if(!ids.has(id))releaseBadge(id);
     let trailIndex=0;
     visible.forEach((p,i)=>{
-      tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.rotation.set(p.age*2,p.age*3,0);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
-      projectileMesh.setMatrixAt(i,tmp.matrix);projectileMesh.setColorAt(i,color.setHex(projectileColor(p.weapon)));
-      const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
-      if(!history.length || history[history.length-1].distanceToSquared(current)>.006){history.push(current);if(history.length>TRAIL_POINTS)history.shift();}
-      trails.set(p.id,history);
-      history.forEach((position,j)=>{tmp.position.copy(position);tmp.rotation.set(0,0,0);tmp.scale.setScalar(p.radius*.65*(j+1)/history.length);tmp.updateMatrix();trailMesh.setMatrixAt(trailIndex,tmp.matrix);trailMesh.setColorAt(trailIndex++,color.setHex(projectileColor(p.weapon)));});
+      tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.quaternion.copy(projectileOrientation(p,orientations.get(p.id)));orientations.set(p.id,tmp.quaternion.clone());tmp.scale.setScalar(p.radius);tmp.updateMatrix();
+      const projectile=projectileMeshes.get(p.weapon)!;projectile.setMatrixAt(projectile.count++,tmp.matrix);
+      if(p.weapon==='pulse'){
+        flameMesh.setMatrixAt(flameMesh.count++,tmp.matrix);
+        const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
+        if(!history.length || history[history.length-1].distanceToSquared(current)>.006){history.push(current);if(history.length>TRAIL_POINTS)history.shift();}
+        trails.set(p.id,history);
+        history.forEach((position,j)=>{tmp.position.copy(position);tmp.rotation.set(0,0,0);tmp.scale.setScalar(p.radius*.50*(j+1)/history.length);tmp.updateMatrix();trailMesh.setMatrixAt(trailIndex,tmp.matrix);trailMesh.setColorAt(trailIndex++,color.setHex(0xc6c5ba));});
+      }
       if(p.fuseRemaining!==null){
         let badge=fuseBadges.get(p.id);
         if(!badge){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(1.8,.9,1);scene.add(sprite);badge={sprite,canvas,texture,label:''};fuseBadges.set(p.id,badge);}
@@ -144,8 +153,9 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=p.fuseRemaining<1?'#ff9f64':'#ffdb9a';ctx.font='bold 34px sans-serif';ctx.textAlign='center';ctx.fillText(label,64,44);badge.texture.needsUpdate=true;badge.label=label;}
       }
     });
-    projectileMesh.count=visible.length;trailMesh.count=trailIndex;projectileMesh.instanceMatrix.needsUpdate=true;trailMesh.instanceMatrix.needsUpdate=true;
-    if(projectileMesh.instanceColor)projectileMesh.instanceColor.needsUpdate=true;if(trailMesh.instanceColor)trailMesh.instanceColor.needsUpdate=true;
+    for(const mesh of projectileMeshes.values())mesh.instanceMatrix.needsUpdate=true;
+    flameMesh.instanceMatrix.needsUpdate=true;trailMesh.count=trailIndex;trailMesh.instanceMatrix.needsUpdate=true;
+    if(trailMesh.instanceColor)trailMesh.instanceColor.needsUpdate=true;
   };
 
   const marker = new THREE.Group();
@@ -162,6 +172,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const raycaster = new THREE.Raycaster();const pointer=new THREE.Vector2();
   let down:{x:number;y:number;time:number;id:number}|null=null;let dragged=false;
   const pointers=new Set<number>();
+  let aimSurface:AimSurface|null=null;
   const pointerDown=(e:PointerEvent)=> { pointers.add(e.pointerId);if(pointers.size>1){down=null;dragged=true;return;} if(e.button===0){down={x:e.clientX,y:e.clientY,time:performance.now(),id:e.pointerId};dragged=false;} };
   const pointerMove=(e:PointerEvent)=> { if(down && Math.hypot(e.clientX-down.x,e.clientY-down.y)>6)dragged=true; };
   const pointerUp=(e:PointerEvent)=> {
@@ -175,6 +186,12 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     // holes continue the same aim ray to the next live surface or stable ground.
     const ground = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), new THREE.Vector3());
     const point = hit?.point ?? (ground && Math.abs(ground.x)<=27 && Math.abs(ground.z)<=22 ? ground : null);
+    aimSurface=null;
+    if(hit?.instanceId!==undefined&&hit.face&&live[hit.instanceId]){
+      const matrix=new THREE.Matrix4();house.getMatrixAt(hit.instanceId,matrix);matrix.premultiply(house.matrixWorld);
+      const normal=hit.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(matrix)).normalize();
+      aimSurface={position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:normal.x,y:normal.y,z:normal.z},voxelId:live[hit.instanceId].id};
+    }
     if(point) options.onAim({x:point.x,y:point.y,z:point.z});
   };
   const cancel=(e:PointerEvent)=>{pointers.delete(e.pointerId);down=null;dragged=true;};
@@ -214,6 +231,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
     setProjectiles:updateProjectiles,
+    getAimSurface(){return aimSurface&&live.some(v=>v.id===aimSurface!.voxelId)?{...aimSurface,position:{...aimSurface.position},normal:{...aimSurface.normal}}:null;},
     getLaunchOrigin(point){
       const direction=new THREE.Vector3(point.x,point.y,point.z).sub(camera.position).normalize();
       const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
@@ -245,8 +263,8 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
       chips=chips.slice(-MAX_DEBRIS);pulse.position.set(point.x,Math.max(.2,point.y-.25),point.z);pulseAge=0;
       pulseMaterial.color.setHex(weapon==='shock'?0x79deff:0xffbf68);flash.position.set(point.x,point.y+1,point.z);
     },
-    setTarget(point){target=point;marker.visible=!!point;},
+    setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

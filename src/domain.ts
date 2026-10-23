@@ -1,4 +1,4 @@
-import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot } from './contracts.js';
+import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot, MapId, ObjectiveState } from './contracts.js';
 
 // Intentionally fictional game units, not a physical blast simulation.
 const MATERIALS: Record<MaterialId, { hp: number; colors: number[] }> = {
@@ -9,7 +9,7 @@ const MATERIALS: Record<MaterialId, { hp: number; colors: number[] }> = {
  foliage: { hp: 0.7, colors: [0x547436, 0x688b37, 0x7e9b42, 0x94ad4c] },
  metal: { hp: 6, colors: [0x3d4954, 0x515e65] },
 };
-const TOOLS = { pulse: { radius: 1.65, strength: 4.8 }, charge: { radius: 3.2, strength: 8 }, shock: { radius: 5.4, strength: 11 } };
+const TOOLS = { pulse: { radius: 3.5, strength: 9 }, charge: { radius: 2.6, strength: 8 }, shock: { radius: 5.4, strength: 11 } };
 const key = (p: Vec3) => `${p.x},${p.y},${p.z}`;
 const clone = (v: Voxel): Voxel => ({ ...v, position: { ...v.position } });
 const immutable = (v: Voxel): Voxel => Object.freeze({ ...v, position: Object.freeze({ ...v.position }) });
@@ -107,14 +107,43 @@ function yard(): Voxel[] {
  return [...cells.values()].map((v,index)=>immutable({...v,id:10000+index}));
 }
 
+/** Two separately supported warehouse bays, within the existing courtyard footprint. */
+function warehouse(): Voxel[] {
+ const cells=new Map<string,Voxel>();
+ for(const [center,side] of [[-4,'left'],[4,'right']] as const){
+  const put=(x:number,y:number,z:number,material:MaterialId)=>{
+   const spec=MATERIALS[material];
+   cells.set(key({x,y,z}),{id:0,position:{x,y,z},material,color:material==='roof'?0x536b7b:spec.colors[Math.abs(x*73+y*31+z*17)%spec.colors.length],hp:spec.hp,maxHp:spec.hp,anchored:y===0,group:'house',objectId:`warehouse:${side}`});
+  };
+  for(let x=center-3;x<=center+3;x++)for(let z=-5;z<=5;z++){
+   put(x,0,z,'stone');put(x,1,z,'wood');
+   for(let y=2;y<=7;y++){
+    if(Math.abs(x-center)!==3&&Math.abs(z)!==5)continue;
+    if(z===5&&Math.abs(x-center)<=1&&y<=5)continue;
+    put(x,y,z,y>=5&&y<=6&&Math.abs(z)===5?'glass':side==='left'?'wood':'stone');
+   }
+  }
+  for(let x=center-3;x<=center+3;x++)for(let z=-5;z<=5;z++){
+   const top=8+Math.floor((3-Math.abs(x-center))/2);
+   put(x,top,z,'roof');if(top===9)put(x,8,z,'roof');
+  }
+ }
+ return [...cells.values()].map((v,index)=>immutable({...v,id:20000+index}));
+}
+
 export function createWorld(): WorldModel {
- const house=cottage(); const props=yard(); const original=[...house,...props]; const originals=new Map(original.map(v=>[v.id,v])); const totalCount=original.length;
- let voxels: readonly Voxel[]=Object.freeze([...original]); let epoch=1, destroyedCount=0, research=0, firstRewardClaimed=false;
- const processed=new Set<string>();
- const result=(accepted=false):DamageResult=>({accepted,removed:[],detached:[],newlyDestroyed:0,researchEarned:0,destruction:destroyedCount/totalCount});
+ const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()])};
+ let mapId:MapId='courtyard', original=maps.courtyard;
+ let voxels: readonly Voxel[]=Object.freeze([...original]); let epoch=1, destroyedCount=0, research=0;
+ const completedMaps=new Set<MapId>();const processed=new Set<string>();
+ const buildingTotal=()=>original.filter(v=>v.group==='house').length;
+ const buildingDestroyed=()=>buildingTotal()-voxels.filter(v=>v.group==='house').length;
+ const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapId==='courtyard'?'木屋拆除':'双跨仓库拆除',total,destroyed,fraction:destroyed/total,goal:.7,complete:destroyed/total>=.7,completedMaps:[...completedMaps]};};
+ const result=(accepted=false):DamageResult=>({accepted,removed:[],detached:[],newlyDestroyed:0,researchEarned:0,destruction:destroyedCount/original.length});
  function damage(command:DamageCommand):DamageResult {
   if(!command||typeof command.id!=='string'||command.id.length===0||command.id.length>160||command.epoch!==epoch||processed.has(command.id)||!Object.hasOwn(TOOLS,command.weapon)||!Number.isFinite(command.power)||command.power<=0||command.power>3||!command.target||![command.target.x,command.target.y,command.target.z].every(n=>Number.isFinite(n)&&Math.abs(n)<=10000)) return result();
   processed.add(command.id);
+  const priorBase=Math.floor(buildingDestroyed()*200/buildingTotal());
   const tool=TOOLS[command.weapon], radius=tool.radius*Math.sqrt(command.power), removed:Voxel[]=[], survivors:Voxel[]=[];
   for(const v of voxels){
    const distance=Math.hypot(v.position.x-command.target.x,v.position.y-command.target.y,v.position.z-command.target.z);
@@ -127,22 +156,33 @@ export function createWorld(): WorldModel {
    const supported=supportedIds(survivors);
    voxels=Object.freeze(survivors.filter(v=>{if(supported.has(v.id))return true;detached.push(v);return false;}));
   } else voxels=Object.freeze(survivors);
-  const newlyDestroyed=removed.length+detached.length;
-  const priorBase=Math.floor(destroyedCount*200/totalCount); destroyedCount+=newlyDestroyed;
-  let researchEarned=Math.floor(destroyedCount*200/totalCount)-priorBase;
-  if(!firstRewardClaimed&&destroyedCount/totalCount>=0.8){firstRewardClaimed=true;researchEarned+=80;}
+  const newlyDestroyed=removed.length+detached.length;destroyedCount+=newlyDestroyed;
+  let researchEarned=Math.floor(buildingDestroyed()*200/buildingTotal())-priorBase;
+  if(!completedMaps.has(mapId)&&getObjective().complete){completedMaps.add(mapId);researchEarned+=80;}
   research+=researchEarned;
-  return {accepted:true,removed:removed.map(clone),detached:detached.map(clone),newlyDestroyed,researchEarned,destruction:destroyedCount/totalCount};
+  return {accepted:true,removed:removed.map(clone),detached:detached.map(clone),newlyDestroyed,researchEarned,destruction:destroyedCount/original.length};
  }
- function getSnapshot():WorldSnapshot{return {schemaVersion:2,epoch,voxels:voxels.map(clone),totalCount,destroyedCount,research,firstRewardClaimed};}
+ function getSnapshot():WorldSnapshot{return {schemaVersion:3,mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
  function restore(snapshot:WorldSnapshot):boolean {
   if(!snapshot||typeof snapshot!=='object')return false;
-  // Unversioned saves belong only to the original 1096-voxel cottage, never the expanded scene.
-  const legacy=snapshot.schemaVersion===undefined;
-  if(!legacy&&snapshot.schemaVersion!==2)return false;
-  const expectedTotal=legacy?house.length:totalCount;
-  if(!Number.isSafeInteger(snapshot.epoch)||snapshot.epoch<1||snapshot.epoch>=Number.MAX_SAFE_INTEGER||snapshot.totalCount!==expectedTotal||!Number.isSafeInteger(snapshot.destroyedCount)||snapshot.destroyedCount<0||snapshot.destroyedCount>expectedTotal||!Number.isSafeInteger(snapshot.research)||snapshot.research<0||typeof snapshot.firstRewardClaimed!=='boolean'||!Array.isArray(snapshot.voxels)||snapshot.voxels.length!==expectedTotal-snapshot.destroyedCount||snapshot.destroyedCount/expectedTotal>=0.8&&!snapshot.firstRewardClaimed)return false;
-  if(snapshot.research<Math.floor(snapshot.destroyedCount*200/expectedTotal)+(snapshot.firstRewardClaimed?80:0))return false;
+  const legacy=snapshot.schemaVersion===undefined, old=legacy||snapshot.schemaVersion===2;
+  if(!old&&snapshot.schemaVersion!==3)return false;
+  const nextMap:MapId=old?'courtyard':snapshot.mapId!;
+  if(nextMap!=='courtyard'&&nextMap!=='warehouse')return false;
+  const bases=maps[nextMap], originals=new Map(bases.map(v=>[v.id,v]));
+  const expectedTotal=legacy?1096:bases.length;
+  if(!Number.isSafeInteger(snapshot.epoch)||snapshot.epoch<1||snapshot.epoch>=Number.MAX_SAFE_INTEGER||snapshot.totalCount!==expectedTotal||!Number.isSafeInteger(snapshot.destroyedCount)||snapshot.destroyedCount<0||snapshot.destroyedCount>expectedTotal||!Number.isSafeInteger(snapshot.research)||snapshot.research<0||typeof snapshot.firstRewardClaimed!=='boolean'||!Array.isArray(snapshot.voxels)||snapshot.voxels.length!==expectedTotal-snapshot.destroyedCount)return false;
+  let completed:MapId[]=[];
+  if(old){
+   if(snapshot.destroyedCount/expectedTotal>=.8&&!snapshot.firstRewardClaimed)return false;
+   if(snapshot.research<Math.floor(snapshot.destroyedCount*200/expectedTotal)+(snapshot.firstRewardClaimed?80:0))return false;
+   if(snapshot.firstRewardClaimed)completed=['courtyard'];
+  }else{
+   if(!Array.isArray(snapshot.completedMaps)||snapshot.completedMaps.length>2)return false;
+   if(snapshot.completedMaps.some(id=>id!=='courtyard'&&id!=='warehouse')||new Set(snapshot.completedMaps).size!==snapshot.completedMaps.length)return false;
+   completed=[...snapshot.completedMaps];
+   if(snapshot.firstRewardClaimed!==completed.includes(nextMap)||snapshot.research<completed.length*80)return false;
+  }
   const seen=new Set<number>();const next:Voxel[]=[];
   for(const v of snapshot.voxels){
    if(!v||!Number.isSafeInteger(v.id)||seen.has(v.id)||legacy&&v.id>=10000)return false;
@@ -152,9 +192,18 @@ export function createWorld(): WorldModel {
    seen.add(v.id);next.push(immutable({...base,hp:v.hp}));
   }
   if(supportedIds(next).size!==next.length)return false;
-  if(legacy)next.push(...props);
-  voxels=Object.freeze(next);epoch=Math.max(epoch,snapshot.epoch)+1;destroyedCount=snapshot.destroyedCount;research=snapshot.research;firstRewardClaimed=snapshot.firstRewardClaimed;processed.clear();return true;
+  if(legacy)next.push(...bases.filter(v=>v.group!=='house'));
+  const total=bases.filter(v=>v.group==='house').length;
+  const currentComplete=(total-next.filter(v=>v.group==='house').length)/total>=.7;
+  if(old&&currentComplete&&!completed.includes('courtyard'))completed.push('courtyard');
+  if(!old&&currentComplete&&!completed.includes(nextMap))return false;
+  // Legacy rewards are retained exactly; migration does not award a new milestone.
+  mapId=nextMap;original=bases;voxels=Object.freeze(next);epoch=Math.max(epoch,snapshot.epoch)+1;destroyedCount=original.length-next.length;research=snapshot.research;completedMaps.clear();for(const id of completed)completedMaps.add(id);processed.clear();return true;
  }
-
- return {get epoch(){return epoch;},getVoxels:()=>voxels,damage,getSnapshot,restore,reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;processed.clear();}};
+ function reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;processed.clear();}
+ function loadMap(next:MapId,free=false){
+  if(next!=='courtyard'&&next!=='warehouse'||next==='warehouse'&&!free&&!completedMaps.has('courtyard'))return false;
+  mapId=next;original=maps[next];reset();return true;
+ }
+ return {get epoch(){return epoch;},getVoxels:()=>voxels,damage,getSnapshot,getObjective,loadMap,restore,reset};
 }

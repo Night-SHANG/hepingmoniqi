@@ -101,6 +101,8 @@ try{
  await page.goto(process.env.GAME_URL || 'http://127.0.0.1:5191',{waitUntil:'networkidle'});
  await page.waitForFunction(()=>window.__heping?.physicsReady && window.__heping?.projectiles && window.__heping?.lastDetonations);
  await page.locator('#dismiss-intro').click();
+ await page.locator('#settings').click();await page.locator('#sandbox').check();await page.locator('.done').click();
+ await page.locator('[data-weapon="pulse"]').click();
  await page.locator('#reset').click();
  await page.locator('#camera').click();
  await page.waitForTimeout(400);
@@ -118,8 +120,8 @@ try{
  assert.ok(secondImpact.position.y<firstImpact.position.y-.5,'Same aim must pass the removed roof instead of exploding at stale aim/collider');
  await capture('04-lower-impact');
 
- // Enter sandbox through the actual settings dialog to unlock the timed tool.
- await page.locator('#settings').click();await page.locator('#sandbox').check();await page.locator('.done').click();
+ // Reset the free-mode fixture before testing the delayed grenade.
+ await page.locator('#reset').click();
  await page.locator('[data-weapon="charge"]').click();
  evidence.chargeAim=await aimAt(v=>v.group==='house'&&v.material==='roof'&&Math.abs(v.position.x)<4);
  const charge=await launchVisible('05-timed-in-flight');

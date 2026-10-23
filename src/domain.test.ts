@@ -16,7 +16,7 @@ test('first pulse destroys targeted timber and earns research exactly once',()=>
  const w=createWorld(); const target=w.getVoxels().find(v=>v.material==='wood'&&v.position.y===3)!.position;
  const result=hit(w,'one',target);
  assert.equal(result.accepted,true); assert.ok(result.removed.length>0); assert.ok(result.newlyDestroyed>0);
- assert.equal(result.researchEarned,Math.floor(result.newlyDestroyed*200/w.getSnapshot().totalCount));
+ assert.equal(result.researchEarned,Math.floor([...result.removed,...result.detached].filter(v=>v.group==='house').length*200/w.getObjective().total));
  const before=w.getSnapshot(); assert.equal(hit(w,'one',target).accepted,false); assert.deepEqual(w.getSnapshot(),before);
 });
 test('invalid commands do not mutate state or consume valid command ids',()=>{
@@ -29,7 +29,7 @@ test('support loss detaches blocks, accounting counts each voxel once',()=>{
  for(let x=-7;x<=7;x+=2) for(let z=-5;z<=5;z+=2){ const r=hit(w,`${x},${z}`,{x,y:1,z},'charge',3); detached+=r.detached.length; assert.equal(r.newlyDestroyed,r.removed.length+r.detached.length); }
  assert.ok(detached>0); const s=w.getSnapshot(); assert.equal(s.totalCount,s.voxels.length+s.destroyedCount);
 });
-test('80 percent milestone pays once; reset preserves progression and rejects old epochs',()=>{
+test('70 percent building milestone pays once; reset preserves progression and rejects old epochs',()=>{
  const w=createWorld(); const old=w.epoch; let earned=0;
  for(const v of [...w.getVoxels()]) earned+=hit(w,`clear-${v.id}`,v.position,'shock',3).researchEarned;
  const s=w.getSnapshot(); assert.equal(s.destroyedCount,s.totalCount); assert.equal(s.firstRewardClaimed,true); assert.equal(earned,280);
@@ -85,7 +85,7 @@ test('cut tree trunk detaches crown without damaging distant cottage or other tr
 });
 test('expanded save schema roundtrips with props and rejects unknown versions',()=>{
  const w=createWorld();hit(w,'yard',{x:13,y:1,z:4},'charge');const s=w.getSnapshot();
- assert.equal((s as any).schemaVersion,2);assert.equal(createWorld().restore(s),true);
+ assert.equal((s as any).schemaVersion,3);assert.equal(createWorld().restore(s),true);
  assert.equal(w.restore({...s,schemaVersion:99} as any),false);
 });
 test('legacy cottage saves migrate explicitly, preserving damage and RP while adding intact yard',()=>{
@@ -93,7 +93,7 @@ test('legacy cottage saves migrate explicitly, preserving damage and RP while ad
  const legacyVoxels=house.map(({group,objectId,...v})=>v);
  const legacy={epoch:9,totalCount:1096,destroyedCount:0,research:37,firstRewardClaimed:false,voxels:legacyVoxels};
  assert.equal(w.restore(legacy),true);const migrated=w.getSnapshot();
- assert.equal(migrated.schemaVersion,2);assert.equal(migrated.research,37);assert.equal(migrated.destroyedCount,0);
+ assert.equal(migrated.schemaVersion,3);assert.equal(migrated.research,37);assert.equal(migrated.destroyedCount,0);
  assert.deepEqual(migrated.voxels.filter(v=>v.group==='house'),house);
  assert.ok(migrated.voxels.some(v=>v.group==='tree'));
  assert.equal(createWorld().restore(migrated),true);
@@ -107,4 +107,56 @@ test('prop support and group identity cannot be forged in saves; extra payload c
  for(const mutate of [(s:any)=>s.voxels.find((v:any)=>v.group==='tree').objectId='house',(s:any)=>s.voxels.find((v:any)=>v.group==='tree').group='house',(s:any)=>s.voxels.push(...s.voxels)]){
   const invalid=structuredClone(before);mutate(invalid);assert.equal(w.restore(invalid),false);assert.deepEqual(w.getSnapshot(),before);
  }
+});
+
+test('v3 objective counts only building and yard destruction earns no research',()=>{
+ const w=createWorld();const before=w.getObjective();assert.equal(before.total,1096);assert.equal(before.goal,.7);assert.equal(before.mapId,'courtyard');
+ hit(w,'tree-only',{x:-16,y:2,z:6},'pulse');
+ assert.deepEqual(w.getObjective(),before);assert.equal(w.getSnapshot().research,0);assert.ok(w.getSnapshot().destroyedCount>0);
+});
+test('building completion unlocks warehouse without requiring yard cleanup and rewards once',()=>{
+ const w=createWorld();assert.equal(w.loadMap('warehouse'),false);
+ for(const v of [...w.getVoxels()].filter(v=>v.group==='house'))hit(w,`house-${v.id}`,v.position,'shock',3);
+ const objective=w.getObjective();assert.equal(objective.complete,true);assert.ok(w.getVoxels().some(v=>v.group!=='house'));assert.deepEqual(objective.completedMaps,['courtyard']);assert.equal(w.getSnapshot().research,280);
+ const oldEpoch=w.epoch;assert.equal(w.loadMap('warehouse'),true);assert.ok(w.epoch>oldEpoch);assert.equal(w.getObjective().mapId,'warehouse');assert.equal(w.getObjective().fraction,0);assert.equal(w.getSnapshot().research,280);
+ const warehouse=w.getSnapshot();assert.ok(warehouse.voxels.some(v=>v.objectId==='warehouse:left'));assert.ok(warehouse.voxels.some(v=>v.objectId==='warehouse:right'));
+ const positions=new Set(warehouse.voxels.map(v=>`${v.position.x},${v.position.y},${v.position.z}`));assert.equal(positions.size,warehouse.voxels.length);
+ assert.equal(createWorld().restore(warehouse),true);w.reset();assert.deepEqual(w.getSnapshot().voxels,warehouse.voxels);assert.equal(w.getSnapshot().research,280);
+});
+test('completed map records are deep-owned, validated and retained across map revisits',()=>{
+ const w=createWorld();assert.equal(w.loadMap('warehouse',true),true);const before=w.getSnapshot();
+ for(const completedMaps of [['bogus'],['courtyard','courtyard'],null]){assert.equal(w.restore({...before,completedMaps} as any),false);assert.deepEqual(w.getSnapshot(),before);}
+ const objective=w.getObjective();objective.completedMaps.push('courtyard');assert.deepEqual(w.getObjective().completedMaps,[]);
+ assert.equal(w.loadMap('courtyard'),true);assert.equal(w.loadMap('warehouse'),false);
+});
+test('v2 migration preserves earned research and cannot pay an already claimed milestone twice',()=>{
+ const w=createWorld();const fresh=w.getSnapshot();const old={...fresh,schemaVersion:2 as const,mapId:undefined,completedMaps:undefined,research:280,firstRewardClaimed:true};
+ assert.equal(w.restore(old),true);assert.deepEqual(w.getObjective().completedMaps,['courtyard']);assert.equal(w.getSnapshot().research,280);
+ for(const v of [...w.getVoxels()].filter(v=>v.group==='house'))hit(w,`clear-${v.id}`,v.position,'shock',3);
+ assert.equal(w.getSnapshot().research,480);assert.equal(w.getSnapshot().schemaVersion,3);
+});
+test('v2 building-complete migration does not require old whole-yard milestone or mint a reward',()=>{
+ const w=createWorld();for(const v of [...w.getVoxels()].filter(v=>v.group==='house')){hit(w,`partial-${v.id}`,v.position,'shock',3);if(w.getObjective().complete)break;}
+ const current=w.getSnapshot();assert.ok(current.destroyedCount/current.totalCount<.8);
+ const oldResearch=Math.floor(current.destroyedCount*200/current.totalCount);
+ const old={...current,schemaVersion:2 as const,mapId:undefined,completedMaps:undefined,research:oldResearch,firstRewardClaimed:false};
+ const migrated=createWorld();assert.equal(migrated.restore(old),true);assert.equal(migrated.getSnapshot().research,oldResearch);assert.equal(migrated.getObjective().complete,true);assert.deepEqual(migrated.getObjective().completedMaps,['courtyard']);
+ assert.equal(hit(migrated,'miss-after-migration',{x:100,y:100,z:100}).researchEarned,0);assert.equal(createWorld().restore(migrated.getSnapshot()),true);
+});
+test('warehouse completion rewards its own milestone once and map changes reject stale commands',()=>{
+ const w=createWorld();w.loadMap('warehouse',true);const before=w.epoch;let initial=0;
+ for(const v of [...w.getVoxels()].filter(v=>v.group==='house'))initial+=hit(w,`warehouse-${v.id}`,v.position,'shock',3).researchEarned;
+ assert.equal(initial,280);assert.deepEqual(w.getObjective().completedMaps,['warehouse']);
+ w.reset();for(const v of [...w.getVoxels()].filter(v=>v.group==='house'))hit(w,`repeat-${v.id}`,v.position,'shock',3);
+ assert.equal(w.getSnapshot().research,480);w.loadMap('courtyard');assert.equal(w.damage({id:'late',epoch:before,target:{x:0,y:3,z:5},weapon:'shock',power:1}).accepted,false);
+ assert.equal(createWorld().restore(w.getSnapshot()),true);
+});
+
+test('unlocked rocket destroys more timber than grenade at the same intact wall target',()=>{
+ const target={x:0,y:3,z:5}, grenadeWorld=createWorld(), rocketWorld=createWorld();
+ assert.ok(grenadeWorld.getVoxels().some(v=>v.material==='wood'&&v.position.x===target.x&&v.position.y===target.y&&v.position.z===target.z));
+ const grenade=hit(grenadeWorld,'grenade',target,'charge');
+ const rocket=hit(rocketWorld,'rocket',target,'pulse');
+ assert.ok(grenade.newlyDestroyed>0);
+ assert.ok(rocket.newlyDestroyed>grenade.newlyDestroyed,`rocket ${rocket.newlyDestroyed} must exceed grenade ${grenade.newlyDestroyed}`);
 });

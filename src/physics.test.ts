@@ -69,3 +69,44 @@ test('low-fps quarter-speed advances body and fuse together; a paused frame adva
   const blast=slow.step(1*.25);assert.equal(blast.length,1);assert.ok(Math.abs(blast[0].age-3)<1e-8);
  }finally{slow.dispose();reference.dispose();}
 });
+const attached = (id='package',voxelId=1) => ({id,epoch:1,surface:{voxelId,position:{x:0,y:8.4825,z:0},normal:{x:0,y:1,z:0}},power:1});
+test('remote package attaches to a live surface and waits indefinitely for one manual detonation',async()=>{
+ const p=await createProjectilePhysics();try{
+ p.syncVoxels([voxel(1,8)],1);assert.equal(p.launch(shot('not-a-projectile','shock')),false);assert.equal(p.attach(attached()),true);
+ assert.equal(p.attach(attached()),false);const placed=p.getProjectiles()[0];assert.equal(placed.state,'attached');assert.equal(placed.hostVoxelId,1);assert.equal(placed.fuseRemaining,null);assert.ok(placed.position.y>8.4825);
+ assert.deepEqual(advance(p,20),[]);assert.deepEqual(p.getProjectiles()[0].position,placed.position);
+ const events=p.detonateAttached();assert.equal(events.length,1);assert.equal(events[0].reason,'remote');assert.deepEqual(events[0].position,placed.position);assert.deepEqual(p.detonateAttached(),[]);assert.deepEqual(p.getProjectiles(),[]);
+ }finally{p.dispose();}
+});
+test('remote package rejects invented surfaces and retains deep-owned placement state',async()=>{
+ const p=await createProjectilePhysics();try{
+ p.syncVoxels([voxel(1,8)],1);
+ assert.equal(p.attach(attached('unknown',99)),false);
+ for(const surface of [{position:{x:0,y:80,z:0},normal:{x:0,y:1,z:0}}, {position:{x:0,y:8,z:0},normal:{x:0,y:1,z:0}}, {position:{x:0,y:8.4825,z:0},normal:{x:0,y:0,z:0}}, {position:{x:0,y:8.4825,z:0},normal:{x:1,y:0,z:0}}])assert.equal(p.attach({...attached('bad'),surface:{voxelId:1,...surface}}),false);
+ assert.equal(p.attach({...attached('stale'),epoch:0}),false);
+ const command=attached();assert.equal(p.attach(command),true);command.surface.position.y=100;command.surface.normal.y=-1;const view=p.getProjectiles()[0];assert.ok(view.position.y<9);view.position.y=200;view.normal!.y=-1;assert.ok(p.getProjectiles()[0].position.y<9);assert.equal(p.getProjectiles()[0].normal!.y,1);
+ }finally{p.dispose();}
+});
+test('host destruction or epoch change invalidates attached packages without fabricated explosions; package count bounded',async()=>{
+ const p=await createProjectilePhysics();try{
+ p.syncVoxels([voxel(1,8)],1);for(let i=0;i<8;i++)assert.equal(p.attach(attached(`p${i}`)),true);assert.equal(p.attach(attached('overflow')),false);
+ p.syncVoxels([],1);assert.deepEqual(p.getProjectiles(),[]);assert.deepEqual(p.detonateAttached(),[]);
+ p.syncVoxels([voxel(1,8)],2);assert.equal(p.attach({...attached('new'),epoch:2}),true);p.syncVoxels([voxel(1,8)],3);assert.deepEqual(p.getProjectiles(),[]);assert.deepEqual(p.detonateAttached(),[]);
+ }finally{p.dispose();}
+});
+test('flight views expose actual velocity and grenade rigid-body rotation',async()=>{
+ const p=await createProjectilePhysics();try{
+ p.syncVoxels([],1);p.launch(shot('grenade','charge'));const initial=p.getProjectiles()[0];assert.equal(initial.state,'flying');assert.ok(initial.velocity);assert.ok(initial.rotation);advance(p,.2);const next=p.getProjectiles()[0];assert.notDeepEqual(next.rotation,initial.rotation);assert.ok(next.velocity!.y<initial.velocity!.y);
+ }finally{p.dispose();}
+});
+test('starter grenade keeps a local roof bounce and detonates close enough to damage the aimed cottage',async()=>{
+ const {createWorld}=await import('./domain.js');const {PerspectiveCamera,Vector3}=await import('three');
+ const world=createWorld(),p=await createProjectilePhysics();try{
+ const camera=new PerspectiveCamera(42,1.6,.2,250);camera.position.set(27,23,32);camera.lookAt(0,4.5,0);camera.updateMatrixWorld();
+ const target=new Vector3(.46526905451609124,12.189553688105082,4.482499986886978),direction=target.clone().sub(camera.position).normalize();
+ const origin=camera.position.clone().addScaledVector(direction,8).addScaledVector(new Vector3(1,0,0).applyQuaternion(camera.quaternion),1.1).addScaledVector(new Vector3(0,1,0).applyQuaternion(camera.quaternion),-2);
+ p.syncVoxels(world.getVoxels(),world.epoch);p.launch({id:'starter',epoch:world.epoch,origin,target,weapon:'charge',power:1});
+ const blasts=advance(p,3);assert.equal(blasts.length,1);assert.equal(blasts[0].reason,'timer');
+ const result=world.damage({id:'starter',epoch:world.epoch,target:blasts[0].position,weapon:'charge',power:1});assert.ok(result.removed.some(v=>v.group==='house'),'Actual 3s grenade blast must damage nearby house, not bounce out of the starter experience');
+ }finally{p.dispose();}
+});

@@ -41,3 +41,11 @@ Unit tests establish deterministic collision/fuse/lifecycle behavior. Browser ch
 - Selected screenshots are also printed as JPEG base64 with the existing CI log convention. No gameplay mutator is called through diagnostics.
 - A full local `npm test` run after integration passed 22/22 tests, including the domain owner's environment/save tests and physics owner's actual Rapier contact, timer, roof-hole, bounce, reset, budget, expiry, and frame-rate tests.
 - Browser execution is a separate acceptance gate. Syntax checking the harness and passing unit tests do not establish a browser pass or visual quality.
+
+### CI feedback and harness corrections
+
+Two browser runs provided partial, not final, acceptance evidence. Both cleared the initial and repeated roof-shot checks. One reached the timed explosion at age approximately 3.0 simulation seconds and confirmed reset cleanup, then failed to select the unnecessarily restricted front fence. Another timed out awaiting the timed explosion on a slow software renderer; simulation clock corrections are owned by the scene/physics implementation.
+
+The harness now selects any genuinely ray-hit fence rather than requiring a front-fence coordinate. It verifies the projected point actually exposes the canvas with `elementFromPoint`, instead of assuming fixed HUD exclusion rectangles. Before in-flight captures it activates the real slow-motion control, pauses through the UI, then restores the previous speed before resuming. Timer/contact and no-immediate-damage assertions are unchanged. A timeout now records the latest projectile age, fuse and position, recent detonations, epoch, damage, target, pause/slow state, and document visibility.
+
+A subsequent independent full local unit run passed 24/24 tests after the low-frame-rate physics regressions were added. A complete browser rerun is still required; earlier partial passes are not a final acceptance result.

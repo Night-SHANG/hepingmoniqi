@@ -3,6 +3,7 @@ import type { Detonation, ProjectileCommand, ProjectilePhysics, ProjectileView, 
 
 // Fictional play-space constants. No real weapon or blast modelling.
 const STEP = 1 / 120;
+const MAX_FRAME_SECONDS = 1; // At most 120 solver steps per rendered frame.
 const GRAVITY = 18;
 const MAX_ACTIVE = 24;
 const MAX_LIFETIME = 12;
@@ -66,8 +67,10 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
  function step(deltaSeconds:number):Detonation[] {
   const results:Detonation[]=[];
   if(disposed || !Number.isFinite(deltaSeconds) || deltaSeconds<=0)return results;
-  // Discard long background-tab gaps rather than teleporting shots or detonating during pause.
-  accumulator+=Math.min(deltaSeconds,.25);
+  // Preserve foreground elapsed time down to 1fps. Body and fuse always advance
+  // together in fixed steps; exceptionally long stalls are bounded to avoid a spiral.
+  // The caller passes zero during pause/hidden tabs and applies intentional slow motion.
+  accumulator+=Math.min(deltaSeconds,MAX_FRAME_SECONDS);
   while(accumulator+1e-10>=STEP) {
    accumulator-=STEP;world.step(events);
    for(const ball of balls.values())ball.age+=STEP;

@@ -21,7 +21,14 @@ async function capture(name){
 }
 const summary = s => ({destroyed:s.snapshot.destroyedCount,epoch:s.snapshot.epoch,projectiles:s.projectiles,detonations:s.detonations,target:s.target});
 async function waitForShot(id,timeout=60000){
- await page.waitForFunction(id=>window.__heping.lastDetonations().some(d=>d.id===id),id,{timeout});
+ try{
+  await page.waitForFunction(id=>window.__heping.lastDetonations().some(d=>d.id===id),id,{timeout});
+ }catch(error){
+  const current=await read();
+  const controls=await page.evaluate(()=>({paused:document.querySelector('#pause').classList.contains('active'),slow:document.querySelector('#slow').classList.contains('active'),hidden:document.hidden}));
+  evidence.waitTimeout={id,timeout,current:summary(current),controls};
+  throw new Error(`Detonation wait failed: ${JSON.stringify(evidence.waitTimeout)}; ${error}`);
+ }
  return (await read()).detonations.find(d=>d.id===id);
 }
 async function aimAt(predicate){
@@ -34,7 +41,9 @@ async function aimAt(predicate){
  for(const voxel of candidates){
   const p=new THREE.Vector3(voxel.position.x,voxel.position.y,voxel.position.z).project(camera);
   const x=rect.x+(p.x+1)*rect.width/2,y=rect.y+(1-p.y)*rect.height/2;
-  if(x<320||x>1350||y<180||y>730)continue;
+  if(p.z < -1 || p.z > 1 || x<rect.x || x>=rect.x+rect.width || y<rect.y || y>=rect.y+rect.height)continue;
+  const canvasExposed=await page.evaluate(({x,y})=>document.elementFromPoint(x,y)===document.querySelector('canvas'),{x,y});
+  if(!canvasExposed)continue;
   await page.mouse.click(x,y);
   const picked=await read();
   if(!picked.target)continue;
@@ -47,6 +56,10 @@ async function aimAt(predicate){
  throw new Error('Could not aim at the requested live object through real canvas input');
 }
 async function launchVisible(name){
+ // Real slow-motion control gives software-rendered CI enough interaction time
+ // to pause the visible body without changing the game's physics or assertions.
+ const wasSlow=await page.locator('#slow').evaluate(e=>e.classList.contains('active'));
+ if(!wasSlow)await page.locator('#slow').click();
  const before=await read();
  await page.locator('#fire').click();
  const flying=await read();
@@ -61,6 +74,7 @@ async function launchVisible(name){
  assert.ok(frozen.projectiles.some(p=>p.id===round.id),'Round must remain visible long enough to observe and pause');
  await capture(name);
  evidence[name]=summary(frozen);
+ if(!wasSlow)await page.locator('#slow').click();
  await page.locator('#pause').click();
  return round;
 }
@@ -115,7 +129,7 @@ try{
  evidence.reset=summary(later);
 
  await page.locator('[data-weapon="pulse"]').click();
- evidence.fenceAim=await aimAt(v=>v.group==='fence'&&v.position.z>10);
+ evidence.fenceAim=await aimAt(v=>v.group==='fence');
  const propBefore=await read();
  const fence=await launchVisible('09-fence-in-flight');
  await waitForShot(fence.id);

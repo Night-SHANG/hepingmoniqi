@@ -186,10 +186,15 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   let frame=0,disposed=false,last=performance.now();
+  const resetClock=()=>{last=performance.now();};
+  document.addEventListener('visibilitychange',resetClock);
   const animate=(now:number)=>{
     if(disposed)return;
-    const dt=Math.min((now-last)/1000,.045)*timeScale;last=now;controls.update();
-    options.onFrame?.(dt);
+    const elapsed=document.hidden?0:Math.max(0,Math.min((now-last)/1000,1));
+    last=now;controls.update();
+    // Physics owns bounded fixed substeps; cosmetic effects keep their small step.
+    options.onFrame?.(elapsed*timeScale);
+    const dt=Math.min(elapsed,.045)*timeScale;
     chips=chips.filter(c=>c.age<c.life);
     chips.forEach((c,i)=>{
       c.age+=dt;c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
@@ -239,6 +244,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     },
     setTarget(point){target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

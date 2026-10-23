@@ -5,7 +5,7 @@ A fictional, unoccupied Three.js destruction sandbox with Rapier projectile phys
 ## Run
 
 Node 22+: `npm ci`, then `npm run dev -- --port 5191`.
-`npm test` runs 41 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
+`npm test` runs 43 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
 
 Fully extract the browser ZIP, then run START-WINDOWS.bat with Python 3 installed. It opens a loopback HTTP server and the default browser. macOS/Linux: `python3 serve.py`. Keep the server window open. Direct file:// opening is unsupported.
 

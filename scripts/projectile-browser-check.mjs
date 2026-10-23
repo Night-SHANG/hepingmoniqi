@@ -31,7 +31,7 @@ async function waitForShot(id,timeout=60000){
  }
  return (await read()).detonations.find(d=>d.id===id);
 }
-async function aimAt(predicate){
+async function aimAt(predicate,central=false){
  const state=await read();
  const rect=await page.locator('canvas').boundingBox();
  // Match the public reset-camera view, only to choose real pointer coordinates.
@@ -43,9 +43,10 @@ async function aimAt(predicate){
   const p=new THREE.Vector3(voxel.position.x,voxel.position.y,voxel.position.z).project(camera);
   const x=rect.x+(p.x+1)*rect.width/2,y=rect.y+(1-p.y)*rect.height/2;
   return {voxel,p,x,y,centrality:Math.hypot(x-(rect.x+rect.width/2),y-(rect.y+rect.height/2))};
- }).sort((a,b)=>a.centrality-b.centrality);
+ }).sort((a,b)=>central?a.centrality-b.centrality:b.voxel.position.z-a.voxel.position.z || b.voxel.position.y-a.voxel.position.y);
+ const margin=central?120:8;
  for(const {voxel,p,x,y} of candidates){
-  if(p.z < -1 || p.z > 1 || x<rect.x+120 || x>=rect.x+rect.width-120 || y<rect.y+120 || y>=rect.y+rect.height-120)continue;
+  if(p.z < -1 || p.z > 1 || x<rect.x+margin || x>=rect.x+rect.width-margin || y<rect.y+margin || y>=rect.y+rect.height-margin)continue;
   const canvasExposed=await page.evaluate(({x,y})=>document.elementFromPoint(x,y)===document.querySelector('canvas'),{x,y});
   if(!canvasExposed)continue;
   await page.mouse.click(x,y);
@@ -147,7 +148,7 @@ try{
  evidence.reset=summary(later);
 
  await page.locator('[data-weapon="pulse"]').click();
- evidence.fenceAim=await aimAt(v=>v.group==='fence');
+ evidence.fenceAim=await aimAt(v=>v.group==='fence',true);
  const propBefore=await read();
  const fence=await launchVisible('09-fence-in-flight');
  await waitForShot(fence.id);

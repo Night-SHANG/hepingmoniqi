@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { ProjectileView, WeaponId } from './contracts';
+import type { ProjectileView, Vec3, WeaponId } from './contracts';
 /** Original stylized geometry, normalized to roughly one collider radius. */
 export function createWeaponGeometry(weapon:WeaponId):THREE.BufferGeometry {
  const parts:THREE.BufferGeometry[]=[];
@@ -13,8 +13,8 @@ export function createWeaponGeometry(weapon:WeaponId):THREE.BufferGeometry {
  }else if(weapon==='pulse'){
   part(new THREE.CylinderGeometry(.48,.48,1.25,10),0xffeed0,0,-.05);
   part(new THREE.ConeGeometry(.48,.48,10),0xf25e27,0,.815);
-  part(new THREE.CylinderGeometry(.49,.49,.15,10),0x182e3b,0,-.72);
-  for(let i=0;i<4;i++){const fin=new THREE.BoxGeometry(.10,.48,.78);fin.translate(0,-.55,.31);fin.rotateY(i*Math.PI/2);part(fin,0x142b39);}
+  part(new THREE.CylinderGeometry(.49,.49,.15,10),0xffe4ab,0,-.72);
+  for(let i=0;i<4;i++){const fin=new THREE.BoxGeometry(.10,.48,.78);fin.translate(0,-.55,.31);fin.rotateY(i*Math.PI/2);part(fin,0xf5bd65);}
  }else{
   part(new THREE.BoxGeometry(1.45,.95,.37),0xffd174);
   part(new THREE.BoxGeometry(1.30,.78,.08),0xe8ad48,0,0,.225);
@@ -29,4 +29,10 @@ export function projectileOrientation(p:ProjectileView,previous=new THREE.Quater
  const v=p.weapon==='shock'?p.normal:p.velocity;
  if(!v||![v.x,v.y,v.z].every(Number.isFinite)||v.x*v.x+v.y*v.y+v.z*v.z<1e-10)return previous.clone();
  return new THREE.Quaternion().setFromUnitVectors(p.weapon==='shock'?new THREE.Vector3(0,0,1):new THREE.Vector3(0,1,0),new THREE.Vector3(v.x,v.y,v.z).normalize());
+}
+
+/** Status annotation is deliberately a HUD overlay. The physical model keeps depth testing. */
+export const ATTACHED_ANNOTATION = Object.freeze({depthTest:false,depthWrite:false,renderOrder:30});
+export function attachedAnnotationPosition(position:Vec3,cameraRotation:THREE.Quaternion):THREE.Vector3 {
+ return new THREE.Vector3(1.8,1.25,0).applyQuaternion(cameraRotation).add(new THREE.Vector3(position.x,position.y,position.z));
 }

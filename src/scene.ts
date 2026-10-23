@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createWeaponGeometry, projectileOrientation } from './weapon-models';
+import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation } from './weapon-models';
 import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
 type Block = { x:number; y:number; z:number; sx:number; sy:number; sz:number; color:number };
@@ -121,7 +121,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const outlineMaterial=new THREE.MeshBasicMaterial({color:0x102832,side:THREE.BackSide});
   const outlines=new Map<WeaponId,THREE.InstancedMesh>();
   for(const [weapon,body] of projectileMeshes){const mesh=new THREE.InstancedMesh(body.geometry,outlineMaterial,MAX_PROJECTILES);mesh.count=0;mesh.frustumCulled=false;scene.add(mesh);outlines.set(weapon,mesh);}
-  const leaderMaterial=new THREE.LineBasicMaterial({color:0xb4ffd4,transparent:true,opacity:.9,depthWrite:false});
+  const leaderMaterial=new THREE.LineBasicMaterial({color:0xb4ffd4,transparent:true,opacity:.9,depthWrite:ATTACHED_ANNOTATION.depthWrite,depthTest:ATTACHED_ANNOTATION.depthTest});
   const orientations=new Map<string,THREE.Quaternion>();
   const flameMaterial=new THREE.MeshBasicMaterial({color:0xffb94f,transparent:true,opacity:.9,depthWrite:false});
   const flameGeometry=new THREE.ConeGeometry(.22,.85,6);flameGeometry.rotateZ(Math.PI);flameGeometry.translate(0,-1.18,0);
@@ -158,8 +158,8 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         const label=attached?'attached-icon':Math.max(0,p.fuseRemaining!).toFixed(1)+'s';
         if(attached){
           badge.sprite.scale.set(2.6,.72,1);
-          const offset=new THREE.Vector3(1.8,1.25,0).applyQuaternion(camera.quaternion);badge.sprite.position.set(p.position.x,p.position.y,p.position.z).add(offset);
-          if(!badge.leader){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));badge.leader=new THREE.Line(geometry,leaderMaterial);badge.leader.frustumCulled=false;scene.add(badge.leader);}
+          badge.sprite.position.copy(attachedAnnotationPosition(p.position,camera.quaternion));badge.sprite.material.depthTest=ATTACHED_ANNOTATION.depthTest;badge.sprite.material.depthWrite=ATTACHED_ANNOTATION.depthWrite;badge.sprite.renderOrder=ATTACHED_ANNOTATION.renderOrder;
+          if(!badge.leader){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));badge.leader=new THREE.Line(geometry,leaderMaterial);badge.leader.frustumCulled=false;badge.leader.renderOrder=ATTACHED_ANNOTATION.renderOrder-1;scene.add(badge.leader);}
           const positions=badge.leader.geometry.getAttribute('position');positions.setXYZ(0,p.position.x,p.position.y,p.position.z);positions.setXYZ(1,badge.sprite.position.x,badge.sprite.position.y-.3,badge.sprite.position.z);positions.needsUpdate=true;
         }
         if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}

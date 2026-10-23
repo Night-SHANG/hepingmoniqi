@@ -148,7 +148,7 @@ try{
  evidence.reset=summary(later);
 
  await page.locator('[data-weapon="pulse"]').click();
- evidence.fenceAim=await aimAt(v=>v.group==='fence',true);
+ evidence.fenceAim=await aimAt(v=>v.group==='fence'&&v.position.z===17&&v.position.x>=-12&&v.position.x<=-4,true);
  const propBefore=await read();
  const fence=await launchVisible('09-fence-in-flight');
  await waitForShot(fence.id);

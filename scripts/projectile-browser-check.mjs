@@ -14,7 +14,7 @@ await fs.mkdir('artifacts/projectile-regression',{recursive:true});
 const read = () => page.evaluate(()=>({snapshot:window.__heping.snapshot(),projectiles:window.__heping.projectiles(),detonations:window.__heping.lastDetonations(),target:window.__heping.target,weapon:window.__heping.weapon}));
 async function capture(name){
  await page.screenshot({path:`artifacts/projectile-regression/${name}.png`});
- if(process.env.CI && ['01-roof-in-flight','02-roof-hole','03-repeat-through-hole','06-paused-round','10-fence-damaged','failure'].includes(name)){
+ if(process.env.CI && ['01-roof-in-flight','02-roof-hole','03-repeat-through-hole','05-timed-in-flight','06-paused-round','10-fence-damaged','failure'].includes(name)){
   const jpg=await page.screenshot({type:'jpeg',quality:35});
   if(jpg.length<220000)console.log(`SCREENSHOT_BASE64 projectile-${name} ${jpg.toString('base64')}`);
  }
@@ -37,11 +37,15 @@ async function aimAt(predicate){
  // Match the public reset-camera view, only to choose real pointer coordinates.
  const camera=new THREE.PerspectiveCamera(42,rect.width/rect.height,.2,250);
  camera.position.set(27,23,32);camera.lookAt(0,4.5,0);camera.updateMatrixWorld();
- const candidates=state.snapshot.voxels.filter(predicate).sort((a,b)=>b.position.z-a.position.z || b.position.y-a.position.y);
- for(const voxel of candidates){
+ // Prefer central visible targets so the real ballistic body's flight also
+ // remains in frame; do not relax the independent projectile-body assertion.
+ const candidates=state.snapshot.voxels.filter(predicate).map(voxel=>{
   const p=new THREE.Vector3(voxel.position.x,voxel.position.y,voxel.position.z).project(camera);
   const x=rect.x+(p.x+1)*rect.width/2,y=rect.y+(1-p.y)*rect.height/2;
-  if(p.z < -1 || p.z > 1 || x<rect.x || x>=rect.x+rect.width || y<rect.y || y>=rect.y+rect.height)continue;
+  return {voxel,p,x,y,centrality:Math.hypot(x-(rect.x+rect.width/2),y-(rect.y+rect.height/2))};
+ }).sort((a,b)=>a.centrality-b.centrality);
+ for(const {voxel,p,x,y} of candidates){
+  if(p.z < -1 || p.z > 1 || x<rect.x+120 || x>=rect.x+rect.width-120 || y<rect.y+120 || y>=rect.y+rect.height-120)continue;
   const canvasExposed=await page.evaluate(({x,y})=>document.elementFromPoint(x,y)===document.querySelector('canvas'),{x,y});
   if(!canvasExposed)continue;
   await page.mouse.click(x,y);

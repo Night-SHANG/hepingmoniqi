@@ -35,8 +35,10 @@ await page.locator('#fire').click();await page.waitForTimeout(800);const sandbox
 if(sandboxShot.destroyed<=0)throw new Error("Sandbox shot did not destroy any cottage voxels");
 await page.locator('#settings').click();await page.locator('#sandbox').uncheck();await page.locator('.done').click();const afterSandbox=await state();
 await page.setViewportSize({width:844,height:390});await page.waitForTimeout(700);await capture('mobile-landscape');
+const controlsReachable=await page.evaluate(()=>['settings','reset','pause','fire'].every(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth&&(hit===e||e.contains(hit));}));
+await page.locator('#settings').click();await page.locator('.done').click();
 const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
-const evidence={renderColors:colors.size,renderBrightSamples:bright,initial,afterDrag,targetAfterDrag,aim,afterShot,afterReload,afterReset,sandboxShot,afterSandbox,errors,overflow};
+const evidence={renderColors:colors.size,renderBrightSamples:bright,initial,afterDrag,targetAfterDrag,aim,afterShot,afterReload,afterReset,sandboxShot,afterSandbox,errors,overflow,controlsReachable};
 await fs.writeFile('artifacts/browser-results.json',JSON.stringify(evidence,null,2));
-if(errors.length||afterDrag.destroyed!==0||afterShot.destroyed<=0||afterReload.destroyed!==afterShot.destroyed||afterReset.destroyed!==0||afterReset.research!==afterShot.research||afterSandbox.research!==afterReset.research||afterSandbox.destroyed!==0||overflow)throw new Error(JSON.stringify(evidence));
+if(errors.length||afterDrag.destroyed!==0||afterShot.destroyed<=0||afterReload.destroyed!==afterShot.destroyed||afterReset.destroyed!==0||afterReset.research!==afterShot.research||afterSandbox.research!==afterReset.research||afterSandbox.destroyed!==0||overflow||!controlsReachable)throw new Error(JSON.stringify(evidence));
 console.log(JSON.stringify(evidence,null,2));await browser.close();

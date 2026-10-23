@@ -1,4 +1,6 @@
 import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot, MapId, ObjectiveState, RoundState, RoundResult, Loadout, WeaponId } from './contracts.js';
+import {TOOLS,WEAPON_IDS,MAP_IDS,mapAvailable,mapTitle} from './content-catalog.js';
+import {bridgeVoxels,towerVoxels} from './map-generators.js';
 import {capacityForResearch,toolAvailable,validateLoadout,weaponCost} from './gameplay.js';
 
 // Intentionally fictional game units, not a physical blast simulation.
@@ -10,7 +12,7 @@ const MATERIALS: Record<MaterialId, { hp: number; colors: number[] }> = {
  foliage: { hp: 0.7, colors: [0x547436, 0x688b37, 0x7e9b42, 0x94ad4c] },
  metal: { hp: 6, colors: [0x3d4954, 0x515e65] },
 };
-const TOOLS = { pulse: { radius: 3.5, strength: 9 }, charge: { radius: 2.6, strength: 8 }, shock: { radius: 5.4, strength: 11 } };
+
 const key = (p: Vec3) => `${p.x},${p.y},${p.z}`;
 const clone = (v: Voxel): Voxel => ({ ...v, position: { ...v.position } });
 const immutable = (v: Voxel): Voxel => Object.freeze({ ...v, position: Object.freeze({ ...v.position }) });
@@ -133,16 +135,16 @@ function warehouse(): Voxel[] {
 }
 
 type InventoryRound = RoundState & {loadout:Loadout;remaining:Loadout};
-const weaponIds:WeaponId[]=['charge','pulse','shock'];
+const weaponIds=WEAPON_IDS;
 const inventoryCapacity=(loadout:Loadout)=>weaponIds.reduce((total,id)=>total+loadout[id]*weaponCost(id),0);
 const cloneRound=(round:InventoryRound):InventoryRound=>({...round,loadout:{...round.loadout},remaining:{...round.remaining}});
 function freshRound(research:number,startDestroyed=0):InventoryRound{
- const budget=capacityForResearch(research),loadout={charge:budget,pulse:0,shock:0};
+ const budget=capacityForResearch(research),loadout={charge:budget,pulse:0,shock:0,echo:0,split:0};
  return {budget,used:0,startResearch:research,startDestroyed,settled:false,loadout,remaining:{...loadout}};
 }
 
 export function createWorld(): WorldModel {
- const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()])};
+ const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()]),bridge:Object.freeze([...bridgeVoxels(),...yard()]),tower:Object.freeze([...towerVoxels(),...yard()])};
  let mapId:MapId='courtyard', original=maps.courtyard;
  let voxels: readonly Voxel[]=Object.freeze([...original]); let epoch=1, destroyedCount=0, research=0;
  const completedMaps=new Set<MapId>();const processed=new Set<string>();
@@ -153,7 +155,7 @@ export function createWorld(): WorldModel {
  // cells removed by support loss. Rounding the cumulative total, not each hit,
  // makes tiny damage count without allowing repeated fractional-hit farming.
  const buildingResearch=()=>Math.min(200,Math.ceil((buildingDestroyed()+voxels.reduce((sum,v)=>sum+(v.group==='house'?1-v.hp/v.maxHp:0),0))*200/buildingTotal()));
- const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapId==='courtyard'?'木屋拆除':'双跨仓库拆除',total,destroyed,fraction:destroyed/total,goal:1,complete:destroyed===total,completedMaps:[...completedMaps]};};
+ const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapTitle(mapId),total,destroyed,fraction:destroyed/total,goal:1,complete:destroyed===total,completedMaps:[...completedMaps]};};
  function recordShot(weapon:WeaponId='charge'):boolean {
   if(round.settled||!weaponIds.includes(weapon)||!toolAvailable(weapon,round.startResearch,false)||round.remaining[weapon]<=0||round.used+weaponCost(weapon)>round.budget)return false;
   round.remaining[weapon]--;round.used+=weaponCost(weapon);return true;
@@ -184,13 +186,13 @@ export function createWorld(): WorldModel {
   research+=researchEarned;
   return {accepted:true,removed:removed.map(clone),detached:detached.map(clone),newlyDestroyed,researchEarned,destruction:destroyedCount/original.length};
  }
- function getSnapshot():WorldSnapshot{return {schemaVersion:5,round:cloneRound(round),mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
+ function getSnapshot():WorldSnapshot{return {schemaVersion:6,round:cloneRound(round),mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
  function restore(snapshot:WorldSnapshot):boolean {
   if(!snapshot||typeof snapshot!=='object')return false;
   const legacy=snapshot.schemaVersion===undefined, old=legacy||snapshot.schemaVersion===2;
-  if(!old&&snapshot.schemaVersion!==3&&snapshot.schemaVersion!==4&&snapshot.schemaVersion!==5)return false;
+  if(!old&&snapshot.schemaVersion!==3&&snapshot.schemaVersion!==4&&snapshot.schemaVersion!==5&&snapshot.schemaVersion!==6)return false;
   const nextMap:MapId=old?'courtyard':snapshot.mapId!;
-  if(nextMap!=='courtyard'&&nextMap!=='warehouse')return false;
+  if(!MAP_IDS.includes(nextMap)||(snapshot.schemaVersion!==6&&nextMap!=='courtyard'&&nextMap!=='warehouse'))return false;
   const bases=maps[nextMap], originals=new Map(bases.map(v=>[v.id,v]));
   const expectedTotal=legacy?1096:bases.length;
   if(!Number.isSafeInteger(snapshot.epoch)||snapshot.epoch<1||snapshot.epoch>=Number.MAX_SAFE_INTEGER||snapshot.totalCount!==expectedTotal||!Number.isSafeInteger(snapshot.destroyedCount)||snapshot.destroyedCount<0||snapshot.destroyedCount>expectedTotal||!Number.isSafeInteger(snapshot.research)||snapshot.research<0||typeof snapshot.firstRewardClaimed!=='boolean'||!Array.isArray(snapshot.voxels)||snapshot.voxels.length!==expectedTotal-snapshot.destroyedCount)return false;
@@ -200,8 +202,8 @@ export function createWorld(): WorldModel {
    if(snapshot.research<Math.floor(snapshot.destroyedCount*200/expectedTotal)+(snapshot.firstRewardClaimed?80:0))return false;
    if(snapshot.firstRewardClaimed)completed=['courtyard'];
   }else{
-   if(!Array.isArray(snapshot.completedMaps)||snapshot.completedMaps.length>2)return false;
-   if(snapshot.completedMaps.some(id=>id!=='courtyard'&&id!=='warehouse')||new Set(snapshot.completedMaps).size!==snapshot.completedMaps.length)return false;
+   if(!Array.isArray(snapshot.completedMaps)||snapshot.completedMaps.length>(snapshot.schemaVersion===6?4:2))return false;
+   if(snapshot.completedMaps.some(id=>!MAP_IDS.includes(id)||(snapshot.schemaVersion!==6&&id!=='courtyard'&&id!=='warehouse'))||new Set(snapshot.completedMaps).size!==snapshot.completedMaps.length)return false;
    completed=[...snapshot.completedMaps];
    if(snapshot.firstRewardClaimed!==completed.includes(nextMap)||snapshot.research<completed.length*80)return false;
   }
@@ -218,19 +220,23 @@ export function createWorld(): WorldModel {
   const total=bases.filter(v=>v.group==='house').length;
   const nextBuildingDestroyed=total-next.filter(v=>v.group==='house').length;
   let nextRound=freshRound(snapshot.research,nextBuildingDestroyed);
-  if(snapshot.schemaVersion===4||snapshot.schemaVersion===5){
+  if(snapshot.schemaVersion===4||snapshot.schemaVersion===5||snapshot.schemaVersion===6){
    const saved=snapshot.round;
    if(!saved||!Number.isSafeInteger(saved.used)||saved.used<0||saved.used>saved.budget||typeof saved.settled!=='boolean'||!Number.isSafeInteger(saved.startResearch)||saved.startResearch<0||saved.startResearch>snapshot.research||!Number.isSafeInteger(saved.startDestroyed)||saved.startDestroyed<0||saved.startDestroyed>nextBuildingDestroyed)return false;
    if(snapshot.schemaVersion===4){
     if(saved.budget!==6)return false;
     // Old saves tracked successful executions, not weapon types. Preserve the
     // exact legacy capacity as grenades, including spent slots after a reload.
-    nextRound={budget:6,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled,loadout:{charge:6,pulse:0,shock:0},remaining:{charge:6-saved.used,pulse:0,shock:0}};
+    nextRound={budget:6,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled,loadout:{charge:6,pulse:0,shock:0,echo:0,split:0},remaining:{charge:6-saved.used,pulse:0,shock:0,echo:0,split:0}};
    }else{
-    const {loadout,remaining}=saved;
-    // A six-slot v4 round may persist at high research. New rounds always use
-    // the current tier; neither that migration nor reload may add ammunition.
-    if(saved.budget!==6&&saved.budget!==8||saved.budget>capacityForResearch(saved.startResearch)||!loadout||!validateLoadout(loadout,saved.startResearch)||inventoryCapacity(loadout)>saved.budget||!remaining||typeof remaining!=='object'||Array.isArray(remaining)||Object.keys(remaining).length!==3||!weaponIds.every(id=>Object.hasOwn(remaining,id)&&Number.isSafeInteger(remaining[id])&&remaining[id]>=0&&remaining[id]<=loadout[id]))return false;
+    let {loadout,remaining}=saved;
+    const ids:readonly WeaponId[]=snapshot.schemaVersion===5?['charge','pulse','shock']:weaponIds;
+    const exact=(value:unknown):value is Loadout=>!!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===ids.length&&ids.every(id=>Object.hasOwn(value,id));
+    // Validate the historical shape BEFORE adding new zero slots. Never refill.
+    if(!exact(loadout)||!exact(remaining))return false;
+    if(snapshot.schemaVersion===5){loadout={...loadout,echo:0,split:0};remaining={...remaining,echo:0,split:0};}
+    const budgets=snapshot.schemaVersion===5?[6,8]:[6,8,10];
+    if(!budgets.includes(saved.budget)||saved.budget>capacityForResearch(saved.startResearch)||!validateLoadout(loadout,saved.startResearch)||inventoryCapacity(loadout)>saved.budget||!weaponIds.every(id=>Number.isSafeInteger(remaining![id])&&remaining![id]>=0&&remaining![id]<=loadout![id]))return false;
     if(saved.used!==inventoryCapacity(loadout)-inventoryCapacity(remaining))return false;
     nextRound={budget:saved.budget,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled,loadout:{...loadout},remaining:{...remaining}};
    }
@@ -241,13 +247,13 @@ export function createWorld(): WorldModel {
  }
  function reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;round=freshRound(research);processed.clear();}
  function startRound(next:MapId,loadout:Loadout):boolean{
-  if(next!=='courtyard'&&next!=='warehouse'||next==='warehouse'&&research<120||!validateLoadout(loadout,research))return false;
+  if(!mapAvailable(next,research)||!validateLoadout(loadout,research))return false;
   const inventory={...loadout};
   mapId=next;original=maps[next];reset();
   round.loadout=inventory;round.remaining={...inventory};return true;
  }
  function loadMap(next:MapId,free=false){
-  if(next!=='courtyard'&&next!=='warehouse'||next==='warehouse'&&!free&&research<120)return false;
+  if(!mapAvailable(next,research,free))return false;
   mapId=next;original=maps[next];reset();return true;
  }
  return {get epoch(){return epoch;},getVoxels:()=>voxels,getRound:()=>cloneRound(round),startRound,recordShot,finishRound,damage,getSnapshot,getObjective,loadMap,restore,reset};

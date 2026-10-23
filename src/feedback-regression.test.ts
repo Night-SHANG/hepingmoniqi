@@ -7,7 +7,7 @@ test('capacity crossing preserves spent inventory; retry copies exact underfille
  const world=createWorld(), seed=world.getSnapshot();
  seed.research=119;
  assert.equal(world.restore(seed),true,'native-only fixture is a valid saved world');
- const loadout={charge:2,pulse:0,shock:0};
+ const loadout={charge:2,pulse:0,shock:0,echo:0,split:0};
  assert.equal(world.startRound('courtyard',loadout),true);
  const initial=world.getSnapshot();
  assert.equal(world.getRound().budget,6);
@@ -17,7 +17,7 @@ test('capacity crossing preserves spent inventory; retry copies exact underfille
  assert.equal(damage.accepted,true);assert.ok(damage.researchEarned>0);
  const damaged=world.getSnapshot();
  assert.ok(damaged.research>=120);assert.equal(damaged.round!.budget,6);
- assert.deepEqual(damaged.round!.remaining,{charge:1,pulse:0,shock:0});
+ assert.deepEqual(damaged.round!.remaining,{charge:1,pulse:0,shock:0,echo:0,split:0});
  assert.deepEqual(crossedUnlocks(119,damaged.research),['双跨仓库','携带容量 6 → 8 格']);
  const restored=createWorld();assert.equal(restored.restore(damaged),true);
  assert.deepEqual(restored.getRound(),damaged.round,'reload must not refill spent stock after crossing');

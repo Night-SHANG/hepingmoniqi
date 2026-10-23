@@ -214,3 +214,96 @@ test('automatic high-arc grenade preview ends at its actual fuse rather than pro
   assert.deepEqual(preview.points.at(-1),events[0].position);assert.ok(events[0].position.y>0);
  }finally{p.dispose();}
 });
+
+test('echo captures its origin, survives host loss after activation and emits exactly three unique simulation-clock pulses',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8)],1);assert.equal(p.attach({...attached('echo'),weapon:'echo'}),true);
+  const origin=p.getProjectiles()[0].position;
+  const first=p.detonateAttached();assert.equal(first.length,1);assert.equal(first[0].id,'echo:echo:0');
+  assert.deepEqual(p.detonateAttached(),[]);assert.equal(p.getPendingWorkCount!(),2);
+  p.syncVoxels([],1);assert.deepEqual(p.step(0),[]);assert.equal(p.getPendingWorkCount!(),2);
+  assert.deepEqual(advance(p,.64),[]);const second=advance(p,.01);assert.equal(second.length,1);
+  const third=advance(p,.65);assert.equal(third.length,1);
+  const all=[...first,...second,...third];assert.deepEqual(all.map(e=>e.id),['echo:echo:0','echo:echo:1','echo:echo:2']);
+  assert.ok(all.every(e=>JSON.stringify(e.position)===JSON.stringify(origin)));assert.equal(p.getPendingWorkCount!(),0);assert.deepEqual(advance(p,3),[]);
+ }finally{p.dispose();}
+});
+test('unactivated echo host loss cancels; epoch and explicit same-epoch reset clear future pulses',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8)],1);assert.equal(p.attach({...attached('lost'),weapon:'echo'}),true);p.syncVoxels([],1);assert.deepEqual(p.detonateAttached(),[]);
+  assert.equal(p.attach(ground('reset-echo','echo')),true);p.detonateAttached();p.syncVoxels([],2);assert.deepEqual(advance(p,2),[]);assert.equal(p.getPendingWorkCount!(),0);
+  assert.equal(p.attach({...ground('same-epoch','echo'),epoch:2}),true);p.detonateAttached();p.reset!();assert.deepEqual(advance(p,2),[]);assert.equal(p.getPendingWorkCount!(),0);
+ }finally{p.dispose();}
+});
+test('split parent creates exactly three real distinct moving children without parent damage or recursive splitting',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.launch({...shot('split','split'),origin:{x:0,y:40,z:0},target:{x:8,y:40,z:0}}),true);
+  assert.deepEqual(advance(p,.65),[]);const children=p.getProjectiles();assert.equal(children.length,3);
+  assert.deepEqual(children.map(c=>c.id),['split:child:0','split:child:1','split:child:2']);assert.ok(children.every(c=>c.stage==='child' && c.trigger==='automatic'));
+  assert.equal(new Set(children.map(c=>JSON.stringify(c.position))).size,3);assert.equal(p.getPendingWorkCount!(),3);
+  assert.deepEqual(p.step(0),[]);assert.deepEqual(p.getProjectiles(),children);advance(p,.1);assert.ok(p.getProjectiles().every((c,i)=>c.position.y!==children[i].position.y && c.velocity!.y<children[i].velocity!.y));
+  const events=advance(p,1.1);assert.equal(events.length,3);assert.equal(new Set(events.map(e=>e.id)).size,3);assert.ok(events.every(e=>e.reason==='timer' && Math.abs(e.age-1.2)<1e-8));assert.equal(p.getPendingWorkCount!(),0);assert.deepEqual(advance(p,3),[]);
+ }finally{p.dispose();}
+});
+test('split impact precedes parent timer; remote placed or flying parents wait and manual activation never duplicates children',async()=>{
+ for(const placed of [false,true]){
+  const p=await createProjectilePhysics();try{
+   p.syncVoxels([voxel(1,8)],1);
+   if(placed)assert.equal(p.attach({...attached('manual'),weapon:'split'}),true);else assert.equal(p.launch({...shot('manual','split'),trigger:'remote'}),true);
+   assert.deepEqual(advance(p,4),[]);assert.equal(p.getProjectiles().length,1);assert.deepEqual(p.detonateAttached(),[]);assert.equal(p.getProjectiles().length,3);assert.deepEqual(p.detonateAttached(),[]);assert.equal(p.getProjectiles().length,3);
+   assert.equal(advance(p,1.2).length,3);
+  }finally{p.dispose();}
+ }
+ const p=await createProjectilePhysics();try{p.syncVoxels([voxel(1,8)],1);p.launch(shot('impact','split'));assert.deepEqual(advance(p,.5),[]);assert.equal(p.getProjectiles().length,3);}finally{p.dispose();}
+});
+test('new effects preserve low-fps and slowed clocks, preview isolation, reset and uncapped finite children',async()=>{
+ const a=await createProjectilePhysics(),b=await createProjectilePhysics();try{
+  for(const p of [a,b]){p.syncVoxels([],1);assert.equal(p.attach(ground('echo-clock','echo')),true);p.detonateAttached();assert.equal(p.launch({...shot('split-clock','split'),origin:{x:0,y:40,z:0},target:{x:8,y:40,z:0}}),true);}
+  const expected=advance(a,1);assert.deepEqual(b.step(1),expected);assert.deepEqual(a.getProjectiles(),b.getProjectiles());
+  const before=b.getProjectiles(),pending=b.getPendingWorkCount!();b.preview(shot('preview-split','split'));assert.deepEqual(b.getProjectiles(),before);assert.equal(b.getPendingWorkCount!(),pending);
+  const more=advance(a,.5);assert.deepEqual([...b.step(.25),...b.step(.25)],more);assert.deepEqual(a.getProjectiles(),b.getProjectiles());
+  b.reset!();assert.equal(b.getPendingWorkCount!(),0);assert.deepEqual(advance(b,3),[]);
+  for(let i=0;i<60;i++)assert.equal(b.attach(ground(`many-${i}`,'split')),true);b.detonateAttached();assert.equal(b.getProjectiles().length,180);assert.equal(advance(b,1.2).length,180);
+ }finally{a.dispose();b.dispose();}
+});
+test('parent and derived effect ids reserve atomically so later commands cannot replace child bodies or pulse identities',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.attach(ground('taken:child:1')),true);assert.equal(p.attach(ground('taken','split')),false);
+  assert.equal(p.launch(shot('taken','split')),false);assert.equal(p.launch(shot('good','split')),true);
+  assert.equal(p.attach(ground('good:child:0')),false);assert.equal(p.launch(shot('good:child:2')),false);
+  assert.equal(p.attach(ground('echo-id','echo')),true);assert.equal(p.attach(ground('echo-id:echo:2')),false);
+  p.reset!();assert.equal(p.attach(ground('taken','split')),true);
+ }finally{p.dispose();}
+});
+test('placed split children visibly bounce on the real substrate before their one-shot timer expires',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([],1);assert.equal(p.attach(ground('bounce-split','split')),true);p.detonateAttached();
+  let down=false,bounced=false;for(let i=0;i<130;i++){
+   assert.deepEqual(p.step(1/120),[]);const child=p.getProjectiles()[0];assert.ok(child.position.y>-.5);
+   if(child.velocity!.y<-.2)down=true;if(down && child.velocity!.y>.2)bounced=true;
+  }
+  assert.equal(bounced,true);assert.equal(advance(p,14/120).length,3);
+ }finally{p.dispose();}
+});
+test('activated echo preserves its placed face normal and owns copies of origin through every view and event',async()=>{
+ const p=await createProjectilePhysics();try{
+  p.syncVoxels([voxel(1,8)],1);const command:AttachedCommand={...attached('wall-echo'),weapon:'echo',surface:{voxelId:1,position:{x:.4825,y:8,z:0},normal:{x:1,y:0,z:0}}};
+  assert.equal(p.attach(command),true);const first=p.detonateAttached()[0],origin={...first.position};
+  command.surface.normal.x=-1;first.position.x=999;const view=p.getProjectiles()[0];assert.deepEqual(view.normal,{x:1,y:0,z:0});view.normal!.x=-1;view.position.x=888;
+  assert.deepEqual(p.getProjectiles()[0].normal,{x:1,y:0,z:0});p.syncVoxels([],1);assert.deepEqual(advance(p,.65)[0].position,origin);
+ }finally{p.dispose();}
+});
+test('derived effect ids fit the domain limit and overlong parents reject atomically without pending work',async()=>{
+ for(const [weapon,acceptedLength,rejectedLength] of [['echo',153,154],['split',152,153]] as const){
+  for(const method of ['launch','attach'] as const){
+   const p=await createProjectilePhysics();try{
+    p.syncVoxels([],1);const rejected='x'.repeat(rejectedLength),accepted='y'.repeat(acceptedLength);
+    const submit=(id:string)=>method==='launch'?p.launch(shot(id,weapon)):p.attach(ground(id,weapon));
+    assert.equal(submit(rejected),false);assert.equal(p.getPendingWorkCount!(),0);assert.deepEqual(p.getProjectiles(),[]);
+    // Rejection must not reserve even the otherwise-valid parent ID.
+    assert.equal(p.attach(ground(rejected,'shock')),true);p.reset!();
+    assert.equal(submit(accepted),true);assert.equal(p.getPendingWorkCount!(),1);
+   }finally{p.dispose();}
+  }
+ }
+});

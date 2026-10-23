@@ -10,11 +10,11 @@ const PREVIEW_SECONDS = 6;
 const PREVIEW_SAMPLE_STEPS = 4;
 const HALF_VOXEL = .4825;
 let initialization: Promise<void> | undefined;
-type Ball = { command: ProjectileCommand; body: RAPIER.RigidBody; collider: RAPIER.Collider; age: number; radius: number; contacted?:boolean };
+type Ball = { command: ProjectileCommand; body: RAPIER.RigidBody; collider: RAPIER.Collider; age: number; radius: number; stage?:'parent'|'child'; contacted?:boolean };
 type Simulation = { world:RAPIER.World; events:RAPIER.EventQueue; balls:Map<string,Ball>; byCollider:Map<number,string> };
 const finiteVector = (p: Vec3) => p && [p.x,p.y,p.z].every(n => Number.isFinite(n) && Math.abs(n) <= 10000);
 const copy = (p: Vec3):Vec3 => ({x:p.x,y:p.y,z:p.z});
-const isWeapon = (weapon:unknown):weapon is WeaponId => weapon==='pulse' || weapon==='charge' || weapon==='shock';
+const isWeapon = (weapon:unknown):weapon is WeaponId => weapon==='pulse' || weapon==='charge' || weapon==='shock' || weapon==='echo' || weapon==='split';
 const isRemote = (command:ProjectileCommand) => command.trigger==='remote';
 const weaponRadius = (weapon:WeaponId) => weapon==='charge'?.27:weapon==='shock'?.3:.2;
 
@@ -24,8 +24,8 @@ function launchVelocity(command:ProjectileCommand):Vec3 {
  const duration=Math.max(.45,Math.min(1.5,Math.hypot(t.x-o.x,t.y-o.y,t.z-o.z)/26));
  return {x:(t.x-o.x)/duration,y:(t.y-o.y)/duration+GRAVITY*duration/2,z:(t.z-o.z)/duration};
 }
-function createBall(world:RAPIER.World,command:ProjectileCommand):Ball {
- const o=command.origin,v=launchVelocity(command);
+function createBall(world:RAPIER.World,command:ProjectileCommand,velocity?:Vec3,child=false):Ball {
+ const o=command.origin,v=velocity??launchVelocity(command);
  // Aim defines only the initial velocity, never an explosion trigger or homing target.
  const descriptor=RAPIER.RigidBodyDesc.dynamic().setTranslation(o.x,o.y,o.z).setLinvel(v.x,v.y,v.z).setCcdEnabled(true);
  if(command.weapon==='shock'){
@@ -38,17 +38,28 @@ function createBall(world:RAPIER.World,command:ProjectileCommand):Ball {
  const body=world.createRigidBody(descriptor);
  if(command.weapon==='charge')body.setAngvel({x:3.2,y:1.3,z:2.1},true);
  if(command.weapon==='shock')body.setAngvel({x:2.4,y:.8,z:1.2},true);
- const radius=weaponRadius(command.weapon);
+ const radius=child?.16:weaponRadius(command.weapon);
  // Preserve the mature round rocket/grenade CCD shapes. Packages use a real
  // oriented box matching the model footprint instead of pretending to be a ball.
  const shape=command.weapon==='shock' ? RAPIER.ColliderDesc.cuboid(.725*radius,.51*radius,.24*radius) : RAPIER.ColliderDesc.ball(radius);
- const collider=world.createCollider(shape.setRestitution(command.weapon==='charge'?.42:isRemote(command)?.25:0).setFriction(.8).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),body);
- return {command:{...command,origin:copy(o),target:copy(command.target)},body,collider,age:0,radius};
+ const collider=world.createCollider(shape.setRestitution(child?.48:command.weapon==='charge'?.42:isRemote(command)?.25:0).setFriction(.8).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),body);
+ return {command:{...command,origin:copy(o),target:copy(command.target)},body,collider,age:0,radius,stage:command.weapon==='split'?(child?'child':'parent'):undefined};
 }
 function removeBall(simulation:Simulation,ball:Ball) {
  simulation.byCollider.delete(ball.collider.handle);
  simulation.balls.delete(ball.command.id);
  simulation.world.removeRigidBody(ball.body);
+}
+/** Three actual child bodies; offsets/spread are deliberately stylized game units. */
+function splitParent(simulation:Simulation,command:ProjectileCommand,position:Vec3,velocity:Vec3,normal:Vec3={x:0,y:1,z:0}) {
+ const tangent=Math.abs(normal.y)>.5?{x:1,y:0,z:0}:{x:0,y:1,z:0};
+ const bitangent={x:normal.y*tangent.z-normal.z*tangent.y,y:normal.z*tangent.x-normal.x*tangent.z,z:normal.x*tangent.y-normal.y*tangent.x};
+ for(let i=0;i<3;i++){
+  const angle=i*Math.PI*2/3,dx=tangent.x*Math.cos(angle)+bitangent.x*Math.sin(angle),dy=tangent.y*Math.cos(angle)+bitangent.y*Math.sin(angle),dz=tangent.z*Math.cos(angle)+bitangent.z*Math.sin(angle);
+  const origin={x:position.x+normal.x*.3+dx*.34,y:position.y+normal.y*.3+dy*.34,z:position.z+normal.z*.3+dz*.34};
+  const child=createBall(simulation.world,{...command,id:`${command.id}:child:${i}`,origin,target:{x:origin.x,y:origin.y+1,z:origin.z},trigger:'automatic'},{x:velocity.x+dx*3+normal.x*3,y:velocity.y+dy*3+normal.y*3,z:velocity.z+dz*3+normal.z*3},true);
+  simulation.balls.set(child.command.id,child);simulation.byCollider.set(child.collider.handle,child.command.id);
+ }
 }
 function simulateStep(simulation:Simulation):{detonations:Detonation[];contacts:Map<string,Vec3>;ended:Map<string,Vec3>} {
  const {world,events,balls,byCollider}=simulation;
@@ -70,12 +81,16 @@ function simulateStep(simulation:Simulation):{detonations:Detonation[];contacts:
   }
  });
  const detonations:Detonation[]=[],ended=new Map<string,Vec3>();
- for(const ball of balls.values()){
+ for(const ball of [...balls.values()]){
   if(isRemote(ball.command))continue; // Armed remote ordnance survives until manual detonation/reset.
-  const timed=ball.command.weapon==='charge' && ball.age+1e-9>=3;
-  const impact=ball.command.weapon!=='charge' && contacts.has(ball.command.id);
+  if(ball.command.weapon==='split' && ball.stage!=='child' && (ball.age+1e-9>=.65 || contacts.has(ball.command.id))){
+   const position=copy(ball.body.translation()),velocity=copy(ball.body.linvel());
+   ended.set(ball.command.id,position);removeBall(simulation,ball);splitParent(simulation,ball.command,position,velocity);continue;
+  }
+  const timed=(ball.command.weapon==='charge' && ball.age+1e-9>=3) || (ball.stage==='child' && ball.age+1e-9>=1.2);
+  const impact=ball.command.weapon!=='charge' && ball.command.weapon!=='split' && contacts.has(ball.command.id);
   if(timed || impact){
-   detonations.push({id:ball.command.id,epoch:ball.command.epoch,position:copy(ball.body.translation()),weapon:ball.command.weapon,power:ball.command.power,reason:timed?'timer':'impact',age:ball.age});
+   detonations.push({id:ball.command.id,epoch:ball.command.epoch,position:copy(ball.body.translation()),weapon:ball.command.weapon,power:ball.command.power,reason:timed?'timer':'impact',age:ball.age,stage:ball.stage});
    ended.set(ball.command.id,copy(ball.body.translation()));removeBall(simulation,ball);
   }else{
    const position=ball.body.translation();
@@ -99,13 +114,23 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
  const byCollider = new Map<number,string>();
  const simulation:Simulation={world,events,balls,byCollider};
  const launched = new Set<string>();
+ const emitters=new Map<string,{base:Detonation;elapsed:number;next:number;normal?:Vec3}>();
+ function activateEcho(base:Detonation,normal?:Vec3):Detonation {
+  emitters.set(base.id,{base:{...base,position:copy(base.position)},elapsed:0,next:1,normal:normal?copy(normal):undefined});
+  return {...base,id:`${base.id}:echo:0`,stage:'emitter'};
+ }
+ function reset() {
+  if(disposed)return;
+  for(const ball of balls.values())removeBall(simulation,ball);
+  packages.clear();emitters.clear();launched.clear();accumulator=0;events.clear();
+ }
+ function getPendingWorkCount(){return balls.size+packages.size+[...emitters.values()].reduce((sum,e)=>sum+3-e.next,0);}
+
  let epoch = 0, accumulator = 0, disposed = false;
  function syncVoxels(voxels:readonly Voxel[], nextEpoch:number) {
   if(disposed) return;
   if(nextEpoch !== epoch) {
-   for(const ball of balls.values())removeBall(simulation,ball);
-   packages.clear();launched.clear();accumulator=0;epoch=nextEpoch;
-   events.clear();
+   reset();epoch=nextEpoch;
   }
   const ids = new Set<number>();
   for(const voxel of voxels) {
@@ -119,13 +144,18 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   for(const [id,entry] of terrain)if(!ids.has(id)){world.removeCollider(entry.collider,true);terrain.delete(id);}
   for(const [id,pack] of packages)if(pack.command.surface.voxelId!==null && !ids.has(pack.command.surface.voxelId))packages.delete(id);
  }
+ function commandIds(id:string,weapon:WeaponId):string[]{
+  return weapon==='split'?[id,...[0,1,2].map(i=>`${id}:child:${i}`)]:weapon==='echo'?[id,...[0,1,2].map(i=>`${id}:echo:${i}`)]:[id];
+ }
+ function idsAvailable(id:string,weapon:WeaponId){return commandIds(id,weapon).every(candidate=>candidate.length<=160 && !launched.has(candidate));}
+ function reserveIds(id:string,weapon:WeaponId){for(const candidate of commandIds(id,weapon))launched.add(candidate);}
  function validCommand(command:ProjectileCommand):boolean {
-  return !disposed && !!command && typeof command.id==='string' && command.id.length>0 && command.id.length<=160 && command.epoch===epoch && !launched.has(command.id) && isWeapon(command.weapon) && (command.trigger===undefined || command.trigger==='automatic' || command.trigger==='remote') && Number.isFinite(command.power) && command.power>0 && command.power<=3 && finiteVector(command.origin) && finiteVector(command.target) && Math.hypot(command.target.x-command.origin.x,command.target.y-command.origin.y,command.target.z-command.origin.z)>=.01;
+  return !disposed && !!command && typeof command.id==='string' && command.id.length>0 && command.id.length<=160 && command.epoch===epoch && idsAvailable(command.id,command.weapon) && isWeapon(command.weapon) && (command.trigger===undefined || command.trigger==='automatic' || command.trigger==='remote') && Number.isFinite(command.power) && command.power>0 && command.power<=3 && finiteVector(command.origin) && finiteVector(command.target) && Math.hypot(command.target.x-command.origin.x,command.target.y-command.origin.y,command.target.z-command.origin.z)>=.01;
  }
  function launch(command:ProjectileCommand):boolean {
   if(!validCommand(command))return false;
   const ball=createBall(world,command);
-  balls.set(command.id,ball);byCollider.set(ball.collider.handle,command.id);launched.add(command.id);
+  balls.set(command.id,ball);byCollider.set(ball.collider.handle,command.id);reserveIds(command.id,command.weapon);
   return true;
  }
  function preview(command:ProjectileCommand):TrajectoryPreview {
@@ -157,7 +187,7 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   }finally{previewEvents.free();previewWorld.free();}
  }
  function attach(command:AttachedCommand):boolean {
-  if(disposed || !command || typeof command.id!=='string' || !command.id.length || command.id.length>160 || command.epoch!==epoch || launched.has(command.id) || (command.weapon!==undefined && !isWeapon(command.weapon)) || !Number.isFinite(command.power) || command.power<=0 || command.power>3 || !command.surface || !finiteVector(command.surface.position) || !finiteVector(command.surface.normal))return false;
+  if(disposed || !command || typeof command.id!=='string' || !command.id.length || command.id.length>160 || command.epoch!==epoch || !idsAvailable(command.id,command.weapon??'shock') || (command.weapon!==undefined && !isWeapon(command.weapon)) || !Number.isFinite(command.power) || command.power<=0 || command.power>3 || !command.surface || !finiteVector(command.surface.position) || !finiteVector(command.surface.normal))return false;
   const {position:p,normal:n,voxelId}=command.surface;
   const axes=['x','y','z'] as const;
   const axis=axes.find(a=>Math.abs(Math.abs(n[a])-1)<1e-4);
@@ -175,15 +205,27 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   const normal={x:0,y:0,z:0};normal[axis]=Math.sign(n[axis]);
   const position={x:p.x+normal.x*.08,y:p.y+normal.y*.08,z:p.z+normal.z*.08};
   const stored={...command,surface:{voxelId,position:copy(p),normal:copy(normal)}};
-  packages.set(command.id,{command:stored,position,normal,age:0});launched.add(command.id);return true;
+  packages.set(command.id,{command:stored,position,normal,age:0});reserveIds(command.id,command.weapon??'shock');return true;
  }
  function detonateAttached():Detonation[] {
   if(disposed)return [];
   const result:Detonation[]=[];
-  for(const pack of packages.values())if(pack.command.epoch===epoch && (pack.command.surface.voxelId===null || terrain.has(pack.command.surface.voxelId)))result.push({id:pack.command.id,epoch,position:copy(pack.position),weapon:pack.command.weapon??'shock',power:pack.command.power,reason:'remote',age:pack.age});
+  for(const pack of packages.values())if(pack.command.epoch===epoch && (pack.command.surface.voxelId===null || terrain.has(pack.command.surface.voxelId))){
+   const weapon=pack.command.weapon??'shock';
+   if(weapon==='split')splitParent(simulation,{id:pack.command.id,epoch,weapon,power:pack.command.power,origin:pack.position,target:pack.position},pack.position,{x:0,y:0,z:0},pack.normal);
+   else {
+    const event:Detonation={id:pack.command.id,epoch,position:copy(pack.position),weapon,power:pack.command.power,reason:'remote',age:pack.age};
+    result.push(weapon==='echo'?activateEcho(event,pack.normal):event);
+   }
+  }
   packages.clear();
-  for(const ball of balls.values())if(isRemote(ball.command)){
-   result.push({id:ball.command.id,epoch,position:copy(ball.body.translation()),weapon:ball.command.weapon,power:ball.command.power,reason:'remote',age:ball.age});
+  for(const ball of [...balls.values()])if(isRemote(ball.command)){
+   const position=copy(ball.body.translation()),velocity=copy(ball.body.linvel());
+   if(ball.command.weapon==='split')splitParent(simulation,ball.command,position,velocity);
+   else {
+    const event:Detonation={id:ball.command.id,epoch,position,weapon:ball.command.weapon,power:ball.command.power,reason:'remote',age:ball.age};
+    result.push(ball.command.weapon==='echo'?activateEcho(event):event);
+   }
    removeBall(simulation,ball);
   }
   return result;
@@ -197,16 +239,25 @@ export async function createProjectilePhysics(): Promise<ProjectilePhysics> {
   accumulator+=Math.min(deltaSeconds,MAX_FRAME_SECONDS);
   while(accumulator+1e-10>=STEP){
    accumulator-=STEP;
-   results.push(...simulateStep(simulation).detonations);
+   // Advance only emitters that existed before this step, so activation starts at t=0.
+   for(const [id,emitter] of emitters){
+    emitter.elapsed+=STEP;
+    while(emitter.next<3 && emitter.elapsed+1e-9>=emitter.next*.65){
+     results.push({...emitter.base,id:`${id}:echo:${emitter.next}`,position:copy(emitter.base.position),age:emitter.base.age+emitter.next*.65,stage:'emitter',reason:'timer'});emitter.next++;
+    }
+    if(emitter.next===3)emitters.delete(id);
+   }
+   for(const event of simulateStep(simulation).detonations)results.push(event.weapon==='echo'?activateEcho(event):event);
    for(const pack of packages.values())pack.age+=STEP;
   }
   return results;
  }
  function getProjectiles():ProjectileView[] {
   return [
-   ...[...balls.values()].map(ball=>({id:ball.command.id,position:copy(ball.body.translation()),radius:ball.radius,weapon:ball.command.weapon,age:ball.age,fuseRemaining:ball.command.weapon==='charge'&&!isRemote(ball.command)?Math.max(0,3-ball.age):null,velocity:copy(ball.body.linvel()),rotation:{...ball.body.rotation()},trigger:ball.command.trigger??'automatic',state:'flying' as const})),
-   ...[...packages.values()].map(pack=>({id:pack.command.id,position:copy(pack.position),radius:weaponRadius(pack.command.weapon??'shock'),weapon:pack.command.weapon??'shock',age:pack.age,fuseRemaining:null,trigger:'remote' as const,state:'attached' as const,normal:copy(pack.normal),hostVoxelId:pack.command.surface.voxelId,velocity:{x:0,y:0,z:0}}))
+   ...[...balls.values()].map(ball=>({id:ball.command.id,stage:ball.stage,position:copy(ball.body.translation()),radius:ball.radius,weapon:ball.command.weapon,age:ball.age,fuseRemaining:isRemote(ball.command)?null:ball.stage==='child'?Math.max(0,1.2-ball.age):ball.command.weapon==='split'?Math.max(0,.65-ball.age):ball.command.weapon==='charge'?Math.max(0,3-ball.age):null,velocity:copy(ball.body.linvel()),rotation:{...ball.body.rotation()},trigger:ball.command.trigger??'automatic',state:'flying' as const})),
+   ...[...emitters.values()].map(e=>({id:e.base.id,stage:'emitter' as const,normal:e.normal?copy(e.normal):undefined,position:copy(e.base.position),radius:weaponRadius('echo'),weapon:'echo' as const,age:e.elapsed,fuseRemaining:Math.max(0,e.next*.65-e.elapsed),trigger:'automatic' as const,state:'attached' as const,velocity:{x:0,y:0,z:0}})),
+   ...[...packages.values()].map(pack=>({id:pack.command.id,stage:pack.command.weapon==='split'?'parent' as const:pack.command.weapon==='echo'?'emitter' as const:undefined,position:copy(pack.position),radius:weaponRadius(pack.command.weapon??'shock'),weapon:pack.command.weapon??'shock',age:pack.age,fuseRemaining:null,trigger:'remote' as const,state:'attached' as const,normal:copy(pack.normal),hostVoxelId:pack.command.surface.voxelId,velocity:{x:0,y:0,z:0}}))
   ];
  }
- return {syncVoxels,launch,preview,attach,detonateAttached,step,getProjectiles,dispose(){if(disposed)return;disposed=true;balls.clear();packages.clear();byCollider.clear();terrain.clear();launched.clear();events.free();world.free();}};
+ return {syncVoxels,launch,preview,attach,detonateAttached,step,getProjectiles,getPendingWorkCount,reset,dispose(){if(disposed)return;disposed=true;balls.clear();packages.clear();emitters.clear();byCollider.clear();terrain.clear();launched.clear();events.free();world.free();}};
 }

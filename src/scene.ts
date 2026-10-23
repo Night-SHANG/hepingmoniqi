@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation } from './weapon-models';
+import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation, projectileModelKey, WEAPON_MODEL_KEYS, type WeaponModelKey } from './weapon-models';
 import { effectFrameDeltas, clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
 import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
@@ -116,11 +116,11 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   // advances their motion; trails are a bounded visual history of those transforms.
   const MAX_COSMETIC_PROJECTILES=64, TRAIL_POINTS=12;
   const projectileMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.58,metalness:.25});
-  const projectileMeshes=new Map<WeaponId,ReturnType<typeof createGrowingInstancePool>>();
-  for(const weapon of ['charge','pulse','shock'] as const)projectileMeshes.set(weapon,createGrowingInstancePool(scene,createWeaponGeometry(weapon),projectileMaterial));
+  const projectileMeshes=new Map<WeaponModelKey,ReturnType<typeof createGrowingInstancePool>>();
+  for(const key of WEAPON_MODEL_KEYS){const geometry=key==='split-child'?createWeaponGeometry('split','child'):createWeaponGeometry(key);projectileMeshes.set(key,createGrowingInstancePool(scene,geometry,projectileMaterial));}
   // Thin authored silhouette shell only, never a hit proxy or depth-disabled model.
   const outlineMaterial=new THREE.MeshBasicMaterial({color:0x102832,side:THREE.BackSide});
-  const outlines=new Map<WeaponId,ReturnType<typeof createGrowingInstancePool>>();
+  const outlines=new Map<WeaponModelKey,ReturnType<typeof createGrowingInstancePool>>();
   for(const [weapon,body] of projectileMeshes){const pool=createGrowingInstancePool(scene,body.mesh.geometry,outlineMaterial);pool.mesh.castShadow=false;outlines.set(weapon,pool);}
   const leaderMaterial=new THREE.LineBasicMaterial({color:0xb4ffd4,transparent:true,opacity:.9,depthWrite:ATTACHED_ANNOTATION.depthWrite,depthTest:ATTACHED_ANNOTATION.depthTest});
   const orientations=new Map<string,THREE.Quaternion>();
@@ -138,13 +138,13 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const trailIds=new Set(views.filter(v=>v.weapon==='pulse'&&v.state!=='attached').slice(0,MAX_COSMETIC_PROJECTILES).map(v=>v.id));
     for(const id of trails.keys())if(!trailIds.has(id))trails.delete(id);
     for(const id of orientations.keys())if(!ids.has(id))orientations.delete(id);
-    for(const [weapon,pool] of projectileMeshes){const count=views.filter(v=>v.weapon===weapon).length;pool.reserve(count);pool.mesh.count=0;const outline=outlines.get(weapon)!;outline.reserve(count);outline.mesh.count=0;}flameMesh.count=0;
+    for(const [weapon,pool] of projectileMeshes){const count=views.filter(v=>projectileModelKey(v)===weapon).length;pool.reserve(count);pool.mesh.count=0;const outline=outlines.get(weapon)!;outline.reserve(count);outline.mesh.count=0;}flameMesh.count=0;
     for(const id of fuseBadges.keys())if(!ids.has(id))releaseBadge(id);
     let trailIndex=0;
     views.forEach(p=>{
       tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.quaternion.copy(projectileOrientation(p,orientations.get(p.id)));orientations.set(p.id,tmp.quaternion.clone());tmp.scale.setScalar(p.radius);tmp.updateMatrix();
-      const projectile=projectileMeshes.get(p.weapon)!.mesh;projectile.setMatrixAt(projectile.count++,tmp.matrix);
-      const outline=outlines.get(p.weapon)!.mesh;tmp.scale.setScalar(p.radius*1.045);tmp.updateMatrix();outline.setMatrixAt(outline.count++,tmp.matrix);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
+      const projectile=projectileMeshes.get(projectileModelKey(p))!.mesh;projectile.setMatrixAt(projectile.count++,tmp.matrix);
+      const outline=outlines.get(projectileModelKey(p))!.mesh;tmp.scale.setScalar(p.radius*1.045);tmp.updateMatrix();outline.setMatrixAt(outline.count++,tmp.matrix);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
       if(trailIds.has(p.id)){
         flameMesh.setMatrixAt(flameMesh.count++,tmp.matrix);
         const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
@@ -156,15 +156,16 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         let badge=fuseBadges.get(p.id);
         if(!badge){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(1.8,.9,1);scene.add(sprite);badge={sprite,canvas,texture,label:''};fuseBadges.set(p.id,badge);}
         badge.sprite.position.set(p.position.x,p.position.y+.9,p.position.z);
-        const attached=p.state==='attached';
-        const label=attached?'attached-icon':Math.max(0,p.fuseRemaining!).toFixed(1)+'s';
+        const attached=p.state==='attached'||p.stage==='emitter';
+        const emitting=p.weapon==='echo'&&p.stage==='emitter';
+        const label=emitting?'↻ '+Math.max(0,p.fuseRemaining??0).toFixed(1)+'s':attached?'attached-icon':Math.max(0,p.fuseRemaining!).toFixed(1)+'s';
         if(attached){
           badge.sprite.scale.set(2.6,.72,1);
           badge.sprite.position.copy(attachedAnnotationPosition(p.position,camera.quaternion));badge.sprite.material.depthTest=ATTACHED_ANNOTATION.depthTest;badge.sprite.material.depthWrite=ATTACHED_ANNOTATION.depthWrite;badge.sprite.renderOrder=ATTACHED_ANNOTATION.renderOrder;
           if(!badge.leader){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));badge.leader=new THREE.Line(geometry,leaderMaterial);badge.leader.frustumCulled=false;badge.leader.renderOrder=ATTACHED_ANNOTATION.renderOrder-1;scene.add(badge.leader);}
           const positions=badge.leader.geometry.getAttribute('position');positions.setXYZ(0,p.position.x,p.position.y,p.position.z);positions.setXYZ(1,badge.sprite.position.x,badge.sprite.position.y-.3,badge.sprite.position.z);positions.needsUpdate=true;
         }
-        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
+        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached&&!emitting){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
       }else releaseBadge(p.id);
     });
     for(const pool of projectileMeshes.values())pool.mesh.instanceMatrix.needsUpdate=true;for(const pool of outlines.values())pool.mesh.instanceMatrix.needsUpdate=true;
@@ -285,10 +286,10 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         chips.push({p,v:velocity,rotation:new THREE.Vector3(rand(),rand(),rand()),spin:new THREE.Vector3(rand()*4-2,rand()*4-2,rand()*4-2),size:.35+rand()*.5,age:0,life:4+rand()*2,color:v.color});
       }
       chips=chips.slice(-MAX_DEBRIS);pulse.position.set(point.x,Math.max(.2,point.y-.25),point.z);pulseAge=0;
-      pulseMaterial.color.setHex(weapon==='shock'?0x79deff:0xffbf68);flash.position.set(point.x,point.y+1,point.z);
+      pulseMaterial.color.setHex(weapon==='shock'||weapon==='echo'?0x79deff:0xffbf68);flash.position.set(point.x,point.y+1,point.z);
     },
     setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

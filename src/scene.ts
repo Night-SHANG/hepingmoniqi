@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation } from './weapon-models';
+import { clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
 import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
 type Block = { x:number; y:number; z:number; sx:number; sy:number; sz:number; color:number };
@@ -113,37 +114,38 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
 
   // Only physics supplies projectile transforms. This renderer never detonates or
   // advances their motion; trails are a bounded visual history of those transforms.
-  const MAX_PROJECTILES=48, TRAIL_POINTS=12;
+  const MAX_COSMETIC_PROJECTILES=64, TRAIL_POINTS=12;
   const projectileMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.58,metalness:.25});
-  const projectileMeshes=new Map<WeaponId,THREE.InstancedMesh>();
-  for(const weapon of ['charge','pulse','shock'] as const){const mesh=new THREE.InstancedMesh(createWeaponGeometry(weapon),projectileMaterial,MAX_PROJECTILES);mesh.count=0;mesh.castShadow=true;mesh.frustumCulled=false;scene.add(mesh);projectileMeshes.set(weapon,mesh);}
+  const projectileMeshes=new Map<WeaponId,ReturnType<typeof createGrowingInstancePool>>();
+  for(const weapon of ['charge','pulse','shock'] as const)projectileMeshes.set(weapon,createGrowingInstancePool(scene,createWeaponGeometry(weapon),projectileMaterial));
   // Thin authored silhouette shell only, never a hit proxy or depth-disabled model.
   const outlineMaterial=new THREE.MeshBasicMaterial({color:0x102832,side:THREE.BackSide});
-  const outlines=new Map<WeaponId,THREE.InstancedMesh>();
-  for(const [weapon,body] of projectileMeshes){const mesh=new THREE.InstancedMesh(body.geometry,outlineMaterial,MAX_PROJECTILES);mesh.count=0;mesh.frustumCulled=false;scene.add(mesh);outlines.set(weapon,mesh);}
+  const outlines=new Map<WeaponId,ReturnType<typeof createGrowingInstancePool>>();
+  for(const [weapon,body] of projectileMeshes){const pool=createGrowingInstancePool(scene,body.mesh.geometry,outlineMaterial);pool.mesh.castShadow=false;outlines.set(weapon,pool);}
   const leaderMaterial=new THREE.LineBasicMaterial({color:0xb4ffd4,transparent:true,opacity:.9,depthWrite:ATTACHED_ANNOTATION.depthWrite,depthTest:ATTACHED_ANNOTATION.depthTest});
   const orientations=new Map<string,THREE.Quaternion>();
   const flameMaterial=new THREE.MeshBasicMaterial({color:0xffb94f,transparent:true,opacity:.9,depthWrite:false});
   const flameGeometry=new THREE.ConeGeometry(.22,.85,6);flameGeometry.rotateZ(Math.PI);flameGeometry.translate(0,-1.18,0);
-  const flameMesh=new THREE.InstancedMesh(flameGeometry,flameMaterial,MAX_PROJECTILES);flameMesh.count=0;flameMesh.frustumCulled=false;scene.add(flameMesh);
+  const flameMesh=new THREE.InstancedMesh(flameGeometry,flameMaterial,MAX_COSMETIC_PROJECTILES);flameMesh.count=0;flameMesh.frustumCulled=false;scene.add(flameMesh);
   const trailMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.72,depthWrite:false});
-  const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_PROJECTILES*TRAIL_POINTS);
+  const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_COSMETIC_PROJECTILES*TRAIL_POINTS);
   trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
   const trails=new Map<string,THREE.Vector3[]>();
   const fuseBadges=new Map<string,{sprite:THREE.Sprite;canvas:HTMLCanvasElement;texture:THREE.CanvasTexture;label:string;leader?:THREE.Line}>();
   const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;scene.remove(badge.sprite);if(badge.leader){scene.remove(badge.leader);badge.leader.geometry.dispose();}badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
   const updateProjectiles=(views:readonly ProjectileView[])=>{
-    const visible=views.slice(0,MAX_PROJECTILES), ids=new Set(visible.map(v=>v.id));
-    for(const id of trails.keys())if(!ids.has(id))trails.delete(id);
+    const ids=new Set(views.map(v=>v.id));
+    const trailIds=new Set(views.filter(v=>v.weapon==='pulse'&&v.state!=='attached').slice(0,MAX_COSMETIC_PROJECTILES).map(v=>v.id));
+    for(const id of trails.keys())if(!trailIds.has(id))trails.delete(id);
     for(const id of orientations.keys())if(!ids.has(id))orientations.delete(id);
-    for(const mesh of projectileMeshes.values())mesh.count=0;for(const mesh of outlines.values())mesh.count=0;flameMesh.count=0;
+    for(const [weapon,pool] of projectileMeshes){const count=views.filter(v=>v.weapon===weapon).length;pool.reserve(count);pool.mesh.count=0;const outline=outlines.get(weapon)!;outline.reserve(count);outline.mesh.count=0;}flameMesh.count=0;
     for(const id of fuseBadges.keys())if(!ids.has(id))releaseBadge(id);
     let trailIndex=0;
-    visible.forEach((p,i)=>{
+    views.forEach(p=>{
       tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.quaternion.copy(projectileOrientation(p,orientations.get(p.id)));orientations.set(p.id,tmp.quaternion.clone());tmp.scale.setScalar(p.radius);tmp.updateMatrix();
-      const projectile=projectileMeshes.get(p.weapon)!;projectile.setMatrixAt(projectile.count++,tmp.matrix);
-      const outline=outlines.get(p.weapon)!;tmp.scale.setScalar(p.radius*1.045);tmp.updateMatrix();outline.setMatrixAt(outline.count++,tmp.matrix);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
-      if(p.weapon==='pulse'){
+      const projectile=projectileMeshes.get(p.weapon)!.mesh;projectile.setMatrixAt(projectile.count++,tmp.matrix);
+      const outline=outlines.get(p.weapon)!.mesh;tmp.scale.setScalar(p.radius*1.045);tmp.updateMatrix();outline.setMatrixAt(outline.count++,tmp.matrix);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
+      if(trailIds.has(p.id)){
         flameMesh.setMatrixAt(flameMesh.count++,tmp.matrix);
         const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
         if(!history.length || history[history.length-1].distanceToSquared(current)>.006){history.push(current);if(history.length>TRAIL_POINTS)history.shift();}
@@ -163,9 +165,9 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
           const positions=badge.leader.geometry.getAttribute('position');positions.setXYZ(0,p.position.x,p.position.y,p.position.z);positions.setXYZ(1,badge.sprite.position.x,badge.sprite.position.y-.3,badge.sprite.position.z);positions.needsUpdate=true;
         }
         if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
-      }
+      }else releaseBadge(p.id);
     });
-    for(const mesh of projectileMeshes.values())mesh.instanceMatrix.needsUpdate=true;for(const mesh of outlines.values())mesh.instanceMatrix.needsUpdate=true;
+    for(const pool of projectileMeshes.values())pool.mesh.instanceMatrix.needsUpdate=true;for(const pool of outlines.values())pool.mesh.instanceMatrix.needsUpdate=true;
     flameMesh.instanceMatrix.needsUpdate=true;trailMesh.count=trailIndex;trailMesh.instanceMatrix.needsUpdate=true;
     if(trailMesh.instanceColor)trailMesh.instanceColor.needsUpdate=true;
   };
@@ -177,6 +179,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const tickGeometry = new THREE.BoxGeometry(.24,.035,.025);
   for(let i=0;i<4;i++) { const tick=new THREE.Mesh(tickGeometry,markerMaterial);tick.position.set(Math.cos(i*Math.PI/2)*.57,Math.sin(i*Math.PI/2)*.57,0);tick.rotation.z=i*Math.PI/2;marker.add(tick); }
   marker.renderOrder=20;marker.children.forEach(c=>c.renderOrder=20);scene.add(marker);marker.visible=false;
+  const trajectory=createTrajectoryOverlay(scene);
   const pulseMaterial = new THREE.MeshBasicMaterial({color:0xffbf68,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
   const pulse = new THREE.Mesh(new THREE.RingGeometry(.93,1,64),pulseMaterial);pulse.rotation.x=-Math.PI/2;scene.add(pulse);
   const flash = new THREE.PointLight(0xffa446,0,18,2);scene.add(flash);
@@ -190,19 +193,21 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const pointerUp=(e:PointerEvent)=> {
     pointers.delete(e.pointerId);
     const start=down;down=null;
-    if(!start || start.id!==e.pointerId || dragged || performance.now()-start.time>420 || !house)return;
+    if(!start || start.id!==e.pointerId || dragged || performance.now()-start.time>420)return;
     const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
-    const hit=raycaster.intersectObject(house,false)[0];
+    const hit=house?raycaster.intersectObject(house,false)[0]:undefined;
     // Surface coordinates are never snapped back to an old voxel center. Empty roof
     // holes continue the same aim ray to the next live surface or stable ground.
     const ground = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), new THREE.Vector3());
     const point = hit?.point ?? (ground && Math.abs(ground.x)<=27 && Math.abs(ground.z)<=22 ? ground : null);
     aimSurface=null;
-    if(hit?.instanceId!==undefined&&hit.face&&live[hit.instanceId]){
+    if(house&&hit?.instanceId!==undefined&&hit.face&&live[hit.instanceId]){
       const matrix=new THREE.Matrix4();house.getMatrixAt(hit.instanceId,matrix);matrix.premultiply(house.matrixWorld);
       const normal=hit.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(matrix)).normalize();
       aimSurface={position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:normal.x,y:normal.y,z:normal.z},voxelId:live[hit.instanceId].id};
+    }else if(point){
+      aimSurface={position:{x:point.x,y:point.y,z:point.z},normal:{x:0,y:1,z:0},voxelId:null};
     }
     if(point) options.onAim({x:point.x,y:point.y,z:point.z});
   };
@@ -224,9 +229,9 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     // Physics owns bounded fixed substeps; cosmetic effects keep their small step.
     options.onFrame?.(elapsed*timeScale);
     const dt=Math.min(elapsed,.045)*timeScale;
-    chips=chips.filter(c=>c.age<c.life);
+    chips=advanceEffectAges(chips,dt);
     chips.forEach((c,i)=>{
-      c.age+=dt;c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
+      c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
       if(c.p.y<c.size*.5){c.p.y=c.size*.5;c.v.y=Math.abs(c.v.y)*.24;c.v.x*=.82;c.v.z*=.82;c.spin.multiplyScalar(.75);}
       c.rotation.addScaledVector(c.spin,dt);
       tmp.position.copy(c.p);tmp.rotation.set(c.rotation.x,c.rotation.y,c.rotation.z);
@@ -234,16 +239,21 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
       debris.setMatrixAt(i,tmp.matrix);debris.setColorAt(i,color.setHex(c.color));
     });
     debris.count=chips.length;if(chips.length){debris.instanceMatrix.needsUpdate=true;if(debris.instanceColor)debris.instanceColor.needsUpdate=true;}
-    pulseAge+=dt;const active=pulseAge<.65; pulse.visible=active;
-    if(active){pulse.scale.setScalar(1+pulseAge*16);pulseMaterial.opacity=(1-pulseAge/.65)*.7;}
+    pulseAge+=dt;const active=pulseAge<PULSE_LIFETIME; pulse.visible=active;
+    if(active){pulse.scale.setScalar(1+pulseAge*16);pulseMaterial.opacity=(1-pulseAge/PULSE_LIFETIME)*.7;}
     flash.intensity=Math.max(0,1-pulseAge/.28)*35;
     if(target){marker.position.set(target.x,target.y,target.z);marker.quaternion.copy(camera.quaternion);marker.position.addScaledVector(new THREE.Vector3().subVectors(camera.position,marker.position).normalize(),.65);}
+    trajectory.faceCamera(camera.quaternion);
     renderer.render(scene,camera);frame=requestAnimationFrame(animate);
   };
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
     setProjectiles:updateProjectiles,
-    getAimSurface(){return aimSurface&&live.some(v=>v.id===aimSurface!.voxelId)?{...aimSurface,position:{...aimSurface.position},normal:{...aimSurface.normal}}:null;},
+    setTrajectory:trajectory.setPreview,
+    clearEffects(){({chips,pulseAge}=clearedVisualEffects(chips,pulseAge));debris.count=0;pulse.visible=false;flash.intensity=0;},
+    hasActiveEffects(){return !disposed&&hasActiveVisualEffects(pulseAge,chips);},
+    getRenderedProjectileCount(){return [...projectileMeshes.values()].reduce((count,pool)=>count+pool.mesh.count,0);},
+    getAimSurface(){return copyLiveAimSurface(aimSurface,live);},
     getLaunchOrigin(point){
       const direction=new THREE.Vector3(point.x,point.y,point.z).sub(camera.position).normalize();
       const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
@@ -277,6 +287,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     },
     setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

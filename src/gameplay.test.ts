@@ -1,14 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {toolAvailable,nextGoal} from './gameplay.js';
-test('grenade starts unlocked, distinct tools follow permanent research and free mode',()=>{
- assert.equal(toolAvailable('charge',0,false),true);
- assert.equal(toolAvailable('pulse',39,false),false);assert.equal(toolAvailable('pulse',40,false),true);
- assert.equal(toolAvailable('shock',89,false),false);assert.equal(toolAvailable('shock',90,false),true);
- assert.equal(toolAvailable('shock',0,true),true);
+test('grenade starts unlocked and free mode does not bypass permanent weapon research',()=>{
+ for(const free of [false,true]){
+  assert.equal(toolAvailable('charge',0,free),true);
+  assert.equal(toolAvailable('pulse',39,free),false);assert.equal(toolAvailable('pulse',40,free),true);
+  assert.equal(toolAvailable('shock',89,free),false);assert.equal(toolAvailable('shock',90,free),true);
+ }
 });
-test('next goal stays concrete before tools and points to actual next map after completion',()=>{
- assert.match(nextGoal(0,false,'courtyard'),/40/);assert.match(nextGoal(40,false,'courtyard'),/90/);
- assert.match(nextGoal(90,false,'courtyard'),/70%/);
- assert.match(nextGoal(140,true,'courtyard'),/仓库/);assert.match(nextGoal(280,true,'warehouse'),/自由/);
+test('next goal follows research gates rather than building completion',()=>{
+ for(const complete of [false,true]){
+  assert.match(nextGoal(0,complete,'courtyard'),/40/);assert.match(nextGoal(40,complete,'courtyard'),/90/);
+  assert.match(nextGoal(90,complete,'courtyard'),/120/);assert.match(nextGoal(119,complete,'courtyard'),/仓库/);
+  assert.match(nextGoal(120,complete,'courtyard'),/仓库/);assert.doesNotMatch(nextGoal(120,complete,'courtyard'),/70%|100%/);
+ }
+ assert.match(nextGoal(120,false,'warehouse'),/实验|自由|重试/);
 });

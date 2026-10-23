@@ -6,6 +6,18 @@ import type { ProjectileView } from './contracts';
 const base:ProjectileView={id:'test',position:{x:0,y:0,z:0},radius:.2,weapon:'pulse',age:1,fuseRemaining:null};
 test('rocket nose follows real velocity and stays stable when stopped',()=>{const q=projectileOrientation({...base,velocity:{x:1,y:2,z:3}});assert.ok(new THREE.Vector3(0,1,0).applyQuaternion(q).distanceTo(new THREE.Vector3(1,2,3).normalize())<1e-6);assert.ok(projectileOrientation({...base,velocity:{x:0,y:0,z:0}},q).equals(q));});
 test('grenade follows physics rotation, package front follows surface normal',()=>{const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.7);assert.ok(projectileOrientation({...base,weapon:'charge',rotation:q}).equals(q));const p=projectileOrientation({...base,weapon:'shock',normal:{x:1,y:0,z:0}});assert.ok(new THREE.Vector3(0,0,1).applyQuaternion(p).distanceTo(new THREE.Vector3(1,0,0))<1e-6);});
+test('a launched package follows its real physics body quaternion instead of an absent surface normal',()=>{
+  const rotation=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),.8);
+  assert.ok(projectileOrientation({...base,weapon:'shock',state:'flying',rotation}).equals(rotation));
+});
+test('all attached weapons orient their authored contact axis to the actual surface normal',()=>{
+  const normal={x:1,y:0,z:0};
+  for(const weapon of ['charge','pulse','shock'] as const){
+    const orientation=projectileOrientation({...base,weapon,state:'attached',normal,rotation:new THREE.Quaternion()});
+    const axis=weapon==='shock'?new THREE.Vector3(0,0,1):new THREE.Vector3(0,1,0);
+    assert.ok(axis.applyQuaternion(orientation).distanceTo(new THREE.Vector3(1,0,0))<1e-6,weapon);
+  }
+});
 test('three authored silhouettes have bounded collider-compatible primary envelopes',()=>{const sizes=[];for(const w of ['charge','pulse','shock'] as const){const g=createWeaponGeometry(w);g.computeBoundingBox();const size=g.boundingBox!.getSize(new THREE.Vector3());sizes.push(size.toArray().join(','));assert.ok(Math.max(size.x,size.y,size.z)<=2.21);assert.ok(g.getAttribute('color'));g.dispose();}assert.equal(new Set(sizes).size,3);});
 test('rocket uses collider envelope for a wider contrasted silhouette without extending its hit proxy',()=>{const g=createWeaponGeometry('pulse');g.computeBoundingBox();const size=g.boundingBox!.getSize(new THREE.Vector3());assert.ok(size.x>=1.3);const pos=g.getAttribute('position');for(let i=0;i<pos.count;i++)assert.ok(Math.hypot(pos.getX(i),pos.getY(i),pos.getZ(i))<=1.1);g.dispose();});
 test('attached annotation is a depth-free overlay with a camera-plane offset, not a relocated body',async()=>{const { ATTACHED_ANNOTATION, attachedAnnotationPosition }=await import('./weapon-models');assert.equal(ATTACHED_ANNOTATION.depthTest,false);assert.equal(ATTACHED_ANNOTATION.depthWrite,false);assert.ok(ATTACHED_ANNOTATION.renderOrder>20);const camera=new THREE.PerspectiveCamera(42,1.6,.2,250);camera.position.set(27,23,32);camera.lookAt(0,4.5,0);camera.updateMatrixWorld();const anchor={x:0,y:4,z:0};const label=attachedAnnotationPosition(anchor,camera.quaternion);const a=new THREE.Vector3(anchor.x,anchor.y,anchor.z).project(camera),b=label.clone().project(camera);assert.ok(b.x>a.x);assert.ok(b.y>a.y);assert.ok(Math.abs(b.x)<1&&Math.abs(b.y)<1);assert.deepEqual(anchor,{x:0,y:4,z:0});});

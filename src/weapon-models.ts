@@ -25,8 +25,8 @@ export function createWeaponGeometry(weapon:WeaponId):THREE.BufferGeometry {
  const merged=mergeGeometries(parts);for(const p of parts)p.dispose();return merged;
 }
 export function projectileOrientation(p:ProjectileView,previous=new THREE.Quaternion()):THREE.Quaternion {
- if(p.weapon==='charge'&&p.rotation)return new THREE.Quaternion(p.rotation.x,p.rotation.y,p.rotation.z,p.rotation.w).normalize();
- const v=p.weapon==='shock'?p.normal:p.velocity;
+ if(p.state!=='attached'&&(p.weapon==='charge'||p.weapon==='shock'&&p.state==='flying')&&p.rotation)return new THREE.Quaternion(p.rotation.x,p.rotation.y,p.rotation.z,p.rotation.w).normalize();
+ const v=p.state==='attached'||p.weapon==='shock'?p.normal:p.velocity;
  if(!v||![v.x,v.y,v.z].every(Number.isFinite)||v.x*v.x+v.y*v.y+v.z*v.z<1e-10)return previous.clone();
  return new THREE.Quaternion().setFromUnitVectors(p.weapon==='shock'?new THREE.Vector3(0,0,1):new THREE.Vector3(0,1,0),new THREE.Vector3(v.x,v.y,v.z).normalize());
 }

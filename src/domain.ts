@@ -1,4 +1,4 @@
-import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot, MapId, ObjectiveState } from './contracts.js';
+import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot, MapId, ObjectiveState, RoundState, RoundResult } from './contracts.js';
 
 // Intentionally fictional game units, not a physical blast simulation.
 const MATERIALS: Record<MaterialId, { hp: number; colors: number[] }> = {
@@ -136,14 +136,27 @@ export function createWorld(): WorldModel {
  let mapId:MapId='courtyard', original=maps.courtyard;
  let voxels: readonly Voxel[]=Object.freeze([...original]); let epoch=1, destroyedCount=0, research=0;
  const completedMaps=new Set<MapId>();const processed=new Set<string>();
+ let round:RoundState={budget:6,used:0,startResearch:0,startDestroyed:0,settled:false};
  const buildingTotal=()=>original.filter(v=>v.group==='house').length;
  const buildingDestroyed=()=>buildingTotal()-voxels.filter(v=>v.group==='house').length;
- const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapId==='courtyard'?'木屋拆除':'双跨仓库拆除',total,destroyed,fraction:destroyed/total,goal:.7,complete:destroyed/total>=.7,completedMaps:[...completedMaps]};};
+ // Credit the cumulative fraction of each building cell's health lost, including
+ // cells removed by support loss. Rounding the cumulative total, not each hit,
+ // makes tiny damage count without allowing repeated fractional-hit farming.
+ const buildingResearch=()=>Math.min(200,Math.ceil((buildingDestroyed()+voxels.reduce((sum,v)=>sum+(v.group==='house'?1-v.hp/v.maxHp:0),0))*200/buildingTotal()));
+ const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapId==='courtyard'?'木屋拆除':'双跨仓库拆除',total,destroyed,fraction:destroyed/total,goal:1,complete:destroyed===total,completedMaps:[...completedMaps]};};
+ function recordShot():boolean {
+  if(round.settled||round.used>=round.budget)return false;
+  round.used++;return true;
+ }
+ function finishRound():RoundResult {
+  round.settled=true;
+  return {used:round.used,budget:round.budget,destruction:getObjective().fraction,researchEarned:research-round.startResearch};
+ }
  const result=(accepted=false):DamageResult=>({accepted,removed:[],detached:[],newlyDestroyed:0,researchEarned:0,destruction:destroyedCount/original.length});
  function damage(command:DamageCommand):DamageResult {
-  if(!command||typeof command.id!=='string'||command.id.length===0||command.id.length>160||command.epoch!==epoch||processed.has(command.id)||!Object.hasOwn(TOOLS,command.weapon)||!Number.isFinite(command.power)||command.power<=0||command.power>3||!command.target||![command.target.x,command.target.y,command.target.z].every(n=>Number.isFinite(n)&&Math.abs(n)<=10000)) return result();
+  if(round.settled||!command||typeof command.id!=='string'||command.id.length===0||command.id.length>160||command.epoch!==epoch||processed.has(command.id)||!Object.hasOwn(TOOLS,command.weapon)||!Number.isFinite(command.power)||command.power<=0||command.power>3||!command.target||![command.target.x,command.target.y,command.target.z].every(n=>Number.isFinite(n)&&Math.abs(n)<=10000)) return result();
   processed.add(command.id);
-  const priorBase=Math.floor(buildingDestroyed()*200/buildingTotal());
+  const priorBase=buildingResearch();
   const tool=TOOLS[command.weapon], radius=tool.radius*Math.sqrt(command.power), removed:Voxel[]=[], survivors:Voxel[]=[];
   for(const v of voxels){
    const distance=Math.hypot(v.position.x-command.target.x,v.position.y-command.target.y,v.position.z-command.target.z);
@@ -157,16 +170,15 @@ export function createWorld(): WorldModel {
    voxels=Object.freeze(survivors.filter(v=>{if(supported.has(v.id))return true;detached.push(v);return false;}));
   } else voxels=Object.freeze(survivors);
   const newlyDestroyed=removed.length+detached.length;destroyedCount+=newlyDestroyed;
-  let researchEarned=Math.floor(buildingDestroyed()*200/buildingTotal())-priorBase;
-  if(!completedMaps.has(mapId)&&getObjective().complete){completedMaps.add(mapId);researchEarned+=80;}
+  const researchEarned=command.reward===false?0:buildingResearch()-priorBase;
   research+=researchEarned;
   return {accepted:true,removed:removed.map(clone),detached:detached.map(clone),newlyDestroyed,researchEarned,destruction:destroyedCount/original.length};
  }
- function getSnapshot():WorldSnapshot{return {schemaVersion:3,mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
+ function getSnapshot():WorldSnapshot{return {schemaVersion:4,round:{...round},mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
  function restore(snapshot:WorldSnapshot):boolean {
   if(!snapshot||typeof snapshot!=='object')return false;
   const legacy=snapshot.schemaVersion===undefined, old=legacy||snapshot.schemaVersion===2;
-  if(!old&&snapshot.schemaVersion!==3)return false;
+  if(!old&&snapshot.schemaVersion!==3&&snapshot.schemaVersion!==4)return false;
   const nextMap:MapId=old?'courtyard':snapshot.mapId!;
   if(nextMap!=='courtyard'&&nextMap!=='warehouse')return false;
   const bases=maps[nextMap], originals=new Map(bases.map(v=>[v.id,v]));
@@ -194,16 +206,22 @@ export function createWorld(): WorldModel {
   if(supportedIds(next).size!==next.length)return false;
   if(legacy)next.push(...bases.filter(v=>v.group!=='house'));
   const total=bases.filter(v=>v.group==='house').length;
-  const currentComplete=(total-next.filter(v=>v.group==='house').length)/total>=.7;
-  if(old&&currentComplete&&!completed.includes('courtyard'))completed.push('courtyard');
-  if(!old&&currentComplete&&!completed.includes(nextMap))return false;
-  // Legacy rewards are retained exactly; migration does not award a new milestone.
-  mapId=nextMap;original=bases;voxels=Object.freeze(next);epoch=Math.max(epoch,snapshot.epoch)+1;destroyedCount=original.length-next.length;research=snapshot.research;completedMaps.clear();for(const id of completed)completedMaps.add(id);processed.clear();return true;
+  const nextBuildingDestroyed=total-next.filter(v=>v.group==='house').length;
+  let nextRound:RoundState={budget:6,used:0,startResearch:snapshot.research,startDestroyed:nextBuildingDestroyed,settled:false};
+  if(snapshot.schemaVersion===4){
+   const saved=snapshot.round;
+   if(!saved||saved.budget!==6||!Number.isSafeInteger(saved.used)||saved.used<0||saved.used>saved.budget||typeof saved.settled!=='boolean'||!Number.isSafeInteger(saved.startResearch)||saved.startResearch<0||saved.startResearch>snapshot.research||!Number.isSafeInteger(saved.startDestroyed)||saved.startDestroyed<0||saved.startDestroyed>nextBuildingDestroyed)return false;
+   nextRound={budget:saved.budget,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled};
+  }
+  // Historical rewards and completion metadata are preserved, never re-awarded
+  // or inferred from a threshold. Only an intentional retry/map change refills
+  // a v4 round; older saves receive their first finite-ammunition round here.
+  mapId=nextMap;original=bases;voxels=Object.freeze(next);epoch=Math.max(epoch,snapshot.epoch)+1;destroyedCount=original.length-next.length;research=snapshot.research;round=nextRound;completedMaps.clear();for(const id of completed)completedMaps.add(id);processed.clear();return true;
  }
- function reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;processed.clear();}
+ function reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;round={budget:6,used:0,startResearch:research,startDestroyed:0,settled:false};processed.clear();}
  function loadMap(next:MapId,free=false){
-  if(next!=='courtyard'&&next!=='warehouse'||next==='warehouse'&&!free&&!completedMaps.has('courtyard'))return false;
+  if(next!=='courtyard'&&next!=='warehouse'||next==='warehouse'&&!free&&research<120)return false;
   mapId=next;original=maps[next];reset();return true;
  }
- return {get epoch(){return epoch;},getVoxels:()=>voxels,damage,getSnapshot,getObjective,loadMap,restore,reset};
+ return {get epoch(){return epoch;},getVoxels:()=>voxels,getRound:()=>({...round}),recordShot,finishRound,damage,getSnapshot,getObjective,loadMap,restore,reset};
 }

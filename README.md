@@ -1,17 +1,19 @@
-# 核平模拟器：庭院拆除挑战 v0.3
+# 核平模拟器：有限弹药破坏实验 v0.4
 
 A fictional, unoccupied Three.js destruction sandbox with Rapier projectile physics.
 
 ## Run
 
 Node 22+: `npm ci`, then `npm run dev -- --port 5191`.
-`npm test` runs 43 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
+`npm test` runs 75 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
 
 Fully extract the browser ZIP, then run START-WINDOWS.bat with Python 3 installed. It opens a loopback HTTP server and the default browser. macOS/Linux: `python3 serve.py`. Keep the server window open. Direct file:// opening is unsupported.
 
-Drag to orbit, wheel to zoom, click a live object to aim. Start with a spinning grenade (key 1): throw, bounce, then explode after three simulated seconds. Earn 40 research to unlock the direction-oriented contact rocket (key 2), then 90 to unlock the attached remote package (key 3). Place packages on live voxel surfaces and press 遥控引爆; they never use an automatic fuse and cannot attach to background ground. Pause freezes physics and fuses; slow motion slows both. Rockets can enter previously opened roof holes.
+Drag to orbit, wheel to zoom, click to aim. Main mode gives six shared ammunition units per round. Partial building damage earns research; deliberate retry restores ammunition while preserving research. Unlock rocket at 40, remote package at 90 and warehouse at 120 research. There is no forced 70% or 100% pass, automatic result modal or automatic explosion pause.
 
-Demolish 70% of the named building, not trees or fences. Courtyard completion opens a result screen and unlocks the warehouse. Retry retains earned unlocks. Free mode provides all tools while isolating its damage and rewards from saved growth. Settings also offers audio controls. Existing browser saves migrate without losing earned research.
+Choose direct placement, real-physics trajectory preview with confirmation, or quick fire. Placement arms the selected tool for manual triggering. Launched tools can use automatic collision/fuse behavior or remain remotely armed. Preview does not spend ammunition; confirmation does. The manual detonator triggers all armed objects at their current positions. Explicit round ending triggers any armed remainder, waits for airborne rounds and visible effects, then shows results. Reset cancels in-flight ordnance and pending results.
+
+Free mode selects either building and has unlimited ammunition/placement counts, but only tools unlocked in main mode are available. It grants no research and cannot overwrite the saved main round. Instanced bodies grow dynamically rather than hiding objects beyond an arbitrary limit. Existing saves migrate with earned research intact; current saves preserve spent ammunition across reload.
 
 ## Current boundaries
 

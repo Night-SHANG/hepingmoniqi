@@ -1,3 +1,16 @@
+# E0 v0.4 finite-ammunition experiments
+
+Main mode: six ammunition units per round, partial building-health damage earns research, retry preserves research and refills ammunition. Tools unlock at40/90 research; warehouse at120. No mandatory70% or100% pass. No automatic pause or modal at a destruction threshold.
+
+Choose direct placement, actual Rapier trajectory preview plus confirmation, or quick fire. Launched tools support automatic or remote triggers. All placed tools wait for a manual trigger. Explicit ending triggers remaining armed objects once and waits for airborne objects and visible effects before presenting results.
+
+Free mode selects all existing maps with unlimited ammunition and dynamic placed-object pools, while respecting saved main-mode tool unlocks and awarding no research. Current saves preserve spent ammunition; older saves retain research. There is no eight-package or48-rendered-object gameplay cap.
+
+Local75 tests and production build pass. Actual v0.4 browser verification pending; earlier release evidence below does not substitute for this version's runtime tests.
+
+---
+## Previous release evidence
+
 # E0 v0.3 courtyard and warehouse progression
 
 ## Implemented

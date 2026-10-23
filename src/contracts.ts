@@ -4,13 +4,18 @@ export type MaterialId = 'wood' | 'stone' | 'roof' | 'glass' | 'metal' | 'foliag
 /** Stable IDs: pulse=rocket, charge=grenade, shock=remote package. */
 export type WeaponId = 'pulse' | 'charge' | 'shock';
 export type MapId = 'courtyard' | 'warehouse';
-export interface AimSurface { position:Vec3; normal:Vec3; voxelId:number; }
+export interface AimSurface { position:Vec3; normal:Vec3; voxelId:number|null; }
 export interface ObjectiveState { mapId:MapId; title:string; total:number; destroyed:number; fraction:number; goal:number; complete:boolean; completedMaps:MapId[]; }
 export interface Voxel { id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
-export interface DamageCommand { id: string; epoch: number; target: Vec3; weapon: WeaponId; power: number; }
+export interface DamageCommand { reward?:boolean; id: string; epoch: number; target: Vec3; weapon: WeaponId; power: number; }
 export interface DamageResult { accepted: boolean; removed: Voxel[]; detached: Voxel[]; newlyDestroyed: number; researchEarned: number; destruction: number; }
-export interface WorldSnapshot { schemaVersion?: 2 | 3; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
+export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
+export interface RoundState { budget:number; used:number; startResearch:number; startDestroyed:number; settled:boolean; }
+export interface RoundResult { used:number; budget:number; destruction:number; researchEarned:number; }
 export interface WorldModel {
+ getRound():RoundState;
+ recordShot():boolean;
+ finishRound():RoundResult;
  readonly epoch: number;
  getObjective():ObjectiveState;
  loadMap(mapId:MapId, free?:boolean):boolean;
@@ -23,6 +28,10 @@ export interface WorldModel {
 export interface SceneApi {
  setVoxels(voxels: readonly Voxel[]): void;
  setProjectiles(projectiles: readonly ProjectileView[]): void;
+ setTrajectory(preview:TrajectoryPreview|null):void;
+ hasActiveEffects():boolean;
+ clearEffects():void;
+ getRenderedProjectileCount():number;
  getLaunchOrigin(target: Vec3): Vec3;
  getAimSurface(): AimSurface | null;
  playDamage(result: DamageResult, target: Vec3, weapon: WeaponId): void;
@@ -39,11 +48,14 @@ export interface SceneOptions { onAim: (target: Vec3) => void; onReady?: () => v
 
 /** Rapier owns ball motion/collisions. Game units only, not real-world weapons. */
 export type DetonationMode = 'impact' | 'timed';
-export interface ProjectileCommand { id: string; epoch: number; origin: Vec3; target: Vec3; weapon: WeaponId; power: number; }
-export interface ProjectileView { id: string; position: Vec3; radius: number; weapon: WeaponId; age: number; fuseRemaining: number | null; velocity?:Vec3; rotation?:{x:number;y:number;z:number;w:number}; state?:'flying'|'attached'; normal?:Vec3; hostVoxelId?:number; }
+export type TriggerMode = 'automatic' | 'remote';
+export interface TrajectoryPreview { points:Vec3[]; impact:Vec3|null; duration:number; }
+export interface ProjectileCommand { trigger?:TriggerMode; id: string; epoch: number; origin: Vec3; target: Vec3; weapon: WeaponId; power: number; }
+export interface ProjectileView { id: string; position: Vec3; radius: number; weapon: WeaponId; age: number; fuseRemaining: number | null; velocity?:Vec3; rotation?:{x:number;y:number;z:number;w:number}; trigger?:TriggerMode; state?:'flying'|'attached'; normal?:Vec3; hostVoxelId?:number|null; }
 export interface Detonation { id: string; epoch: number; position: Vec3; weapon: WeaponId; power: number; reason: 'impact' | 'timer' | 'remote'; age: number; }
-export interface AttachedCommand { id:string; epoch:number; surface:AimSurface; power:number; }
+export interface AttachedCommand { weapon?:WeaponId; id:string; epoch:number; surface:AimSurface; power:number; }
 export interface ProjectilePhysics {
+ preview(command:ProjectileCommand):TrajectoryPreview;
  attach(command:AttachedCommand):boolean;
  detonateAttached():Detonation[];
  syncVoxels(voxels: readonly Voxel[], epoch: number): void;

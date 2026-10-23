@@ -1,4 +1,4 @@
-import type {WeaponId,MapId,Loadout} from './contracts';
+import type {WeaponId,MapId,Loadout,TriggerMode} from './contracts';
 /** Free experiments use saved main research; they never bypass weapon locks. */
 export function toolAvailable(id:WeaponId,research:number,_free:boolean):boolean{return id==='charge'||research>=(id==='pulse'?40:90);}
 export function nextGoal(research:number,_complete:boolean,map:MapId):string{
@@ -24,4 +24,21 @@ export function validateLoadout(loadout:Loadout,research:number):boolean{
   used+=count*weaponCost(id);
  }
  return used>0&&used<=capacityForResearch(research);
+}
+
+/** Every newly reached reward, including independent rewards at the same gate. */
+export function crossedUnlocks(startResearch:number,endResearch:number):string[]{
+ const milestones:ReadonlyArray<readonly [number,string]>=[
+  [40,'火箭弹'],[90,'遥控爆破包'],[120,'双跨仓库'],[120,'携带容量 6 → 8 格']
+ ];
+ return milestones.filter(([research])=>startResearch<research&&endResearch>=research).map(([,label])=>label);
+}
+/** Placement always uses remote detonation; remote packages cannot be launched. */
+export function deliveryPolicy(weapon:WeaponId,delivery:'quick'|'place',requestedTrigger:TriggerMode):{
+ delivery:'quick'|'place';trigger:TriggerMode;canLaunch:boolean;canChooseTrigger:boolean;
+}{
+ const canLaunch=weapon!=='shock';
+ const effectiveDelivery=canLaunch?delivery:'place';
+ const canChooseTrigger=effectiveDelivery==='quick';
+ return {delivery:effectiveDelivery,trigger:canChooseTrigger?requestedTrigger:'remote',canLaunch,canChooseTrigger};
 }

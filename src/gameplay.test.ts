@@ -42,3 +42,37 @@ test('loadout validation rejects empty, overbudget, locked and malformed item co
  assert.equal(validateLoadout({charge:0,pulse:1,shock:0},40),true);
  assert.equal(validateLoadout({charge:0,pulse:0,shock:1},90),true);
 });
+
+// Dropping a threshold, duplicating the 120 reward, or inventing a higher tier
+// must fail these assertions against the complete, player-visible reward list.
+test('crossed unlocks includes every milestone and the distinct capacity reward',async()=>{
+ const {crossedUnlocks}=await import('./gameplay.js');
+ assert.equal(typeof crossedUnlocks,'function');
+ assert.deepEqual(crossedUnlocks(0,120),['火箭弹','遥控爆破包','双跨仓库','携带容量 6 → 8 格']);
+ assert.deepEqual(crossedUnlocks(39,40),['火箭弹']);
+ assert.deepEqual(crossedUnlocks(89,90),['遥控爆破包']);
+ assert.deepEqual(crossedUnlocks(119,120),['双跨仓库','携带容量 6 → 8 格']);
+ assert.deepEqual(crossedUnlocks(40,999999),['遥控爆破包','双跨仓库','携带容量 6 → 8 格']);
+});
+test('crossed unlocks does not repeat earned rewards or report noncrossings',async()=>{
+ const {crossedUnlocks}=await import('./gameplay.js');
+ assert.equal(typeof crossedUnlocks,'function');
+ for(const [start,end] of [[0,0],[0,39],[40,89],[90,119],[120,120],[120,999999],[120,0]])assert.deepEqual(crossedUnlocks(start,end),[],`${start} to ${end}`);
+});
+// Allowing launch/automatic on packages, or stripping a quick tool's requested
+// trigger, must fail the exhaustive legal delivery/trigger combinations below.
+test('remote package always uses placement and remote trigger',async()=>{
+ const {deliveryPolicy}=await import('./gameplay.js');
+ assert.equal(typeof deliveryPolicy,'function');
+ for(const delivery of ['quick','place'] as const)for(const trigger of ['automatic','remote'] as const){
+  assert.deepEqual(deliveryPolicy('shock',delivery,trigger),{delivery:'place',trigger:'remote',canLaunch:false,canChooseTrigger:false});
+ }
+});
+test('launchable tools retain quick trigger choice and force remote placement',async()=>{
+ const {deliveryPolicy}=await import('./gameplay.js');
+ assert.equal(typeof deliveryPolicy,'function');
+ for(const weapon of ['charge','pulse'] as const)for(const trigger of ['automatic','remote'] as const){
+  assert.deepEqual(deliveryPolicy(weapon,'quick',trigger),{delivery:'quick',trigger,canLaunch:true,canChooseTrigger:true});
+  assert.deepEqual(deliveryPolicy(weapon,'place',trigger),{delivery:'place',trigger:'remote',canLaunch:true,canChooseTrigger:false});
+ }
+});

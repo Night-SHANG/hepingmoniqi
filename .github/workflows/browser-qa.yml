@@ -18,9 +18,9 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: google-chrome --version
-      - name: Focused v0.5 responsive layout acceptance
+      - name: Focused v0.5.1 feedback acceptance
         env:
           QA_BROWSER_CHANNEL: chrome
         run: |
           python3 -m http.server 5191 --bind 127.0.0.1 --directory dist >/tmp/heping-server.log 2>&1 &
-          node scripts/v05-layout-check.mjs
+          node scripts/v051-browser-check.mjs

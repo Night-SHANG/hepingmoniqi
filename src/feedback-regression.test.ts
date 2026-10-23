@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createWorld} from './domain.js';
+import {crossedUnlocks} from './gameplay.js';
+
+test('capacity crossing preserves spent inventory; retry copies exact underfilled loadout at eight slots',()=>{
+ const world=createWorld(), seed=world.getSnapshot();
+ seed.research=119;
+ assert.equal(world.restore(seed),true,'native-only fixture is a valid saved world');
+ const loadout={charge:2,pulse:0,shock:0};
+ assert.equal(world.startRound('courtyard',loadout),true);
+ const initial=world.getSnapshot();
+ assert.equal(world.getRound().budget,6);
+ assert.equal(world.recordShot('charge'),true);
+ const target=world.getVoxels().find(v=>v.group==='house'&&v.position.y<3)!;
+ const damage=world.damage({id:'capacity-crossing',epoch:world.epoch,target:target.position,weapon:'charge',power:1});
+ assert.equal(damage.accepted,true);assert.ok(damage.researchEarned>0);
+ const damaged=world.getSnapshot();
+ assert.ok(damaged.research>=120);assert.equal(damaged.round!.budget,6);
+ assert.deepEqual(damaged.round!.remaining,{charge:1,pulse:0,shock:0});
+ assert.deepEqual(crossedUnlocks(119,damaged.research),['双跨仓库','携带容量 6 → 8 格']);
+ const restored=createWorld();assert.equal(restored.restore(damaged),true);
+ assert.deepEqual(restored.getRound(),damaged.round,'reload must not refill spent stock after crossing');
+ world.finishRound();
+ const retryLoadout={...world.getRound().loadout!};
+ assert.equal(world.startRound('courtyard',retryLoadout),true);
+ const retried=world.getSnapshot();
+ assert.equal(retried.research,damaged.research);assert.equal(retried.round!.budget,8);
+ assert.equal(retried.round!.used,0);assert.equal(retried.round!.settled,false);
+ assert.deepEqual(retried.round!.loadout,loadout);assert.deepEqual(retried.round!.remaining,loadout);
+ assert.deepEqual(retried.voxels,initial.voxels);assert.equal(retried.destroyedCount,0);
+ assert.ok(retried.epoch>damaged.epoch);
+ retryLoadout.charge=8;assert.deepEqual(world.getRound().loadout,loadout,'retry input is copied, never aliased');
+});

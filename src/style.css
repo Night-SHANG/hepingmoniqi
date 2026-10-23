@@ -16,3 +16,16 @@
 @media(max-width:650px){.console-main{grid-template-columns:1fr;gap:8px}.experiment-controls{grid-column:1/-1;width:100%;grid-template-columns:1fr 1fr;gap:5px 10px}.segmented-control button{min-height:44px;font-size:12px}.control-group>span{font-size:10px}.control-note{font-size:10px;min-height:15px}.action-buttons{grid-column:1/-1;min-height:44px}.action-buttons>button{min-height:44px}.action-buttons #fire small{display:inline;margin-left:8px}.aim-hint{bottom:335px}.capacity-section #capacity-note{font-size:11px}.result-unlocks ul{gap:3px 10px}.power input{height:20px}.power{padding-top:0}.console{bottom:24px}.weapon{min-height:64px}.console-status{margin-bottom:5px}}
 
 .capacity-title{display:flex;align-items:center;gap:5px}#capacity-help{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:4px;color:#b9e3ff;background:#12385d;border:1px solid #4889be;border-radius:50%;font-size:20px}#capacity-dialog{max-height:calc(100dvh - 24px);overflow:auto}#capacity-dialog .capacity-upgrades li{gap:14px;align-items:center;line-height:1.7}#capacity-dialog .capacity-upgrades span{color:#c4e0f5}#capacity-dialog .capacity-upgrades b{color:#ffbd55;white-space:nowrap}#capacity-dialog .done{width:100%;margin-top:18px;min-height:44px}
+/* Capacity help must retain both dismiss actions in compact landscape. */
+#capacity-dialog .close{position:absolute;top:8px;right:8px;float:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+#capacity-dialog .eyebrow,#capacity-dialog h2{padding-right:36px}
+@media(max-height:450px){
+ #capacity-dialog{padding:15px 20px;max-height:calc(100dvh - 24px)}
+ #capacity-dialog h2{font-size:23px;line-height:1.3;margin:6px 0 8px}
+ #capacity-dialog .eyebrow{font-size:8px;line-height:1.3}
+ #capacity-dialog p{font-size:10px;line-height:1.6}
+ #capacity-dialog .capacity-upgrades{gap:6px;margin:11px 0}
+ #capacity-dialog .capacity-upgrades li{padding:7px 10px;line-height:1.6;font-size:11px}
+ #capacity-dialog .capacity-upgrades b{font-size:11px}
+ #capacity-dialog .done{margin-top:11px;padding:9px 15px;min-height:44px;position:sticky;bottom:0}
+}

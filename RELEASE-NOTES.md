@@ -1,23 +1,29 @@
-# E0 first-playable release notes
-
-Runtime revision: f4e0dcd7a0f24b6308766b47b6345c3aaef6a4cd.
-Verification: https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39893173987
+# E0 v0.2 physical-projectile update
 
 ## Implemented
-One 1096-voxel cottage in a landscaped courtyard. Three fictional destruction tools; local damage and support-connectivity collapse; permanent research and tool unlocks; reset retaining growth; separate sandbox; orbit camera and short-click aiming; pause/slow motion; browser-local saving; CC0 audio with mute and bounded overlap. Dark-blue/orange interface follows the supplied visual direction, without claiming the concept artwork's detail level.
+- Visible Rapier rigid-body projectiles, gravity and continuous collision detection. Aiming determines the initial flight path only; detonation uses the body's actual position.
+- Pulse/shock detonate on contact. Delayed charges bounce and detonate after three simulated seconds from launch. Pause freezes both motion and fuse; quarter-speed slows both.
+- Destruction removes live colliders. Repeated shots can pass through missing roof geometry and collide lower down.
+- 1897 authoritative voxels: cottage, trees, fences, planters, workbench, crates and logs. Per-object support-collapse prevents nearby props from supporting one another accidentally.
+- Legacy cottage saves migrate to the expanded courtyard without losing damage or earned research. Reset and sandbox transitions invalidate in-flight rounds.
+- Bounded active-projectile and solver budgets; finite lifetime for misses. Low-frame-rate timing regression fixed with bounded fixed-step catchup and hidden-tab clock reset.
+- Bundled licensed Chinese UI font subset avoids missing glyphs on systems without Chinese fonts.
 
-## Verified
-- 10 domain tests and TypeScript/production build passed.
-- Real Chromium WebGL canvas: 835 quantized colors across 20,334 bright center-region samples.
-- Pointer drag did not aim or fire. An actual pointer-selected shot removed 9 voxels.
-- Reload preserved damage and research; reset restored the cottage while retaining research.
-- Sandbox shot removed 144 voxels; returning to growth restored its original state.
-- Desktop 1440×900 and landscape 844×390 captures inspected.
-- Settings, reset, pause and fire controls remain within the viewport and unobstructed on the landscape layout.
-- No page JavaScript errors or horizontal overflow in this acceptance pass.
-- Python launcher's local HTTP response verified. Windows launcher automation is supplied but not Windows-device-tested.
+## Verified final revision
+
+Commit: 5bbc2ba7dd0c9a00629a6a65bd7e2af2269cca7c.
+Real-browser run: https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39900851540
+
+- 24 domain and real Rapier tests; TypeScript and production build passed.
+- Actual Chrome WebGL, real pointer aiming and fire controls, visible in-frame projectile bodies, no instant damage, repeated roof shot hitting lower live geometry.
+- Delayed charge detonates at age 3.0 at its actual position; pause freezes it, reset invalidates it without late damage.
+- Actual front-fence shot removed fence voxel 10371.
+- Browser-local persistence, research-preserving reset and sandbox separation passed.
+- Desktop and mobile-landscape captures, unobstructed controls, no page JavaScript errors.
+- Font subset includes all 219 Chinese characters used by the current source; screenshots show readable Chinese.
+- Low-FPS body/fuse equality verified at 1/2/5/10 fps versus 120 fps. Software browser screenshots verify function and appearance, not Android hardware performance.
 
 ## Boundaries
-This is the first cottage slice, not the eight-chapter game. Flying fragments are visual animation, not rigid-body or real explosive engineering simulation. Browser+Android is the target direction, but no APK or Android-device performance claim is made. Real touch devices, sustained frame-time/memory budgets and subjective speaker listening remain unverified. Current samples are short stylized CC0 sounds, not authentic nuclear recordings.
+This is the first courtyard slice, not the eight-chapter game. Ground, grass, roads, lake and mountains are still non-destructible background. Debris is cosmetic animation; only launched rounds are rigid bodies. No real explosive engineering is modelled. Browser plus Android is the target direction, but no APK is included. Real touch-device performance, sustained frame-time/memory budgets and subjective speaker listening remain unverified.
 
-Opening index.html directly is not supported. Use the included local HTTP launcher; keep its command window open while playing. Saves belong to the current browser and origin.
+Fully extract the ZIP, then use START-WINDOWS.bat with Python 3 installed, or python3 serve.py on macOS/Linux. Keep the server window open. Direct file:// opening is unsupported. Saves belong to the current browser and origin. The Windows launcher is supplied but not Windows-device-tested.

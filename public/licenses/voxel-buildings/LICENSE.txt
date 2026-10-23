@@ -1,0 +1,30 @@
+Voxel Buildings
+Author/uploader: mehrasaur (preview branding: Creators Sin)
+Source: https://opengameart.org/content/voxel-buildings
+Original download: https://opengameart.org/sites/default/files/Voxel%20Buildings.zip
+License declared by the source page: CC0 1.0 Universal (CC0-1.0)
+License and legal text: https://creativecommons.org/publicdomain/zero/1.0/
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+Source/license verified: 2026-10-23.
+
+The source archive does not include a separate license file. The author's
+OpenGameArt page explicitly declares CC0. Attribution is not required by CC0;
+this notice is retained voluntarily for provenance. This notice does not imply
+endorsement by the author.
+
+The source VOX files under assets/source-buildings are unmodified. Per-file
+SHA-256 hashes, archive hash, byte counts, author/source/license records and
+transformation details are in source-manifest.json. preview.jpg is the source
+pack preview, retained as a reference.
+
+Our importer uses a lossless, palette-uniform greedy merge capped at 8 native
+cells on each axis. It preserves every occupied cell and color and every empty
+gap. This is not a hand-built substitute, bounding-hull approximation, or
+walkable-interior conversion. Most source buildings have solid interiors.
+Runtime transforms native Z-up to world Y-up at default scale 0.5 (neighborhood model 6 uses 0.3 and model 7
+uses 0.4) and uses each merged
+box's actual dimensions. Removing a box removes that exact occupied volume.
+
+Models 8, 9, 10 and 11 have floating details in the original source. Their
+unmodified sources and lossless conversions are archived, but only fully
+face-connected-to-ground models 1–7, 12 and 13 are currently placed in maps.

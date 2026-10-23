@@ -6,7 +6,7 @@ import {createExperimentFlow} from './experiment-flow.js';
 import {capacityForResearch,toolAvailable,mapAvailable} from './gameplay.js';
 import type {WorldSnapshot,ProjectilePhysics,Detonation,Loadout} from './contracts.js';
 const advance=(p:ProjectilePhysics,s:number)=>{const events:Detonation[]=[];for(let i=0;i<Math.round(s*120);i++)events.push(...p.step(1/120));return events;};
-const empty:Loadout={charge:0,pulse:0,shock:0,echo:0,split:0,phase:0};
+const empty:Loadout={charge:0,pulse:0,shock:0,echo:0,split:0,phase:0,heavy:0,nova:0};
 function legacy(){const s=createWorld().getSnapshot();return {...s,schemaVersion:5,research:420,round:{budget:6,used:2,startResearch:90,startDestroyed:0,settled:false,loadout:{charge:2,pulse:1,shock:1},remaining:{charge:0,pulse:1,shock:1}}} as unknown as WorldSnapshot;}
 test('expansion exact 240/420 gates and free shared tools versus five open maps',()=>{
  for(const [id,gate] of [['echo',240],['split',420],['phase',620]] as const){assert.equal(toolAvailable(id,gate-1,true),false);assert.equal(toolAvailable(id,gate,true),true);}
@@ -14,7 +14,7 @@ test('expansion exact 240/420 gates and free shared tools versus five open maps'
  assert.deepEqual([119,120,419,420].map(capacityForResearch),[6,8,8,10]);
 });
 test('schema5 migration preserves six-slot partial ammo and adds strictly zero new stock until next round',()=>{
- const w=createWorld();assert.equal(w.restore(legacy()),true);assert.equal(w.getRound().budget,6);assert.equal(w.getRound().used,2);assert.deepEqual(w.getRound().remaining,{charge:0,pulse:1,shock:1,echo:0,split:0,phase:0});assert.equal(w.getSnapshot().schemaVersion,7);
+ const w=createWorld();assert.equal(w.restore(legacy()),true);assert.equal(w.getRound().budget,6);assert.equal(w.getRound().used,2);assert.deepEqual(w.getRound().remaining,{charge:0,pulse:1,shock:1,echo:0,split:0,phase:0,heavy:0,nova:0});assert.equal(w.getSnapshot().schemaVersion,8);
  const saved=w.getSnapshot();assert.equal(w.restore(saved),true);assert.deepEqual(w.getRound(),saved.round);assert.equal(w.recordShot('split'),false);
  w.finishRound();assert.equal(w.startRound('tower',{...empty,echo:1,split:1,charge:4}),true);assert.equal(w.getRound().budget,10);assert.equal(w.recordShot('split'),true);assert.equal(w.recordShot('split'),false);assert.equal(w.getRound().used,3);assert.equal(w.getRound().remaining?.echo,1);
  for(const extra of [{echo:0},{split:0},{surprise:0}]){const invalid=legacy();Object.assign(invalid.round!.loadout!,extra);assert.equal(createWorld().restore(invalid),false);}

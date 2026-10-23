@@ -428,7 +428,7 @@ test('phase fixed-step contacts agree at 1fps and 120fps and preserve pause sema
 test('phase damage events retain one inventory spend while live geometry is removed after each contact',async()=>{
  const {createWorld}=await import('./domain');const world=createWorld(),p=await createProjectilePhysics();try{
   const snapshot=world.getSnapshot();assert.equal(world.restore({...snapshot,research:620}),true);
-  assert.equal(world.startRound('courtyard',{charge:0,pulse:0,shock:0,echo:0,split:0,phase:1}),true);
+  assert.equal(world.startRound('courtyard',{charge:0,pulse:0,shock:0,echo:0,split:0,phase:1,heavy:0,nova:0}),true);
   p.syncVoxels(world.getVoxels(),world.epoch);
   assert.equal(p.launch({id:'single-inventory',epoch:world.epoch,weapon:'phase',power:1,origin:{x:3,y:25,z:-3},target:{x:3,y:14,z:-3}}),true);
   assert.equal(world.recordShot('phase'),true);let hits=0;

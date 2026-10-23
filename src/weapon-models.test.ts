@@ -43,8 +43,8 @@ test('echo front faces attached and emitting surface while free tools follow phy
 });
 test('all weapon and child render paths are explicit, unsupported IDs never become a package',async()=>{
   const {WEAPON_MODEL_KEYS,projectileModelKey}=await import('./weapon-models');
-  assert.deepEqual(WEAPON_MODEL_KEYS,['charge','pulse','shock','echo','split','split-child','phase']);
-  for(const weapon of ['charge','pulse','shock','echo','split','phase'] as const)assert.equal(projectileModelKey({...base,weapon}),weapon);
+  assert.deepEqual(WEAPON_MODEL_KEYS,['charge','pulse','shock','echo','split','split-child','phase','heavy','nova']);
+  for(const weapon of ['charge','pulse','shock','echo','split','phase','heavy','nova'] as const)assert.equal(projectileModelKey({...base,weapon}),weapon);
   assert.equal(projectileModelKey({...base,weapon:'split',stage:'child'}),'split-child');
   assert.equal(projectileModelKey({...base,weapon:'echo',stage:'emitter'}),'echo');
   assert.throws(()=>createWeaponGeometry('unknown' as never),/Unsupported weapon/);
@@ -102,4 +102,45 @@ test('every phase contact owns an independent visual at its real point and grows
  assert.equal(first.advance(.25),true);assert.ok(first.object.scale.x>initial);assert.equal(second.object.scale.x,initial);
  assert.equal(first.advance(.30),false);assert.ok(first.object.scale.x<=TOOLS.phase.radius);assert.equal(first.object.visible,false);
  assert.equal(second.advance(.1),true);first.dispose();second.dispose();
+});
+
+test('heavy impact pod and white-gold nova capsule have distinct normalized silhouettes',()=>{
+ const signatures=[];
+ for(const weapon of ['heavy','nova'] as const){
+  const geometry=createWeaponGeometry(weapon),positions=geometry.getAttribute('position');
+  geometry.computeBoundingBox();signatures.push(`${positions.count}:${geometry.boundingBox!.getSize(new THREE.Vector3()).toArray()}`);
+  for(let i=0;i<positions.count;i++)assert.ok(Math.hypot(positions.getX(i),positions.getY(i),positions.getZ(i))<=1.000001);
+  assert.ok(positions.count>200);assert.ok(geometry.getAttribute('color'));geometry.dispose();
+ }
+ assert.equal(new Set(signatures).size,2);
+});
+
+test('strong weapon wave is event-local bounded by catalog radius and finite core lifetime',async()=>{
+ const api=await import('./weapon-models');
+ assert.equal(typeof api.createStrongBlastVisual,'function');
+ for(const weapon of ['heavy','nova'] as const){
+  const hit=api.createStrongBlastVisual({x:52,y:4,z:41},weapon,false);
+  assert.deepEqual(hit.object.position.toArray(),[52,4,41]);
+  assert.ok(hit.duration>=1&&hit.duration<=2);
+  assert.equal(hit.advance(0),true);hit.advance(hit.duration/2);
+  assert.ok(hit.object.scale.x>1);assert.ok(hit.object.scale.x<= (weapon==='nova'?48:16));
+  assert.equal(hit.advance(hit.duration),false);assert.equal(hit.object.visible,false);hit.dispose();
+ }
+});
+
+test('reduced motion keeps finite strong-weapon confirmation but suppresses the bright dome',async()=>{
+ const {createStrongBlastVisual}=await import('./weapon-models');
+ const hit=createStrongBlastVisual({x:0,y:0,z:0},'nova',true);
+ const dome=hit.object.getObjectByName('blast-dome') as THREE.Mesh;
+ assert.ok(dome);assert.equal(dome.visible,false);assert.equal(hit.flashIntensity,0);
+ assert.equal(hit.advance(hit.duration),false);hit.dispose();
+});
+
+test('strong wave radius scales with the exact domain power curve, not a full-power cosmetic proxy',async()=>{
+ const {createStrongBlastVisual}=await import('./weapon-models');
+ for(const weapon of ['heavy','nova'] as const){
+  const hit=createStrongBlastVisual({x:0,y:0,z:0},weapon,false,.25);
+  hit.advance(hit.duration);
+  assert.equal(hit.object.scale.x,(weapon==='nova'?48:16)*Math.sqrt(.25));hit.dispose();
+ }
 });

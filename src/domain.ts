@@ -1,6 +1,7 @@
 import type { DamageCommand, DamageResult, MaterialId, Vec3, Voxel, WorldModel, WorldSnapshot, MapId, ObjectiveState, RoundState, RoundResult, Loadout, WeaponId } from './contracts.js';
 import {TOOLS,WEAPON_IDS,MAP_IDS,mapAvailable,mapTitle} from './content-catalog.js';
 import {bridgeVoxels,towerVoxels,cantileverVoxels} from './map-generators.js';
+import {neighborhoodVoxels,cityVoxels} from './scaled-map-generators.js';
 import {capacityForResearch,toolAvailable,validateLoadout,validateHistoricalLoadout,requiresLoadoutReselection,weaponCost} from './gameplay.js';
 
 // Intentionally fictional game units, not a physical blast simulation.
@@ -14,8 +15,8 @@ const MATERIALS: Record<MaterialId, { hp: number; colors: number[] }> = {
 };
 
 const key = (p: Vec3) => `${p.x},${p.y},${p.z}`;
-const clone = (v: Voxel): Voxel => ({ ...v, position: { ...v.position } });
-const immutable = (v: Voxel): Voxel => Object.freeze({ ...v, position: Object.freeze({ ...v.position }) });
+const clone = (v: Voxel): Voxel => ({ ...v, position: { ...v.position }, ...(v.size?{size:{...v.size}}:{}) });
+const immutable = (v: Voxel): Voxel => Object.freeze({ ...v, position: Object.freeze({ ...v.position }), ...(v.size?{size:Object.freeze({...v.size})}:{}) });
 const neighbors = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
 
 function supportedIds(voxels: readonly Voxel[]): Set<number> {
@@ -28,6 +29,69 @@ function supportedIds(voxels: readonly Voxel[]): Set<number> {
  }
  return supported;
 }
+
+// Canonical scaled geometry has a reusable broadphase and face-adjacency graph.
+// Damage/support never compares every cell with every other city cell. Legacy
+// maps retain their exact lattice and center-distance semantics above.
+const BUCKET_SIZE=4, FACE_EPSILON=1e-7;
+type Bounds={min:Vec3;max:Vec3};
+const axes=['x','y','z'] as const;
+function bounds(v:Voxel):Bounds{
+ const size=v.size??{x:1,y:1,z:1};
+ return {min:{x:v.position.x-size.x/2,y:v.position.y-size.y/2,z:v.position.z-size.z/2},max:{x:v.position.x+size.x/2,y:v.position.y+size.y/2,z:v.position.z+size.z/2}};
+}
+function faceTouching(a:Bounds,b:Bounds):boolean{
+ return axes.some(axis=>{
+  if(Math.abs(a.max[axis]-b.min[axis])>FACE_EPSILON&&Math.abs(b.max[axis]-a.min[axis])>FACE_EPSILON)return false;
+  return axes.every(other=>other===axis||Math.min(a.max[other],b.max[other])-Math.max(a.min[other],b.min[other])>FACE_EPSILON);
+ });
+}
+class ScaledSpatialIndex{
+ private readonly buckets=new Map<string,number[]>();
+ private readonly geometry=new Map<number,Bounds>();
+ private readonly adjacent=new Map<number,number[]>();
+ private readonly originals:Map<number,Voxel>;
+ constructor(voxels:readonly Voxel[]){
+  this.originals=new Map(voxels.map(v=>[v.id,v]));
+  for(const voxel of voxels){
+   const box=bounds(voxel);this.geometry.set(voxel.id,box);this.adjacent.set(voxel.id,[]);
+   this.visit(box,key=>{let entries=this.buckets.get(key);if(!entries)this.buckets.set(key,entries=[]);entries.push(voxel.id);});
+  }
+  for(const voxel of voxels){
+   const box=this.geometry.get(voxel.id)!;
+   for(const id of this.query(box)){
+    if(id<=voxel.id||this.originals.get(id)!.objectId!==voxel.objectId||!faceTouching(box,this.geometry.get(id)!))continue;
+    this.adjacent.get(voxel.id)!.push(id);this.adjacent.get(id)!.push(voxel.id);
+   }
+  }
+ }
+ private visit(box:Bounds,callback:(key:string)=>void){
+  for(let x=Math.floor((box.min.x-FACE_EPSILON)/BUCKET_SIZE);x<=Math.floor((box.max.x+FACE_EPSILON)/BUCKET_SIZE);x++)
+  for(let y=Math.floor((box.min.y-FACE_EPSILON)/BUCKET_SIZE);y<=Math.floor((box.max.y+FACE_EPSILON)/BUCKET_SIZE);y++)
+  for(let z=Math.floor((box.min.z-FACE_EPSILON)/BUCKET_SIZE);z<=Math.floor((box.max.z+FACE_EPSILON)/BUCKET_SIZE);z++)callback(`${x},${y},${z}`);
+ }
+ private query(box:Bounds):Set<number>{
+  const ids=new Set<number>();this.visit(box,key=>{for(const id of this.buckets.get(key)??[])ids.add(id);});return ids;
+ }
+ queryRadius(center:Vec3,radius:number):Set<number>{
+  return this.query({min:{x:center.x-radius,y:center.y-radius,z:center.z-radius},max:{x:center.x+radius,y:center.y+radius,z:center.z+radius}});
+ }
+ distanceTo(id:number,p:Vec3):number{
+  const box=this.geometry.get(id)!;
+  return Math.hypot(Math.max(0,box.min.x-p.x,p.x-box.max.x),Math.max(0,box.min.y-p.y,p.y-box.max.y),Math.max(0,box.min.z-p.z,p.z-box.max.z));
+ }
+ supported(voxels:readonly Voxel[]):Set<number>{
+  const alive=new Set(voxels.map(v=>v.id));const queue=voxels.filter(v=>v.anchored).map(v=>v.id);const supported=new Set(queue);
+  for(let i=0;i<queue.length;i++)for(const id of this.adjacent.get(queue[i])!){if(alive.has(id)&&!supported.has(id)){supported.add(id);queue.push(id);}}
+  return supported;
+ }
+}
+const spatialCache=new WeakMap<readonly Voxel[],ScaledSpatialIndex>();
+function spatialFor(voxels:readonly Voxel[]):ScaledSpatialIndex|undefined{
+ if(!voxels.some(v=>v.size))return undefined;
+ let spatial=spatialCache.get(voxels);if(!spatial){spatial=new ScaledSpatialIndex(voxels);spatialCache.set(voxels,spatial);}return spatial;
+}
+const buildingWeight=(voxels:readonly Voxel[])=>voxels.reduce((sum,v)=>sum+(v.group==='house'?(v.weight??1):0),0);
 
 function cottage(): Voxel[] {
  const cells = new Map<string, Voxel>();
@@ -134,27 +198,33 @@ function warehouse(): Voxel[] {
  return [...cells.values()].map((v,index)=>immutable({...v,id:20000+index}));
 }
 
+function canonicalGeometry(voxel:Voxel,base:Voxel):boolean{
+ if(Object.hasOwn(voxel,'size')!==Object.hasOwn(base,'size')||Object.hasOwn(voxel,'weight')!==Object.hasOwn(base,'weight')||voxel.weight!==base.weight)return false;
+ if(!base.size)return voxel.size===undefined;
+ const size=voxel.size;return !!size&&typeof size==='object'&&!Array.isArray(size)&&Object.keys(size).length===3&&(['x','y','z'] as const).every(axis=>Object.hasOwn(size,axis)&&size[axis]===base.size![axis]);
+}
+
 type InventoryRound = RoundState & {loadout:Loadout;remaining:Loadout};
 const weaponIds=WEAPON_IDS;
 const inventoryCapacity=(loadout:Loadout)=>weaponIds.reduce((total,id)=>total+loadout[id]*weaponCost(id),0);
 const cloneRound=(round:InventoryRound):InventoryRound=>({...round,loadout:{...round.loadout},remaining:{...round.remaining}});
 function freshRound(research:number,startDestroyed=0):InventoryRound{
- const budget=capacityForResearch(research),loadout={charge:budget,pulse:0,shock:0,echo:0,split:0,phase:0};
+ const budget=capacityForResearch(research),loadout={charge:budget,pulse:0,shock:0,echo:0,split:0,phase:0,heavy:0,nova:0};
  return {budget,used:0,startResearch:research,startDestroyed,settled:false,loadout,remaining:{...loadout}};
 }
 
 export function createWorld(): WorldModel {
- const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()]),bridge:Object.freeze([...bridgeVoxels(),...yard()]),tower:Object.freeze([...towerVoxels(),...yard()]),cantilever:Object.freeze([...cantileverVoxels(),...yard()])};
+ const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()]),bridge:Object.freeze([...bridgeVoxels(),...yard()]),tower:Object.freeze([...towerVoxels(),...yard()]),cantilever:Object.freeze([...cantileverVoxels(),...yard()]),neighborhood:neighborhoodVoxels(),city:cityVoxels()};
  let mapId:MapId='courtyard', original=maps.courtyard;
  let voxels: readonly Voxel[]=Object.freeze([...original]); let epoch=1, destroyedCount=0, research=0;
  const completedMaps=new Set<MapId>();const processed=new Set<string>();
  let round=freshRound(0);
- const buildingTotal=()=>original.filter(v=>v.group==='house').length;
- const buildingDestroyed=()=>buildingTotal()-voxels.filter(v=>v.group==='house').length;
+ const buildingTotal=()=>buildingWeight(original);
+ const buildingDestroyed=()=>buildingTotal()-buildingWeight(voxels);
  // Credit the cumulative fraction of each building cell's health lost, including
  // cells removed by support loss. Rounding the cumulative total, not each hit,
  // makes tiny damage count without allowing repeated fractional-hit farming.
- const buildingResearch=()=>Math.min(200,Math.ceil((buildingDestroyed()+voxels.reduce((sum,v)=>sum+(v.group==='house'?1-v.hp/v.maxHp:0),0))*200/buildingTotal()));
+ const buildingResearch=()=>Math.min(200,Math.ceil((buildingDestroyed()+voxels.reduce((sum,v)=>sum+(v.group==='house'?(v.weight??1)*(1-v.hp/v.maxHp):0),0))*200/buildingTotal()));
  const getObjective=():ObjectiveState=>{const total=buildingTotal(),destroyed=buildingDestroyed();return {mapId,title:mapTitle(mapId),total,destroyed,fraction:destroyed/total,goal:1,complete:destroyed===total,completedMaps:[...completedMaps]};};
  function recordShot(weapon:WeaponId='charge'):boolean {
   if(round.settled||requiresLoadoutReselection(round)||!weaponIds.includes(weapon)||!toolAvailable(weapon,round.startResearch,false)||round.remaining[weapon]<=0||round.used+weaponCost(weapon)>round.budget)return false;
@@ -170,15 +240,17 @@ export function createWorld(): WorldModel {
   processed.add(command.id);
   const priorBase=buildingResearch();
   const tool=TOOLS[command.weapon], radius=tool.radius*Math.sqrt(command.power), removed:Voxel[]=[], survivors:Voxel[]=[];
+  const spatial=spatialFor(original),candidates=spatial?.queryRadius(command.target,radius);
   for(const v of voxels){
-   const distance=Math.hypot(v.position.x-command.target.x,v.position.y-command.target.y,v.position.z-command.target.z);
+   if(candidates&&!candidates.has(v.id)){survivors.push(v);continue;}
+   const distance=spatial?spatial.distanceTo(v.id,command.target):Math.hypot(v.position.x-command.target.x,v.position.y-command.target.y,v.position.z-command.target.z);
    if(distance>radius){survivors.push(v);continue;}
    const hp=v.hp-tool.strength*command.power*(0.35+0.65*(1-distance/radius));
    if(hp<=0) removed.push(v); else survivors.push(immutable({...v,hp}));
   }
   const detached:Voxel[]=[];
   if(removed.length){
-   const supported=supportedIds(survivors);
+   const supported=spatial?spatial.supported(survivors):supportedIds(survivors);
    voxels=Object.freeze(survivors.filter(v=>{if(supported.has(v.id))return true;detached.push(v);return false;}));
   } else voxels=Object.freeze(survivors);
   const newlyDestroyed=removed.length+detached.length;destroyedCount+=newlyDestroyed;
@@ -186,13 +258,13 @@ export function createWorld(): WorldModel {
   research+=researchEarned;
   return {accepted:true,removed:removed.map(clone),detached:detached.map(clone),newlyDestroyed,researchEarned,destruction:destroyedCount/original.length};
  }
- function getSnapshot():WorldSnapshot{return {schemaVersion:7,round:cloneRound(round),mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
+ function getSnapshot():WorldSnapshot{return {schemaVersion:8,round:cloneRound(round),mapId,completedMaps:[...completedMaps],epoch,voxels:voxels.map(clone),totalCount:original.length,destroyedCount,research,firstRewardClaimed:completedMaps.has(mapId)};}
  function restore(snapshot:WorldSnapshot):boolean {
   if(!snapshot||typeof snapshot!=='object')return false;
   const legacy=snapshot.schemaVersion===undefined, old=legacy||snapshot.schemaVersion===2;
-  if(!old&&snapshot.schemaVersion!==3&&snapshot.schemaVersion!==4&&snapshot.schemaVersion!==5&&snapshot.schemaVersion!==6&&snapshot.schemaVersion!==7)return false;
+  if(!old&&snapshot.schemaVersion!==3&&snapshot.schemaVersion!==4&&snapshot.schemaVersion!==5&&snapshot.schemaVersion!==6&&snapshot.schemaVersion!==7&&snapshot.schemaVersion!==8)return false;
   const nextMap:MapId=old?'courtyard':snapshot.mapId!;
-  const compatibleMap=(id:MapId)=>MAP_IDS.includes(id)&&(snapshot.schemaVersion===7||(snapshot.schemaVersion===6?id!=='cantilever':id==='courtyard'||id==='warehouse'));
+  const compatibleMap=(id:MapId)=>MAP_IDS.includes(id)&&(snapshot.schemaVersion===8||(snapshot.schemaVersion===7?['courtyard','warehouse','bridge','tower','cantilever'].includes(id):snapshot.schemaVersion===6?['courtyard','warehouse','bridge','tower'].includes(id):id==='courtyard'||id==='warehouse'));
   if(!compatibleMap(nextMap))return false;
   const bases=maps[nextMap], originals=new Map(bases.map(v=>[v.id,v]));
   const expectedTotal=legacy?1096:bases.length;
@@ -203,7 +275,7 @@ export function createWorld(): WorldModel {
    if(snapshot.research<Math.floor(snapshot.destroyedCount*200/expectedTotal)+(snapshot.firstRewardClaimed?80:0))return false;
    if(snapshot.firstRewardClaimed)completed=['courtyard'];
   }else{
-   if(!Array.isArray(snapshot.completedMaps)||snapshot.completedMaps.length>(snapshot.schemaVersion===7?5:snapshot.schemaVersion===6?4:2))return false;
+   if(!Array.isArray(snapshot.completedMaps)||snapshot.completedMaps.length>(snapshot.schemaVersion===8?7:snapshot.schemaVersion===7?5:snapshot.schemaVersion===6?4:2))return false;
    if(snapshot.completedMaps.some(id=>!compatibleMap(id))||new Set(snapshot.completedMaps).size!==snapshot.completedMaps.length)return false;
    completed=[...snapshot.completedMaps];
    if(snapshot.firstRewardClaimed!==completed.includes(nextMap)||snapshot.research<completed.length*80)return false;
@@ -213,30 +285,33 @@ export function createWorld(): WorldModel {
    if(!v||!Number.isSafeInteger(v.id)||seen.has(v.id)||legacy&&v.id>=10000)return false;
    const base=originals.get(v.id);
    if(!base||!v.position||v.position.x!==base.position.x||v.position.y!==base.position.y||v.position.z!==base.position.z||v.material!==base.material||v.color!==base.color||v.maxHp!==base.maxHp||v.anchored!==base.anchored||!Number.isFinite(v.hp)||v.hp<=0||v.hp>base.maxHp)return false;
+   if(!canonicalGeometry(v,base))return false;
    if(legacy ? (v.group!==undefined&&v.group!==base.group)||(v.objectId!==undefined&&v.objectId!==base.objectId) : v.group!==base.group||v.objectId!==base.objectId)return false;
    seen.add(v.id);next.push(immutable({...base,hp:v.hp}));
   }
-  if(supportedIds(next).size!==next.length)return false;
+  const spatial=spatialFor(bases);
+  if((spatial?spatial.supported(next):supportedIds(next)).size!==next.length)return false;
   if(legacy)next.push(...bases.filter(v=>v.group!=='house'));
-  const total=bases.filter(v=>v.group==='house').length;
-  const nextBuildingDestroyed=total-next.filter(v=>v.group==='house').length;
+  const total=buildingWeight(bases);
+  const nextBuildingDestroyed=total-buildingWeight(next);
   let nextRound=freshRound(snapshot.research,nextBuildingDestroyed);
-  if(snapshot.schemaVersion===4||snapshot.schemaVersion===5||snapshot.schemaVersion===6||snapshot.schemaVersion===7){
+  if(snapshot.schemaVersion===4||snapshot.schemaVersion===5||snapshot.schemaVersion===6||snapshot.schemaVersion===7||snapshot.schemaVersion===8){
    const saved=snapshot.round;
    if(!saved||!Number.isSafeInteger(saved.used)||saved.used<0||saved.used>saved.budget||typeof saved.settled!=='boolean'||!Number.isSafeInteger(saved.startResearch)||saved.startResearch<0||saved.startResearch>snapshot.research||!Number.isSafeInteger(saved.startDestroyed)||saved.startDestroyed<0||saved.startDestroyed>nextBuildingDestroyed)return false;
    if(snapshot.schemaVersion===4){
     if(saved.budget!==6)return false;
     // Old saves tracked successful executions, not weapon types. Preserve the
     // exact legacy capacity as grenades, including spent slots after a reload.
-    nextRound={budget:6,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled,loadout:{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0},remaining:{charge:6-saved.used,pulse:0,shock:0,echo:0,split:0,phase:0}};
+    nextRound={budget:6,used:saved.used,startResearch:saved.startResearch,startDestroyed:saved.startDestroyed,settled:saved.settled,loadout:{charge:6,pulse:0,shock:0,echo:0,split:0,phase:0,heavy:0,nova:0},remaining:{charge:6-saved.used,pulse:0,shock:0,echo:0,split:0,phase:0,heavy:0,nova:0}};
    }else{
     let {loadout,remaining}=saved;
-    const ids:readonly WeaponId[]=snapshot.schemaVersion===5?['charge','pulse','shock']:snapshot.schemaVersion===6?['charge','pulse','shock','echo','split']:weaponIds;
+    const ids:readonly WeaponId[]=snapshot.schemaVersion===5?['charge','pulse','shock']:snapshot.schemaVersion===6?['charge','pulse','shock','echo','split']:snapshot.schemaVersion===7?['charge','pulse','shock','echo','split','phase']:weaponIds;
     const exact=(value:unknown):value is Loadout=>!!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===ids.length&&ids.every(id=>Object.hasOwn(value,id));
     // Validate the historical shape BEFORE adding new zero slots. Never refill.
     if(!exact(loadout)||!exact(remaining))return false;
-    if(snapshot.schemaVersion===5){loadout={...loadout,echo:0,split:0,phase:0};remaining={...remaining,echo:0,split:0,phase:0};}
-    if(snapshot.schemaVersion===6){loadout={...loadout,phase:0};remaining={...remaining,phase:0};}
+    if(snapshot.schemaVersion===5){loadout={...loadout,echo:0,split:0,phase:0,heavy:0,nova:0};remaining={...remaining,echo:0,split:0,phase:0,heavy:0,nova:0};}
+    if(snapshot.schemaVersion===6){loadout={...loadout,phase:0,heavy:0,nova:0};remaining={...remaining,phase:0,heavy:0,nova:0};}
+    if(snapshot.schemaVersion===7){loadout={...loadout,heavy:0,nova:0};remaining={...remaining,heavy:0,nova:0};}
     const budgets=snapshot.schemaVersion===5?[6,8]:[6,8,10];
     if(!budgets.includes(saved.budget)||saved.budget>capacityForResearch(saved.startResearch)||!validateHistoricalLoadout(loadout,saved.startResearch)||inventoryCapacity(loadout)>saved.budget||!weaponIds.every(id=>Number.isSafeInteger(remaining![id])&&remaining![id]>=0&&remaining![id]<=loadout![id]))return false;
     if(saved.used!==inventoryCapacity(loadout)-inventoryCapacity(remaining))return false;
@@ -247,7 +322,8 @@ export function createWorld(): WorldModel {
   // or inferred from a threshold. Only intentional new rounds refill ammunition.
   mapId=nextMap;original=bases;voxels=Object.freeze(next);epoch=Math.max(epoch,snapshot.epoch)+1;destroyedCount=original.length-next.length;research=snapshot.research;round=nextRound;completedMaps.clear();for(const id of completed)completedMaps.add(id);processed.clear();return true;
  }
- function reset(){epoch++;voxels=Object.freeze([...original]);destroyedCount=0;round=freshRound(research);processed.clear();}
+ // Build scaled-map support once during the transition, never on its first visible hit.
+ function reset(){spatialFor(original);epoch++;voxels=Object.freeze([...original]);destroyedCount=0;round=freshRound(research);processed.clear();}
  function startRound(next:MapId,loadout:Loadout):boolean{
   if(!mapAvailable(next,research)||!validateLoadout(loadout,research))return false;
   const inventory={...loadout};

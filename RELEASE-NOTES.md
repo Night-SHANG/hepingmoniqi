@@ -1,65 +1,50 @@
-# E0 v0.4 finite-ammunition experiments
+# 核平模拟器 v0.8｜九栋街区、六区城市与差异化音效
 
-Main mode: six ammunition units per round, partial building-health damage earns research, retry preserves research and refills ammunition. Tools unlock at40/90 research; warehouse at120. No mandatory70% or100% pass. No automatic pause or modal at a destruction threshold.
+## 本版变化
 
-Choose direct placement, actual Rapier trajectory preview plus confirmation, or quick fire. Launched tools support automatic or remote triggers. All placed tools wait for a manual trigger. Explicit ending triggers remaining armed objects once and waits for airborne objects and visible effects before presenting results.
+- 七张地图、八种工具。保留木屋庭院、双跨仓库、高架连廊、叠层塔楼与悬臂观景台，新增九栋独立建筑的街区，以及六个街区、每区六栋的 36 栋城市。各图有对应场景背景和镜头尺度，装饰建筑不冒充可破坏目标。
+- 复用 mehrasaur 的 CC0 [Voxel Buildings](https://opengameart.org/content/voxel-buildings)。归档全部 13 个原始 VOX，地图使用完整接地的模型 1–7、12、13；8–11 的源素材含悬浮细节，未放入玩法地图。
+- 原始同色占用格无损合并为每轴最多 8 格的长方体，保留颜色和所有空隙。绘制、Rapier 碰撞、伤害、支撑和存档使用实际构件尺寸；按原生占用格数计算拆除权重。源建筑大多内部实心，不宣称可步入房间或精细室内结构。
+- 新增街区冲击弹 heavy：900 研究、3 格、基准半径 16；城市核爆弹 nova：1400 研究、5 格、基准半径 48。半径指 100% 威力下的虚构游戏单位。两者可物理发射或遥控放置，伤害作用于真实建筑构件，可跨栋 / 跨街区，不是一击清空全图。
+- 八种工具主引爆声音使用不同原始采样，共收录 23 个 CC0 WAV。城市音效使用独立主体和 0.35 秒延迟的低频辅助层，辅助层不能替代主体。事件去重、六声部上限、优先级和静音 / 后台 / 重建清理只管理音频，不限真实弹药或伤害。尚未完成主观听感验收。
 
-Free mode selects all existing maps with unlimited ammunition and dynamic placed-object pools, while respecting saved main-mode tool unlocks and awarding no research. Current saves preserve spent ammunition; older saves retain research. There is no eight-package or48-rendered-object gameplay cap.
+## 保持不变
 
-Local75 tests and production build pass. Actual v0.4 browser verification pending; earlier release evidence below does not substitute for this version's runtime tests.
+- 左侧纵向场景列表、中间实时三维预览、右侧配装，列表内部滚动且容量 / 开始按钮固定。游戏内最多三种本轮工具，左侧工具栏可折叠，右下操作区独立。
+- 主模式有限配装，自由模式所选工具无限使用、不计研究；自由模式开放七图，但仍遵守主模式工具解锁。最多三种是种类限制，不是枚数限制。
+- 旧工具解锁仍为 40 / 90 / 240 / 420 / 620；旧地图解锁仍为 120 / 240 / 420 / 620。容量初始 6、120 研究时 8、420 研究时 10，后续解锁不扩容，12 格未开放。
+- 原全局研究与奖励规则不变：永久累计、不消费，整张地图每轮建筑生命损失最多产生 200 研究，不按新增建筑数量倍增；历史奖励与解锁保留，不清零、不迁为章节账本、不重复发放历史奖励。
+- 新解锁和扩容只对下一轮配装生效，当前回合不补弹。“再次挑战”沿用上一轮确切配装；重新配置须由玩家明确开始。
+- 弹药耗尽不强制结算；主动结束等待弹体、连续脉冲和核心视觉效果，之后可查看现场。音频尾响不阻塞结算。
 
----
-## Previous release evidence
+## schema 8 存档
 
-# E0 v0.3 courtyard and warehouse progression
+有效旧档经过结构、几何、支撑和回合库存校验后迁移，保留研究、场景损伤、回合预算、已用弹药与历史奖励。
 
-## Implemented
-- A named building objective: demolish 70% of the building. Trees, fences and other props remain destructible but are not mandatory cleanup and grant no research.
-- Start with a spinning, bouncing grenade. Building damage unlocks the directional rocket at 40 research and the attached manual remote package at 90 research.
-- Three original silhouettes: segmented grenade shell with cap/lever, pointed rocket body with fins and exhaust, strapped flat package with status light.
-- Packages attach only to live voxel faces. They never auto-detonate; use the manual detonator. Losing the host invalidates the package.
-- Courtyard completion opens a result screen and unlocks a separate twin-bay warehouse. Retry retains growth; free mode isolates damage and rewards from growth saves.
-- Strict legacy save migration retains earned research. Old transient projectiles are never restored.
+- schema 7 六工具库存原样保留，heavy / nova 只补 0。
+- schema 6 五工具库存原样保留，phase / heavy / nova 只补 0；schema 5 的新增工具也仅补 0。
+- 新格式要求八个精确库存键，拒绝缺键、多键与不合法构件数据，不通过迁移补弹或扩大旧回合预算。
+- 有效旧配装超过三种时，提示玩家重选；不会静默删工具、覆盖旧回合或清除研究。确认合法配装并明确开始后才重建。
 
-## Verification status
-Local 43 tests and TypeScript/production build pass. Native Three/Rapier preflight completes the courtyard in 17 mixed-tool shots and warehouse in four remote shots; this is deterministic automated targeting, not a claim of typical player completion time. Real Chrome WebGL verification for revision cd59370aa266d9919b3882af37775559f36736bd passed at https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39903928429 .
+启动地址仍固定为 `http://127.0.0.1:7769/`，存档仍属于当前浏览器和来源。旧随机端口数据不自动跨地址迁移，也不被新版删除。服务身份校验不区分版本，切换新版前须关闭旧服务窗口。
 
-The real-input suite confirmed the same 17-shot courtyard and four-shot warehouse path, building-only completion, all unlocks, manual package detonation/no automatic fuse, retry and reload persistence, isolated free mode, and mobile control access. All prior roof-hole, pause, reset and yard-collision browser regressions also passed. Visual-only polish adds original toolbar silhouettes, bounded high-contrast rocket geometry and rear colors, thin model outlines, and an offset attached-package check-mark annotation. The annotation is a depth-free UI overlay; the physical body remains correctly depth-tested and aligned. No gameplay or physics changed.
+## v0.8 验证状态
 
-Final runtime revision: 68f644328c82cb21590648473899978274392bc5. Focused actual default-camera weapon captures, 43 tests and build passed at https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39906204745 . The earlier full gameplay run remains the evidence for unchanged progression and physics. Final visual inspection confirms the grenade shell, brighter rocket rear/fins, attached-package marker and original tool icons; rocket side-profile detail is naturally limited when viewed along its real flight axis.
+- 当前非浏览器记录：202 项游戏测试、12 项 Python 启动器测试、4 项 v0.8 验收辅助测试通过。
+- 覆盖原生素材精确重建、9 / 36 栋身份与六区布局、构件加权和独立支撑、跨栋 / 跨区真实损伤、缺口碰撞、严格迁移与不补弹、旧玩法回归、音频事件与资源完整性。辅助测试只校验验收逻辑和明确标注的测试存档，不启动浏览器。
+- v0.8 真实浏览器验收仍待完成，尚不宣称实际 WebGL 画面、桌面 / 手机视口输入、浏览器音频播放或最终截图通过。旧版通过记录不能覆盖本版新增内容。
+- 高研究测试存档仅用于解锁与迁移验证，不代表自然成长实玩。尚无真实 Windows / 手机设备、长期性能、主观音频听感或最终后期平衡验收。
 
-## Boundaries
-Two compact E0 maps, not the complete city/planet concept. Background ground, water and distant terrain cannot be excavated. Debris remains cosmetic. This is a browser build, not an Android APK. Real device performance and subjective audio listening are not verified.
+可复现的非浏览器命令见 `README.md`。浏览器验收须另有对应版本的实际运行结果。
 
----
-## Preserved previous release evidence
+## 许可与边界
 
-# E0 v0.2 physical-projectile update
+建筑来源、CC0 声明、哈希与转换说明位于源码 `public/licenses/voxel-buildings/`，未修改的 VOX 位于 `assets/source-buildings/`；音频来源与许可在 `public/audio/`，字体在 `public/fonts/`，依赖许可在 `licenses/`。浏览器包保留对应许可目录。
 
-## Implemented
-- Visible Rapier rigid-body projectiles, gravity and continuous collision detection. Aiming determines the initial flight path only; detonation uses the body's actual position.
-- Pulse/shock detonate on contact. Delayed charges bounce and detonate after three simulated seconds from launch. Pause freezes both motion and fuse; quarter-speed slows both.
-- Destruction removes live colliders. Repeated shots can pass through missing roof geometry and collide lower down.
-- 1897 authoritative voxels: cottage, trees, fences, planters, workbench, crates and logs. Per-object support-collapse prevents nearby props from supporting one another accidentally.
-- Legacy cottage saves migrate to the expanded courtyard without losing damage or earned research. Reset and sandbox transitions invalidate in-flight rounds.
-- Bounded active-projectile and solver budgets; finite lifetime for misses. Low-frame-rate timing regression fixed with bounded fixed-step catchup and hidden-tab clock reset.
-- Bundled licensed Chinese UI font subset avoids missing glyphs on systems without Chinese fonts.
+已实现街区与城市，星球、黑洞和宇宙 / 太空玩法尚未实现。地面、道路、水面与远景装饰不可破坏，普通碎屑主要为视觉效果。没有 Android APK 或原生安装包。重复旧图仍可获得研究，未改成防刷取或章节收益系统；无限弹药也不保证无限设备性能。所有工具数值都是虚构游戏规则。
 
-## Verified final revision
+## 历史版本摘要（不代表 v0.8 验收）
 
-Commit: 5bbc2ba7dd0c9a00629a6a65bd7e2af2269cca7c.
-Real-browser run: https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39900851540
-
-- 24 domain and real Rapier tests; TypeScript and production build passed.
-- Actual Chrome WebGL, real pointer aiming and fire controls, visible in-frame projectile bodies, no instant damage, repeated roof shot hitting lower live geometry.
-- Delayed charge detonates at age 3.0 at its actual position; pause freezes it, reset invalidates it without late damage.
-- Actual front-fence shot removed fence voxel 10371.
-- Browser-local persistence, research-preserving reset and sandbox separation passed.
-- Desktop and mobile-landscape captures, unobstructed controls, no page JavaScript errors.
-- Font subset includes all 219 Chinese characters used by the current source; screenshots show readable Chinese.
-- Low-FPS body/fuse equality verified at 1/2/5/10 fps versus 120 fps. Software browser screenshots verify function and appearance, not Android hardware performance.
-
-## Boundaries
-This is the first courtyard slice, not the eight-chapter game. Ground, grass, roads, lake and mountains are still non-destructible background. Debris is cosmetic animation; only launched rounds are rigid bodies. No real explosive engineering is modelled. Browser plus Android is the target direction, but no APK is included. Real touch-device performance, sustained frame-time/memory budgets and subjective speaker listening remain unverified.
-
-Fully extract the ZIP, then use START-WINDOWS.bat with Python 3 installed, or python3 serve.py on macOS/Linux. Keep the server window open. Direct file:// opening is unsupported. Saves belong to the current browser and origin. The Windows launcher is supplied but not Windows-device-tested.
+- v0.7：恢复原左右竖面板，增加每轮最多三种工具、可折叠工具栏、悬臂观景台与穿行球，schema 7 保留旧库存并零扩展。154 项游戏测试、12 项启动器测试、8 项辅助测试，以及真实 Chrome [run39950134768](https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39950134768) 的 28 项专项检查通过。对应验证提交为 `73270278ccbf97e8e1b646e511ea1ac46ea1c263`，运行代码与其父提交 `a519eabc` 相同；高研究 fixture 不代表自然成长。
+- v0.6：增加连廊、塔楼、回声与分裂球，schema 6 和固定 7769 启动器。126 项游戏测试、12 项启动器测试及修正后的 Chrome [run39945362449](https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39945362449) 通过；此前 run39944164596 的移动点击目标检查失败，不改记为通过。
+- v0.5 / v0.5.1：引入主 / 自由模式入口、按枚数配装、主动结束、精确配装重试和直接投放控件。v0.5.1 的 97 项游戏测试及 Chrome [run39941195744](https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39941195744) 专项通过。更早版本逐步加入物理弹体、可穿过真实缺口的碰撞、建筑研究与浏览器本地保存；其旧数值和旧交互不适用于 v0.8。

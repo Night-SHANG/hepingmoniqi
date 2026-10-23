@@ -1,30 +1,80 @@
-# 核平模拟器：有限弹药破坏实验 v0.4
+# 核平模拟器 v0.8
 
-A fictional, unoccupied Three.js destruction sandbox with Rapier projectile physics.
+基于 Three.js / Rapier 的浏览器体素拆除试玩版，现有七张地图、八种工具。主模式通过配装、建筑损伤和永久研究推进；自由模式用于实验。v0.8 新增九栋街区、六区共 36 栋建筑的城市、两种大范围虚构工具，以及按真实游戏事件播放的差异化采样音效。
 
-## Run
+## 开始试玩
 
-Node 22+: `npm ci`, then `npm run dev -- --port 5191`.
-`npm test` runs 75 domain/physics/gameplay/model regressions. `npm run build` checks TypeScript and produces the browser package.
+1. 完整解压浏览器试玩包，不要直接打开 `index.html` 或使用 `file://`。
+2. Windows：安装 Python 3 后双击 `START-WINDOWS.bat`。macOS / Linux：运行 `python3 serve.py`。
+3. 浏览器自动打开固定地址 `http://127.0.0.1:7769/`。游玩期间保持服务窗口运行。
 
-Fully extract the browser ZIP, then run START-WINDOWS.bat with Python 3 installed. It opens a loopback HTTP server and the default browser. macOS/Linux: `python3 serve.py`. Keep the server window open. Direct file:// opening is unsupported.
+启动器只复用通过专用身份端点、应用标记与精确响应校验的游戏服务。端口被其他程序或无法验证的旧服务占用时会停止，不会换端口。身份校验不区分游戏版本，切换新版前请先关闭旧服务窗口，避免继续打开旧版。
 
-Drag to orbit, wheel to zoom, click to aim. Main mode gives six shared ammunition units per round. Partial building damage earns research; deliberate retry restores ammunition while preserving research. Unlock rocket at 40, remote package at 90 and warehouse at 120 research. There is no forced 70% or 100% pass, automatic result modal or automatic explosion pause.
+需要支持 WebGL2 的浏览器。源码须先构建；浏览器试玩包包含预构建资源。Windows 启动脚本已提供，尚未做真实 Windows 设备验收。
 
-Choose direct placement, real-physics trajectory preview with confirmation, or quick fire. Placement arms the selected tool for manual triggering. Launched tools can use automatic collision/fuse behavior or remain remotely armed. Preview does not spend ammunition; confirmation does. The manual detonator triggers all armed objects at their current positions. Explicit round ending triggers any armed remainder, waits for airborne rounds and visible effects, then shows results. Reset cancels in-flight ordnance and pending results.
+## 场景、研究与配装
 
-Free mode selects either building and has unlimited ammunition/placement counts, but only tools unlocked in main mode are available. It grants no research and cannot overwrite the saved main round. Instanced bodies grow dynamically rather than hiding objects beyond an arbitrary limit. Existing saves migrate with earned research intact; current saves preserve spent ammunition across reload.
+准备页保留左侧纵向场景列表、中间实时三维预览、右侧配装。两侧列表各自内部滚动，容量与开始按钮保持在列表外。游戏内左侧工具栏可折叠，右下投放、引爆与主操作区独立。
 
-## Current boundaries
+| 累计研究 | 新解锁 |
+| --- | --- |
+| 0 | 木屋庭院、手榴弹、6 格容量 |
+| 40 | 火箭弹 |
+| 90 | 遥控爆破包 |
+| 120 | 双跨仓库、8 格容量 |
+| 240 | 高架连廊、回声震荡器 |
+| 420 | 叠层塔楼、分裂球、10 格容量 |
+| 620 | 悬臂观景台、穿行球 |
+| 900 | 九栋街区、街区冲击弹 |
+| 1400 | 六区城市、城市核爆弹 |
 
-Two compact E0 maps, courtyard and warehouse, not the eight-chapter concept. The courtyard’s 1897 authoritative voxels include the cottage, trees, fences, planters, workbench, crates and logs. Grass, ground, paths, lake and distant mountains remain background and cannot be excavated. Structural collapse uses discrete connectivity per object. Debris is visual animation; launched projectiles use rigid-body physics. No real weapon engineering is simulated.
+- 每轮选 1 至 3 种已解锁工具，限制种类而非枚数。主模式按数量占格，可以不装满；某种减至 0 后才能换入其他种类。
+- 手榴弹每枚 1 格；火箭弹、遥控爆破包各 2 格；回声震荡器、分裂球、穿行球、街区冲击弹各 3 格；城市核爆弹 5 格。最高容量仍为 10 格，12 格未开放。
+- 自由模式开放全部七张地图，所选工具数量无限、不增加研究；工具解锁仍继承主模式。
+- 保留原全局研究规则：永久累计、不消费；按整张地图的建筑生命损失计算，每轮最多 200 研究，不按建筑数量倍增。非建筑道具不计研究，旧研究、历史奖励与解锁不清零，也不改为章节独立账本。
+- 新解锁与扩容只在下一轮配装生效，不给当前回合补弹。“再次挑战”重建同一地图并沿用原确切配装；调整工具或数量请用“更换场景 / 配置”。
 
-Browser plus Android is the target direction. This is the browser package only, not an APK or native Windows executable. Android device performance, sustained performance budgets and subjective speaker listening are not yet verified.
+## 新增尺度与素材
 
-## Dependencies and assets
+九栋街区含九个独立可破坏建筑；六区城市为六个街区、每区六栋，共 36 栋，并保留道路与河岸等场景背景。建筑不是装饰性替身，各自有独立支撑归属，渲染、碰撞、损伤和存档使用同一组实际构件尺寸。
 
-Three.js 0.180.0 and OrbitControls: MIT. Rapier compat 0.21.0: Apache-2.0. Vite: MIT. TypeScript: Apache-2.0. Versions are locked in package-lock.json; license copies are included. Geometry is authored procedurally. User concept images guided the layout but are not embedded. CC0 audio provenance is in public/audio/SOURCES.md. The bundled Courtyard Sans UI subset is derived from Noto Sans CJK under SIL OFL 1.1; its source and license are in public/fonts. Gameplay requires no paid service or external font.
+建筑来自 mehrasaur 的 [Voxel Buildings](https://opengameart.org/content/voxel-buildings)，采用 CC0-1.0。原生 VOX 按同色体素无损合并为长方体，每轴最多 8 个原生格；保留原占用、空隙与颜色，不用包围盒填满原有空隙。拆除比例按原生占用格数加权，不以合并后的绘制块数量冒充体量。源建筑大多为实心内部，不是可步入房间；当前地图使用九种完整接地模型，未使用带原生悬浮细节的模型。
 
-## Verification
+街区冲击弹在 900 研究解锁，占 3 格，100% 威力的基准作用半径为 16；城市核爆弹在 1400 研究解锁，占 5 格，基准半径为 48。它们支持真实物理发射或表面遥控放置，可影响多栋建筑；城市工具可跨街区，但不是一击清空整座城市。所有半径、威力与效果都是虚构游戏单位，不代表现实武器或工程模拟。
 
-See RELEASE-NOTES.md for the precise runtime revision and evidence. Browser checks use real Chromium WebGL, pointer/button interactions, render captures and read-only diagnostics. No test-only mutation API is exposed.
+## 操作与声音
+
+- 点击建筑或可选地面瞄准，拖动旋转，滚轮缩放；空格或主操作按钮执行发射 / 放置，数字 1 至 3 切换本轮工具。没有玩家轨迹预览或确认步骤。
+- 手榴弹自动发射后 3 秒引爆；火箭弹及新增两种工具自动模式下碰撞引爆。可发射工具可改为遥控；遥控爆破包与回声震荡器只支持表面放置，所有放置都需遥控触发。
+- 回声在触发后 0、0.65、1.30 秒产生三次伤害脉冲；分裂球生成三个独立物理子球；穿行球沿真实路径最多触发三个不同体素接触点。穿行球遥控发射须在 12 秒模拟寿命内激活，触地或越界也会提前结束；激活不补算已飞过的接触点。
+- 弹药耗尽不会强制结算、暂停或重建。主动“结束本轮”会等待弹体、连续脉冲与核心视觉效果；结算后可“查看现场”。音频尾响不阻塞结算。
+- 八种工具的主引爆音使用不同原始采样，城市工具有独立主体与延迟尾层。音效按实际事件去重，最多六个声音声部；限制声音不限制真实弹药或伤害。静音、切到后台或重建场景会清理声音。尚未完成主观听感或真实手机扬声器验收。
+
+详细试玩说明见 `PLAY-README.txt`。
+
+## 存档
+
+当前为 schema 8，严格校验后迁移有效旧存档。schema 7 的六工具库存保留，新增 heavy / nova 均为 0；schema 6 的五工具库存保留，phase / heavy / nova 均为 0；schema 5 的新增工具也仅补 0。保留原研究、建筑损伤、已用弹药、回合预算和历史奖励，不补弹、不自动扩容、不重复发奖。
+
+有效旧配装超过三种时，进入主模式或再次挑战会转到准备页提示重选，不静默删除工具或清空旧回合。只有玩家调整为 1 至 3 种并明确点击“重新配装并开始”，才重建下一轮。
+
+存档属于当前浏览器与完整服务地址（包括端口），不是云存档。固定地址可维持正常重启的存档来源；旧随机端口的数据仍留在原地址，不自动跨地址迁移，也不会被新版清除。更换浏览器、地址或清除站点数据会影响读取。
+
+## 开发与验证
+
+```sh
+npm ci --ignore-scripts
+npm test
+python3 -m unittest discover -s tests -p 'test_serve.py'
+node --test scripts/v08-qa-contract.test.mjs
+npm run build
+```
+
+当前非浏览器验证记录：202 项游戏测试、12 项 Python 启动器测试、4 项 v0.8 验收辅助测试通过。辅助测试不启动真实浏览器。v0.8 实际浏览器画面、输入、布局和音频播放验收仍待完成，不能用 v0.7 的通过记录替代。详见 `RELEASE-NOTES.md`。
+
+## 边界与许可
+
+- 已实现街区与城市；星球、黑洞、宇宙 / 太空玩法仍未实现，没有 Android APK 或原生安装包。
+- 地面、道路、水面及远景装饰不可破坏；普通碎屑主要是视觉效果，不是完整刚体世界。
+- 原研究收益规则保持不变，重复旧地图仍可获得研究；尚未验证自然成长节奏、最终后期平衡、长期性能或真实移动设备表现。无限弹药不等于无限设备性能。
+- 建筑来源与转换记录在 `public/licenses/voxel-buildings/`，原始 VOX 在 `assets/source-buildings/`。音频来源与许可在 `public/audio/`，字体在 `public/fonts/`，依赖许可在 `licenses/`。浏览器包去掉前缀 `public/`，保留相应许可文件。

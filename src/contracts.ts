@@ -2,16 +2,16 @@
 export type Vec3 = { x: number; y: number; z: number };
 export type MaterialId = 'wood' | 'stone' | 'roof' | 'glass' | 'metal' | 'foliage';
 /** Stable IDs: pulse=rocket, charge=grenade, shock=remote package. */
-export type WeaponId = 'pulse' | 'charge' | 'shock' | 'echo' | 'split' | 'phase';
+export type WeaponId = 'pulse' | 'charge' | 'shock' | 'echo' | 'split' | 'phase' | 'heavy' | 'nova';
 /** Inventory counts; capacity is weighted separately by weaponCost. */
 export type Loadout = Record<WeaponId,number>;
-export type MapId = 'courtyard' | 'warehouse' | 'bridge' | 'tower' | 'cantilever';
+export type MapId = 'courtyard' | 'warehouse' | 'bridge' | 'tower' | 'cantilever' | 'neighborhood' | 'city';
 export interface AimSurface { position:Vec3; normal:Vec3; voxelId:number|null; }
 export interface ObjectiveState { mapId:MapId; title:string; total:number; destroyed:number; fraction:number; goal:number; complete:boolean; completedMaps:MapId[]; }
-export interface Voxel { id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
+export interface Voxel { size?:Vec3; weight?:number; id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
 export interface DamageCommand { reward?:boolean; id: string; epoch: number; target: Vec3; weapon: WeaponId; power: number; }
 export interface DamageResult { accepted: boolean; removed: Voxel[]; detached: Voxel[]; newlyDestroyed: number; researchEarned: number; destruction: number; }
-export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6 | 7; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
+export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6 | 7 | 8; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
 export interface RoundState { budget:number; used:number; startResearch:number; startDestroyed:number; settled:boolean; loadout?:Loadout; remaining?:Loadout; }
 export interface RoundResult { used:number; budget:number; destruction:number; researchEarned:number; }
 export interface WorldModel {
@@ -29,6 +29,10 @@ export interface WorldModel {
  restore(snapshot: WorldSnapshot): boolean;
 }
 export interface SceneApi {
+ getDiagnostics():{mapId:MapId;camera:{position:Vec3;target:Vec3;fov:number;far:number};groundBounds:{halfX:number;halfZ:number};renderedVoxelCount:number};
+ projectPoint(point:Vec3):{x:number;y:number;visible:boolean};
+ setMap(mapId:MapId):void;
+ setReducedMotion(reduced:boolean):void;
  setVoxels(voxels: readonly Voxel[]): void;
  setProjectiles(projectiles: readonly ProjectileView[]): void;
  setTrajectory(preview:TrajectoryPreview|null):void;
@@ -37,7 +41,7 @@ export interface SceneApi {
  getRenderedProjectileCount():number;
  getLaunchOrigin(target: Vec3): Vec3;
  getAimSurface(): AimSurface | null;
- playDamage(result: DamageResult, target: Vec3, weapon: WeaponId): void;
+ playDamage(result: DamageResult, target: Vec3, weapon: WeaponId, power?: number): void;
  setTarget(target: Vec3 | null): void;
  setTimeScale(scale: number): void;
  resetCamera(): void;
@@ -63,6 +67,7 @@ export interface ProjectilePhysics {
  preview(command:ProjectileCommand):TrajectoryPreview;
  attach(command:AttachedCommand):boolean;
  detonateAttached():Detonation[];
+ setMap?(mapId:MapId):void;
  syncVoxels(voxels: readonly Voxel[], epoch: number): void;
  launch(command: ProjectileCommand): boolean;
  step(deltaSeconds: number): Detonation[];

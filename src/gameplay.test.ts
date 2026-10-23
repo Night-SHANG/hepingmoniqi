@@ -16,3 +16,29 @@ test('next goal follows research gates rather than building completion',()=>{
  }
  assert.match(nextGoal(120,false,'warehouse'),/实验|自由|重试/);
 });
+
+// These cases protect cost weighting, the live progression boundary, and input
+// validation rather than accepting any positive collection of unlocked tools.
+test('loadout capacity uses six slots before 120 research and eight thereafter',async()=>{
+ const gameplay=await import('./gameplay.js');
+ assert.equal(typeof gameplay.capacityForResearch,'function');
+ for(const [research,capacity] of [[0,6],[40,6],[90,6],[119,6],[120,8],[999999,8]])assert.equal(gameplay.capacityForResearch(research),capacity);
+ assert.equal(gameplay.weaponCost('charge'),1);assert.equal(gameplay.weaponCost('pulse'),2);assert.equal(gameplay.weaponCost('shock'),2);
+ assert.equal(gameplay.validateLoadout({charge:2,pulse:1,shock:1},90),true,'2 grenades, a rocket and a remote package consume six slots');
+ assert.equal(gameplay.validateLoadout({charge:4,pulse:1,shock:1},119),false);
+ assert.equal(gameplay.validateLoadout({charge:4,pulse:1,shock:1},120),true);
+});
+test('loadout validation rejects empty, overbudget, locked and malformed item counts',async()=>{
+ const {validateLoadout}=await import('./gameplay.js');assert.equal(typeof validateLoadout,'function');
+ for(const [loadout,research] of [
+  [{charge:0,pulse:0,shock:0},120], [{charge:7,pulse:0,shock:0},0],
+  [{charge:1,pulse:1,shock:0},39], [{charge:1,pulse:0,shock:1},89],
+  [{charge:-1,pulse:0,shock:0},120], [{charge:1.5,pulse:0,shock:0},120],
+  [{charge:Infinity,pulse:0,shock:0},120], [{charge:Number.MAX_SAFE_INTEGER+1,pulse:0,shock:0},120],
+  [{charge:1,pulse:0},120], [{charge:1,pulse:0,shock:0,fake:1},120], [null,120],
+  [{charge:1,pulse:0,shock:0},NaN], [{charge:1,pulse:0,shock:0},-1]
+ ] as const)assert.equal(validateLoadout(loadout as any,research),false,JSON.stringify({loadout,research}));
+ assert.equal(validateLoadout({charge:1,pulse:0,shock:0},0),true,'using less than all capacity is valid');
+ assert.equal(validateLoadout({charge:0,pulse:1,shock:0},40),true);
+ assert.equal(validateLoadout({charge:0,pulse:0,shock:1},90),true);
+});

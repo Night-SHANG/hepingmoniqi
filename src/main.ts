@@ -1,110 +1,159 @@
 import './style.css';
-import {createExperimentFlow} from './experiment-flow';
-import {toolAvailable,nextGoal} from './gameplay';
+import { createExperimentFlow } from './experiment-flow';
+import { toolAvailable, nextGoal, capacityForResearch, weaponCost, validateLoadout } from './gameplay';
+import { createNavigation } from './navigation';
+import type { GameMode, GameScreen } from './navigation';
 import { createAudio } from './audio';
 import { createWorld } from './domain';
 import { createScene } from './scene';
 import { createProjectilePhysics } from './physics';
-import type { SceneApi, Vec3, WeaponId, WorldSnapshot, ProjectilePhysics, Detonation, MapId, ProjectileCommand, TrajectoryPreview, TriggerMode } from './contracts';
+import type { SceneApi, Vec3, WeaponId, ProjectilePhysics, Detonation, MapId, ProjectileCommand, TriggerMode, Loadout } from './contracts';
 
-const app = document.querySelector<HTMLDivElement>('#app')!;
-app.innerHTML = `<main class="game"><div id="scene" aria-label="可旋转的三维小屋试验场"></div>
-<header class="top"><div class="brand"><span class="cube">◈</span><div><h1>核平模拟器</h1><p>从小屋到宇宙 <span>DESTRUCTION SANDBOX</span></p></div></div><div class="stats"><div class="stat destruction"><span>◉ 建筑拆除</span><strong id="damage">0<small>%</small></strong><i><b id="damage-bar"></b></i></div><div class="stat"><span>◇ 研究进度</span><strong id="research">0</strong><i><b id="research-bar"></b></i></div></div></header>
-<section class="location"><b>E0</b><div><h2 id="map-title">小屋试验场 <span>/ 木屋庭院</span></h2><p><span class="green-dot"></span><span id="mode-label">主模式</span> · 无人实验场</p></div></section>
-<section class="mission"><div><b>本轮实验</b><strong id="objective-progress">建筑拆除 0%</strong></div><p id="next-goal"></p><nav><button id="map-courtyard">木屋庭院</button><button id="map-warehouse" disabled>仓库 · 研究120解锁</button></nav><div class="round-line"><span id="ammo">弹药 6 / 6</span><button id="finish-round">结束本轮</button></div></section>
-<div class="intro" id="intro"><span>实验 001</span><h3>从手榴弹开始</h3><p>每轮6枚，尽量拆得更多。<br>少量破坏也获研究；用更强工具回来重试。</p><button id="dismiss-intro">知道了 <span>↗</span></button></div>
-<aside class="tools"><button id="pause" title="暂停模拟">Ⅱ <span>暂停</span></button><button id="slow" title="慢动作">◷ <span>0.25×</span></button><button id="camera" title="重置镜头">⌾ <span>镜头</span></button><button id="reset" title="重建小屋，保留研究进度">↻ <span>重建</span></button><button id="settings" title="设置">⚙ <span>设置</span></button></aside>
+const weapons:WeaponId[]=['charge','pulse','shock'];
+const names:Record<WeaponId,string>={charge:'手榴弹',pulse:'火箭弹',shock:'遥控爆破包'};
+const symbols:Record<WeaponId,string>={charge:'◈',pulse:'➤',shock:'▣'};
+const weaponIcons:Record<WeaponId,string>={
+ charge:'<path d="M12 5h8v5h-8zM21 5h4v13h-3V9h-1z" fill="currentColor"/><path d="M9 11h14l3 8-4 10H10L6 19zM8 17h16M9 23h14M13 11v17M19 11v17" fill="none" stroke="currentColor" stroke-width="2"/>',
+ pulse:'<path d="m26 3 3 10-7-3z" fill="currentColor"/><path d="m21 9 4 4-13 13-5-5zM10 17l-6 2 2 5M17 24l-2 6-5-2M6 26l-3 3m7-3-4 4" fill="none" stroke="currentColor" stroke-width="2"/>',
+ shock:'<rect x="3" y="8" width="26" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 8v18M23 8v18" stroke="currentColor" stroke-width="3"/><rect x="13" y="12" width="6" height="6" fill="currentColor"/><path d="M16 8V3h7" fill="none" stroke="currentColor" stroke-width="2"/>',
+};
+const icon=(id:WeaponId)=>`<svg viewBox="0 0 32 32" aria-hidden="true">${weaponIcons[id]}</svg>`;
+const buildingIcon='<svg viewBox="0 0 110 70" aria-hidden="true"><path d="m10 32 43-24 46 24-45 25z" fill="#ef8a30"/><path d="M17 34v26l37 10V47z" fill="#916132"/><path d="m54 47 37-15v28L54 70z" fill="#b48345"/><path d="M29 43v15m12-11v14m23-14v13m15-18v13" stroke="#ffd093" stroke-width="6"/><path d="m10 32 43-24 46 24-45 15z" fill="none" stroke="#ffd6a6" stroke-width="2"/></svg>';
+const app=document.querySelector<HTMLDivElement>('#app')!;
+app.innerHTML=`<main class="game" data-screen="home"><div id="scene" aria-label="可旋转的真实三维实验场"></div><div class="screen-shade"></div>
+<section id="home-screen" class="screen home-screen"><div class="home-panel panel"><div class="edition"><span class="status-dot"></span>体素拆除实验室 <span>V0.5</span></div><div class="game-logo"><span>核平</span>模拟器</div><p class="home-tagline">从一间小屋开始。<br>选好工具，亲手拆出下一种可能。</p><div class="home-modes"><button id="mode-main" class="mode-card primary"><span class="mode-index">01 / RESEARCH</span><strong id="main-entry-title">主模式</strong><small>携带配置 · 拆除建筑 · 累积研究</small><span class="mode-arrow">↗</span></button><button id="mode-free" class="mode-card"><span class="mode-index">02 / SANDBOX</span><strong>自由模式</strong><small>任选场景 · 无限弹药 · 不计研究</small><span class="mode-arrow">↗</span></button></div><div class="home-bottom"><button id="home-research">◇ 研究 <b id="home-research-value">0</b></button><button id="home-settings">⚙ 设置</button></div><p class="home-save">研究自动保存至此浏览器</p></div><div class="home-scene-note"><span>LIVE VOXEL WORLD</span><strong>每一块，真的可以拆。</strong><p>真实三维场景 · 弹道碰撞 · 结构坍塌</p></div></section>
+<section id="setup-screen" class="screen setup-screen" hidden><header class="setup-header"><button id="setup-back" class="blue-button">← 返回主页</button><div><span class="eyebrow">PREPARE YOUR EXPERIMENT</span><h1 id="setup-title">主模式</h1></div><div class="research-badge">累计研究 <strong id="setup-research">0</strong><small>RP</small></div></header><div class="setup-columns"><aside class="scene-panel panel"><div class="panel-title"><span>01</span><h2>选择场景</h2></div><p class="panel-caption" id="scene-choice-caption">每次开始实验，建筑完整重建</p><div class="scene-choices"><button data-scene="courtyard" class="scene-card selected"><span class="building-picture cottage-picture">${buildingIcon}<span>WOOD / STONE</span></span><div><strong>木屋庭院</strong><small>小型建筑 · 从这里开始</small><span class="scene-state">已选择</span></div></button><button data-scene="warehouse" class="scene-card"><span class="building-picture warehouse-picture">${buildingIcon}<span>TWIN BAY</span></span><div><strong>双跨仓库</strong><small id="warehouse-lock">主模式累计120研究解锁</small><span class="scene-state">120 RP</span></div></button></div><div class="scene-footnote"><span>◈</span><p>场景与工具分别选择。<br>少量破坏也会留下研究成果。</p></div></aside><div class="setup-center"><span id="selected-scene-kicker">COURTYARD / E0</span><h2 id="selected-scene-name">木屋庭院</h2><p id="setup-center-copy">这一轮，准备怎样拆？</p></div><aside class="loadout-panel panel"><div class="panel-title"><span>02</span><h2 id="loadout-title">携带配置</h2></div><p class="panel-caption" id="loadout-caption">按格数配装，研究不会被消耗</p><div class="loadout-rows">${weapons.map(id=>`<div class="loadout-row" data-loadout="${id}"><span class="loadout-icon ${id}">${icon(id)}</span><div class="loadout-name"><strong>${names[id]}</strong><small id="loadout-hint-${id}">${weaponCost(id)}格 / 枚</small></div><div class="stepper"><button data-adjust="${id}" data-delta="-1" aria-label="减少${names[id]}">−</button><output id="loadout-${id}">0</output><button data-adjust="${id}" data-delta="1" aria-label="增加${names[id]}" class="add">＋</button></div><span class="free-unlock" id="free-unlock-${id}" hidden>已解锁</span></div>`).join('')}</div><div id="capacity-section" class="capacity-section"><div><span>携带容量</span><strong id="capacity-value">6 / 6</strong></div><div id="capacity-meter" class="capacity-meter"></div><p id="capacity-note">累计120研究，容量提升至8格</p></div><div id="free-mode-note" class="free-mode-note" hidden><strong>∞ 无限弹药</strong><p>所有场景均可自由选择。<br>共享主模式武器解锁，不获得研究。</p></div><button id="start-experiment" class="primary start-button">开始实验 <span>↗</span></button><p class="start-caption" id="start-caption">新解锁工具从下一轮起可携带</p></aside></div></section>
+<section id="game-screen" class="screen game-screen" hidden><header class="top"><div class="location panel"><span class="location-mark">◈</span><div><h1 id="map-title">木屋庭院</h1><p><span id="mode-label">主模式</span> <span class="location-slash">/</span> <span id="game-research">0 RP</span></p></div></div><div class="round-status"><div class="damage-panel panel"><span>建筑拆除</span><strong id="damage">0<small>%</small></strong><i><b id="damage-bar"></b></i></div><button id="finish-round" class="blue-button">结束本轮</button></div></header><nav class="game-navigation"><button id="game-home">← 主页</button><button id="change-scene">更换场景 / 配置</button></nav><aside class="tools"><button id="pause" title="暂停模拟">Ⅱ <span>暂停</span></button><button id="camera" title="重置镜头">⌾ <span>镜头</span></button><button id="slow" title="慢动作">▷ <span>慢速</span></button><button id="settings" title="实验设置">⚙ <span>设置</span></button><button id="reset" title="重建自由场景并清除所有待爆物" hidden>↻ <span>重建</span></button></aside><div id="round-guidance" class="round-guidance"><strong id="objective-progress">建筑拆除0%</strong><span id="next-goal"></span></div><div class="aim-hint" id="aim-hint">＋ 点击建筑瞄准，然后发射或放置</div><footer class="console panel"><div class="console-status"><span id="ammo">携带容量6 / 6</span><span id="ammo-status">新解锁工具于下一轮生效</span></div><div class="console-main"><div class="weapon-group">${weapons.map((id,i)=>`<button data-weapon="${id}" class="weapon${id==='charge'?' selected':''}"><span class="key">${i+1}</span><span class="weapon-icon ${id}">${icon(id)}</span><span><b>${names[id]}</b><small id="${id}-label">可使用</small><strong class="inventory-count" id="inventory-${id}">×0</strong></span></button>`).join('')}</div><div class="experiment-controls"><label>投放<select id="delivery"><option value="quick">直接发射</option><option value="place">表面放置</option></select></label><label>引爆<select id="trigger"><option value="automatic">自动引爆</option><option value="remote">统一遥控</option></select></label><label class="power"><span>威力 <strong id="power-value">100%</strong></span><input id="power" aria-label="武器威力" type="range" min="25" max="100" value="100"/></label></div><div class="action-buttons"><button id="fire" class="primary" disabled>发射 <small>SPACE</small></button><button id="detonate" disabled>引爆待爆物 0</button></div></div></footer><div class="bottom-line"><span>拖动旋转 · 滚轮缩放 · 点击瞄准 · 空格发射</span><span id="save-status">本机自动保存</span></div></section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="aim-hint" id="aim-hint"><span>＋</span> 点选庭院物件，设置瞄准点</div>
-<div class="experiment-controls"><label>投放<select id="delivery"><option value="quick">快捷逐发</option><option value="preview">轨迹确认</option><option value="place">直接放置</option></select></label><label>引爆<select id="trigger"><option value="automatic">自动引爆</option><option value="remote">统一遥控</option></select></label><button id="cancel-preview" hidden>取消轨迹</button></div><footer class="console"><div class="weapon-group"><button data-weapon="charge" class="weapon selected"><span class="key">1</span><span class="weapon-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 5h8v5H12zM21 5h4v13h-3V9h-1z" fill="currentColor"/><path d="M9 11h14l3 8-4 10H10L6 19z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 17h16M9 23h14M13 11v17M19 11v17" stroke="currentColor" stroke-width="1.5"/></svg></span><span><b>手榴弹</b><small>抛投 / 放置</small></span></button><button data-weapon="pulse" class="weapon"><span class="key">2</span><span class="weapon-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m26 3 3 10-7-3z" fill="currentColor"/><path d="m21 9 4 4-13 13-5-5zM10 17l-6 2 2 5M17 24l-2 6-5-2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m6 26-3 3m7-3-4 4" stroke="currentColor" stroke-width="2"/></svg></span><span><b>火箭弹</b><small id="pulse-label">研究40解锁</small></span></button><button data-weapon="shock" class="weapon"><span class="key">3</span><span class="weapon-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="8" width="26" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 8v18M23 8v18" stroke="currentColor" stroke-width="3"/><rect x="13" y="12" width="6" height="6" fill="currentColor"/><path d="M16 8V3h7" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span><b>遥控爆破包</b><small id="shock-label">研究90解锁</small></span></button></div><label class="power"><span>威力 <strong id="power-value">100%</strong></span><input id="power" aria-label="武器威力" type="range" min="25" max="100" value="100"/><small>精细实验 <span>全力释放</span></small></label><div class="action-buttons"><button id="fire" disabled>投 掷 <small>SPACE</small></button><button id="detonate" disabled>引爆已放置 · 0</button></div></footer>
-<div class="bottom-line"><span>拖动旋转 · 滚轮缩放 · 点击瞄准 · 空格发射</span><span id="save-status">本机自动保存</span></div>
-<dialog id="completion-dialog"><span class="eyebrow">ROUND SUMMARY</span><h2 id="completion-title">本轮实验结束</h2><p id="round-summary"></p><div class="completion-actions"><button id="next-map">前往双跨仓库</button><button id="retry-map">重试本图</button><button id="continue-free">继续自由破坏</button><button id="observe-scene">查看现场</button></div></dialog>
-<dialog id="settings-dialog"><form method="dialog"><button class="close" aria-label="关闭">×</button><span class="eyebrow">EXPERIMENT SETTINGS</span><h2>实验设置</h2><label class="setting-row">自由沙盒 <input id="sandbox" type="checkbox"/></label><p>任选建筑，无限弹药；武器需在主模式解锁，不增加研究。</p><label class="setting-row">静音 <input id="mute" type="checkbox"/></label><p>爆炸与木块音效使用已核验的 CC0 素材。</p><label class="setting-row">减少动态效果 <input id="reduce-motion" type="checkbox"/></label><p>以慢动作观察破坏，降低动态变化速度。</p><button class="done">返回实验</button></form></dialog>
-</main>`;
-const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-const audio = createAudio();
-const world = createWorld();
-const saveKey = 'hepingmoniqi.first-playable.v1';
-let target: Vec3 | null = null;
-let weapon: WeaponId = 'charge';
-let power = 100, paused = false, slow = false, sandbox = false;
-let delivery:'quick'|'preview'|'place'='quick', trigger:TriggerMode='automatic';
-let growSnapshot:WorldSnapshot|null=null, planned:ProjectileCommand|null=null, preview:TrajectoryPreview|null=null;
-let timer:ReturnType<typeof setTimeout>,shot=0,previousResearch=0,physics:ProjectilePhysics|null=null;
-const flow=createExperimentFlow(),detonations:Detonation[]=[];
-function toast(text:string){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(timer);timer=setTimeout(()=>$('toast').classList.remove('visible'),3400);}
-try{const raw=localStorage.getItem(saveKey);if(raw){const prior=JSON.parse(raw);if(!world.restore(prior))toast('存档不兼容，已保留原数据并开启新实验。');else if(prior.schemaVersion!==4)toast('旧研究已保留，现在每轮有独立弹药配额。');}}catch{toast('存档暂不可用，本轮仍可继续。');}
-previousResearch=world.getSnapshot().research;
+<dialog id="completion-dialog" class="results-dialog panel"><span class="eyebrow">EXPERIMENT COMPLETE</span><h2 id="completion-title">本轮实验完成</h2><p id="result-map" class="result-map">木屋庭院</p><div class="result-metrics"><div><span>建筑拆除</span><strong id="result-damage">0<small>%</small></strong></div><div class="result-research"><span>本轮研究 <b id="result-earned">+0</b></span><span>累计研究 <b id="result-total">0</b></span></div><div class="result-meter"><i id="result-meter-fill"></i></div></div><p id="round-summary"></p><div id="result-unlocks" class="result-unlocks"></div><div class="completion-actions"><button id="retry-map" class="primary">再次挑战</button><button id="change-result-scene" class="blue-button">更换场景</button><button id="result-home" class="blue-button">返回主页</button></div><button id="observe-scene" class="text-button">查看现场 ↗</button></dialog>
+<dialog id="navigation-dialog" class="panel"><span class="eyebrow">LEAVE EXPERIMENT?</span><h2>先结束当前实验？</h2><p>不会直接丢弃现场。确认后将引爆所有待爆物，等待爆炸与坍塌结束，再保留研究并离开。</p><div class="dialog-actions"><button id="confirm-leave" class="primary">引爆、结束并离开</button><button id="cancel-leave" class="blue-button">继续观察</button></div></dialog>
+<dialog id="settings-dialog" class="panel"><form method="dialog"><button class="close" aria-label="关闭">×</button><span class="eyebrow">EXPERIMENT SETTINGS</span><h2>实验设置</h2><label class="setting-row">静音<input id="mute" type="checkbox"/></label><p>爆炸与木块音效使用CC0素材。</p><label class="setting-row">减少动态效果<input id="reduce-motion" type="checkbox"/></label><p>降低模拟速度，便于观察破坏。</p><button class="done primary">返回</button></form></dialog>
+<dialog id="research-dialog" class="panel"><form method="dialog"><button class="close" aria-label="关闭">×</button><span class="eyebrow">PERMANENT RESEARCH</span><h2>研究解锁</h2><p>研究永久保留，不用于消费。新工具从下一轮起生效。</p><ul class="research-list"><li>0 RP <b>手榴弹 · 1格</b></li><li>40 RP <b>火箭弹 · 2格</b></li><li>90 RP <b>遥控爆破包 · 2格</b></li><li>120 RP <b>双跨仓库 · 容量8格</b></li></ul><button class="done blue-button">知道了</button></form></dialog></main>`;
+const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
+const dialog=(id:string)=>$<HTMLDialogElement>(id);
+const audio=createAudio(), mainWorld=createWorld(), freeWorld=createWorld(), navigation=createNavigation();
+let world=mainWorld, sandbox=false, mainSession=false;
+const saveKey='hepingmoniqi.first-playable.v1';
+let selectedScene:MapId='courtyard', setupLoadout:Loadout={charge:6,pulse:0,shock:0};
+let target:Vec3|null=null, weapon:WeaponId='charge', power=100, paused=false, slow=false, reducedMotion=false;
+let delivery:'quick'|'place'='quick', trigger:TriggerMode='automatic';
+let timer:ReturnType<typeof setTimeout>, shot=0, previousResearch=0, physics:ProjectilePhysics|null=null;
+let lastFinishEvidence:{flow:string;paused:boolean;activeEffects:boolean;projectiles:number;detonations:{id:string;reason:string}[]}|null=null;
+const flow=createExperimentFlow(), detonations:Detonation[]=[];
+function toast(text:string){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(timer);timer=setTimeout(()=>$('toast').classList.remove('visible'),3600);}
+try{const raw=localStorage.getItem(saveKey);if(raw){const prior=JSON.parse(raw);if(!mainWorld.restore(prior))toast('存档不兼容，已保留原数据并开启新实验。');else {mainSession=!mainWorld.getRound().settled;selectedScene=mainWorld.getObjective().mapId;if(prior.schemaVersion!==5)toast('旧研究与剩余弹药已保留，请继续实验。');}}}catch{toast('存档暂不可用，本轮仍可继续。');}
+previousResearch=mainResearch();
 let scene:SceneApi;
-try{scene=createScene($('scene'),{onAim(point){target=point;clearPreview();scene.setTarget(point);render();$('aim-hint').textContent=delivery==='place'?'点击放置，把当前工具布置在选定表面。':'瞄准已就绪，可以发射或查看轨迹。';$('intro').classList.add('hidden');},onFrame(dt){if(!physics)return;for(const e of physics.step(dt))detonate(e);scene.setProjectiles(physics.getProjectiles());checkSettlement();}});scene.setVoxels(world.getVoxels());}
+try{scene=createScene($('scene'),{onAim(point){if(navigation.snapshot.screen!=='playing'||flow.state==='ending')return;target=point;scene.setTarget(point);render();$('aim-hint').textContent=delivery==='place'?'表面已选定，点击放置布置当前工具。':'瞄准已就绪，点击发射或按空格。';},onFrame(dt){if(!physics)return;for(const e of physics.step(dt))detonate(e);scene.setProjectiles(physics.getProjectiles());checkSettlement();}});scene.setVoxels(world.getVoxels());}
 catch(error){app.innerHTML='<div class="startup-error"><h1>暂时无法开启三维实验场</h1><p>请使用支持WebGL2的浏览器。已保存研究未被清除。</p><button onclick="location.reload()">重新尝试</button></div>';throw error;}
 void createProjectilePhysics().then(engine=>{physics=engine;physics.syncVoxels(world.getVoxels(),world.epoch);render();}).catch(error=>{console.error(error);toast('物理系统加载失败，请刷新重试。');});
-function clearPreview(){planned=null;preview=null;scene?.setTrajectory(null);}
-function syncWorld(){scene.setVoxels(world.getVoxels());physics?.syncVoxels(world.getVoxels(),world.epoch);scene.setProjectiles(physics?.getProjectiles()??[]);}
-function save(){if(sandbox)return;try{localStorage.setItem(saveKey,JSON.stringify(world.getSnapshot()));$('save-status').textContent='已保存到此浏览器';}catch{$('save-status').textContent='浏览器存储不可用';}}
-function mainResearch(){return sandbox&&growSnapshot?growSnapshot.research:world.getSnapshot().research;}
-function unlocked(id:WeaponId){return toolAvailable(id,mainResearch(),false);}
-function availableAmmo(){const r=world.getRound();return sandbox||(!r.settled&&r.used<r.budget);}
-function render(){
- const o=world.getObjective(),r=world.getRound(),research=mainResearch(),pct=Math.round(o.fraction*100),armed=physics?.getProjectiles().filter(p=>p.state==='attached'||p.trigger==='remote').length??0;
- $('damage').innerHTML=`${pct}<small>%</small>`;$('damage-bar').style.width=`${pct}%`;$('research').textContent=String(research);$('research-bar').style.width=`${Math.min(100,research/120*100)}%`;
- $('objective-progress').textContent=`建筑拆除 ${pct}%`;$('next-goal').textContent=sandbox?'自由模式 · 无限弹药，武器随主模式解锁':nextGoal(research,false,o.mapId);
- $('ammo').textContent=sandbox?'弹药 ∞':`弹药 ${Math.max(0,r.budget-r.used)} / ${r.budget}`;
- $('finish-round').hidden=sandbox;$('finish-round').textContent=flow.state==='ending'?'等待爆炸结束…':r.settled?'查看本轮结果':armed?'引爆并结束':'结束本轮';
- ($('finish-round') as HTMLButtonElement).disabled=flow.state==='ending';
- $('map-title').textContent=o.mapId==='courtyard'?'小屋试验场 / 木屋庭院':'双跨仓库 / 拆除实验';
- $('map-courtyard').classList.toggle('active',o.mapId==='courtyard');$('map-warehouse').classList.toggle('active',o.mapId==='warehouse');
- const open=sandbox||research>=120;($('map-warehouse') as HTMLButtonElement).disabled=!open||flow.state==='ending';($('map-courtyard') as HTMLButtonElement).disabled=flow.state==='ending';$('map-warehouse').textContent=open?'双跨仓库':'仓库 · 研究120';
- $('pulse-label').textContent=unlocked('pulse')?'碰撞 / 遥控':'研究40解锁';$('shock-label').textContent=unlocked('shock')?'放置 / 发射':'研究90解锁';
- document.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b=>{b.classList.toggle('locked',!unlocked(b.dataset.weapon as WeaponId));b.classList.toggle('selected',b.dataset.weapon===weapon);});
- $('detonate').textContent=`统一引爆 · ${armed}`;($('detonate') as HTMLButtonElement).disabled=!armed||paused||flow.state==='ending';$('detonate').classList.toggle('shown',armed>0||delivery==='place'||trigger==='remote');
- $('fire').innerHTML=delivery==='place'?'放 置 <small>SPACE</small>':delivery==='preview'?(planned?'确认发射':'预览轨迹'):'发 射 <small>SPACE</small>';
- ($('fire') as HTMLButtonElement).disabled=!physics||!target||!flow.canAct()||!availableAmmo()||!unlocked(weapon)||(delivery==='place'&&!scene?.getAimSurface());
- ($('trigger') as HTMLSelectElement).disabled=delivery==='place';($('trigger') as HTMLSelectElement).value=delivery==='place'?'remote':trigger;$('cancel-preview').hidden=!planned;
+function mainResearch(){return mainWorld.getSnapshot().research;}
+function unlocked(id:WeaponId){return toolAvailable(id,sandbox?mainResearch():world.getRound().startResearch,false);}
+function selectedRemaining(){return sandbox?Infinity:world.getRound().remaining?.[weapon]??0;}
+function totalRemaining(){return sandbox?Infinity:weapons.reduce((sum,id)=>sum+(world.getRound().remaining?.[id]??0),0);}
+function loadoutCost(){return weapons.reduce((sum,id)=>sum+setupLoadout[id]*weaponCost(id),0);}
+function syncWorld(){scene.setTrajectory(null);scene.setVoxels(world.getVoxels());physics?.syncVoxels(world.getVoxels(),world.epoch);scene.setProjectiles(physics?.getProjectiles()??[]);}
+function save(){if(!mainSession&&!mainWorld.getRound().settled)return;try{localStorage.setItem(saveKey,JSON.stringify(mainWorld.getSnapshot()));$('save-status').textContent='研究与配置已保存';}catch{$('save-status').textContent='浏览器存储不可用';}}
+function setScreen(next:GameScreen,mode:GameMode=navigation.snapshot.mode){navigation.request(next,mode,false);render();}
+function renderSetup(){
+ const research=mainResearch(), free=navigation.snapshot.mode==='free',capacity=capacityForResearch(research),cost=loadoutCost();
+ $('setup-title').textContent=free?'自由模式':'主模式';$('setup-research').textContent=String(research);
+ $('loadout-title').textContent=free?'可用工具':'携带配置';$('loadout-caption').textContent=free?'共享主模式解锁，每种工具无限使用':'按格数配装，研究不会被消耗';
+ $('scene-choice-caption').textContent=free?'独立选择任意场景，无需研究门槛':'每次开始实验，建筑完整重建';
+ $('selected-scene-name').textContent=selectedScene==='courtyard'?'木屋庭院':'双跨仓库';$('selected-scene-kicker').textContent=selectedScene==='courtyard'?'COURTYARD / E0':'TWIN WAREHOUSE / E1';
+ $('setup-center-copy').textContent=free?'没有配额，尽情观察每一次坍塌。':'这一轮，准备怎样拆？';
+ document.querySelectorAll<HTMLButtonElement>('[data-scene]').forEach(b=>{const id=b.dataset.scene as MapId,locked=id==='warehouse'&&!free&&research<120;b.disabled=locked;b.classList.toggle('selected',id===selectedScene);b.classList.toggle('locked',locked);b.querySelector('.scene-state')!.textContent=locked?'120 RP':id===selectedScene?'已选择':'选择场景';});
+ $('warehouse-lock').textContent=free?'自由开放 · 双跨结构':research<120?'主模式累计120研究解锁':'双跨结构 · 更大挑战';
+ for(const id of weapons){const open=toolAvailable(id,research,false),row=document.querySelector<HTMLElement>(`[data-loadout="${id}"]`)!;row.classList.toggle('locked',!open);$('loadout-'+id).textContent=String(setupLoadout[id]);$('loadout-hint-'+id).textContent=open?`${weaponCost(id)}格 / 枚`:`${id==='pulse'?40:90} RP解锁 · ${weaponCost(id)}格 / 枚`;row.querySelector<HTMLElement>('.stepper')!.hidden=free;$('free-unlock-'+id).hidden=!free;$('free-unlock-'+id).textContent=open?'∞':'未解锁';document.querySelectorAll<HTMLButtonElement>(`[data-adjust="${id}"]`).forEach(b=>b.disabled=!open||(b.dataset.delta==='1'?cost+weaponCost(id)>capacity:setupLoadout[id]<=0));}
+ $('capacity-section').hidden=free;$('free-mode-note').hidden=!free;$('capacity-value').textContent=`${cost} / ${capacity}`;$('capacity-meter').innerHTML=Array.from({length:capacity},(_,i)=>`<i class="${i<cost?'filled':''}"></i>`).join('');$('capacity-note').textContent=research<120?'累计120研究，容量提升至8格':'容量8格已解锁 · 研究永久保留';
+ $<HTMLButtonElement>('start-experiment').disabled=!physics||(!free&&!validateLoadout(setupLoadout,research));$('start-caption').textContent=free?'仅练习与观察，不影响主模式研究':cost===0?'至少携带一枚工具才能开始':'新解锁工具从下一轮起可携带';
 }
-function select(id:WeaponId){if(!unlocked(id)){toast('请在主模式积累研究，解锁后自由模式也可使用。');return;}weapon=id;clearPreview();audio.play('ui-click',.7);render();}
+function render(){
+ const nav=navigation.snapshot,playing=nav.screen==='playing'||nav.screen==='results';
+ document.querySelector('.game')!.setAttribute('data-screen',nav.screen);
+ $('home-screen').hidden=nav.screen!=='home';$('setup-screen').hidden=nav.screen!=='setup';$('game-screen').hidden=!playing;
+ $('home-research-value').textContent=String(mainResearch());$('main-entry-title').textContent=mainSession&&!mainWorld.getRound().settled?'继续主模式':'主模式';
+ if(nav.screen==='setup')renderSetup();
+ const o=world.getObjective(),r=world.getRound(),research=mainResearch(),pct=Math.round(o.fraction*100),armed=physics?.getProjectiles().filter(p=>p.state==='attached'||p.trigger==='remote').length??0;
+ $('damage').innerHTML=`${pct}<small>%</small>`;$('damage-bar').style.width=`${pct}%`;$('game-research').textContent=`${research} RP`;$('objective-progress').textContent=`建筑拆除 ${pct}%`;$('next-goal').textContent=sandbox?'自由模式 · 无限弹药，不计研究':nextGoal(research,false,o.mapId);
+ const carried=weapons.reduce((sum,id)=>sum+(r.loadout?.[id]??0)*weaponCost(id),0),remainingSlots=weapons.reduce((sum,id)=>sum+(r.remaining?.[id]??0)*weaponCost(id),0);
+ $('ammo').textContent=sandbox?'自由实验 · ∞ 无限弹药':`携带余量 ${remainingSlots} / ${carried} 格`;
+ $('ammo-status').textContent=!sandbox&&totalRemaining()===0?'弹药已用完，可继续观察或引爆':flow.state==='ending'?'正在等待爆炸与坍塌结束…':sandbox?'所有武器解锁以主模式为准':'新解锁工具于下一轮生效';
+ document.querySelector('.console-status')?.classList.toggle('empty',!sandbox&&totalRemaining()===0);
+ $('finish-round').textContent=flow.state==='ending'?'等待实验结束…':r.settled&&!sandbox?'查看本轮结果':sandbox?'结束自由实验':'结束本轮';$<HTMLButtonElement>('finish-round').disabled=flow.state==='ending';
+ $('reset').hidden=!sandbox;$<HTMLButtonElement>('reset').disabled=flow.state==='ending';$<HTMLButtonElement>('game-home').disabled=flow.state==='ending';$<HTMLButtonElement>('change-scene').disabled=flow.state==='ending';
+ $('map-title').textContent=o.mapId==='courtyard'?'木屋庭院':'双跨仓库';$('mode-label').textContent=sandbox?'自由模式':'主模式';
+ document.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b=>{const id=b.dataset.weapon as WeaponId,open=unlocked(id),count=r.remaining?.[id]??0;b.classList.toggle('locked',!open);b.classList.toggle('empty',!sandbox&&count===0);b.classList.toggle('selected',id===weapon);b.setAttribute('aria-pressed',String(id===weapon));$('inventory-'+id).textContent=sandbox&&open?'∞':`×${count}`;$(id+'-label').textContent=open?sandbox?'无限弹药':`${weaponCost(id)}格 / 枚`:toolAvailable(id,research,false)?'下轮可携带':`${id==='pulse'?40:90} RP解锁`;});
+ $('detonate').textContent=`引爆待爆物 ${armed}`;$<HTMLButtonElement>('detonate').disabled=!armed||paused||flow.state==='ending';$('detonate').classList.toggle('armed',armed>0);
+ $('fire').innerHTML=(delivery==='place'?'放置':'发射')+' <small>SPACE</small>';
+ $<HTMLButtonElement>('fire').disabled=!playing||!physics||!target||paused||!flow.canAct()||selectedRemaining()<=0||!unlocked(weapon)||(delivery==='place'&&!scene?.getAimSurface());
+ $<HTMLSelectElement>('trigger').disabled=delivery==='place';$<HTMLSelectElement>('trigger').value=delivery==='place'?'remote':trigger;
+}
+function select(id:WeaponId){if(!unlocked(id)){toast(toolAvailable(id,mainResearch(),false)?'已解锁，下轮准备时可携带。':'请在主模式积累研究解锁此工具。');return;}weapon=id;audio.play('ui-click',.7);render();}
 function launchCommand():ProjectileCommand{return {id:`${world.epoch}-${Date.now()}-${shot++}`,epoch:world.epoch,origin:scene.getLaunchOrigin(target!),target:{...target!},weapon,power:power/100,trigger};}
 function fire(){
- if(!target||!physics||!flow.canAct()||!availableAmmo()||!unlocked(weapon)||$('settings-dialog').hasAttribute('open')||$('completion-dialog').hasAttribute('open'))return;
+ if(navigation.snapshot.screen!=='playing'||!target||!physics||!flow.canAct()||selectedRemaining()<=0||!unlocked(weapon)||document.querySelector('dialog[open]'))return;
  if(paused){toast('继续模拟后即可操作。');return;}
  let accepted=false;
  if(delivery==='place'){const surface=scene.getAimSurface();if(!surface)return;accepted=physics.attach({id:`${world.epoch}-${Date.now()}-${shot++}`,epoch:world.epoch,surface,power:power/100,weapon});}
- else if(delivery==='preview'&&!planned){planned=launchCommand();preview=physics.preview(planned);scene.setTrajectory(preview);$('aim-hint').textContent='轨迹已预览，确认后才消耗弹药；重新瞄准可调整。';render();return;}
- else{const command=planned??launchCommand();accepted=physics.launch(command);clearPreview();}
+ else accepted=physics.launch(launchCommand());
  if(!accepted){toast('当前投放位置已变化，请重新选择。');render();return;}
- if(!sandbox)world.recordShot();scene.setProjectiles(physics.getProjectiles());save();render();
- $('aim-hint').textContent=delivery==='place'||trigger==='remote'?'已布置遥控弹，可继续安排，最后统一引爆。':weapon==='charge'?'手榴弹飞行中，3秒后在实际位置爆炸。':'弹体飞行中，碰撞后引爆。';
+ if(!sandbox)world.recordShot(weapon);scene.setProjectiles(physics.getProjectiles());save();render();
+ $('aim-hint').textContent=delivery==='place'||trigger==='remote'?'遥控弹已布置。可继续安排，最后统一引爆。':weapon==='charge'?'手榴弹飞行中，3秒后在实际位置爆炸。':'弹体飞行中，碰撞后引爆。';
 }
 function detonate(event:Detonation){
  if(event.epoch!==world.epoch)return;
  const result=world.damage({id:event.id,epoch:event.epoch,target:event.position,weapon:event.weapon,power:event.power,reward:!sandbox});if(!result.accepted)return;
- detonations.push({...event,position:{...event.position}});if(detonations.length>256)detonations.shift();clearPreview();syncWorld();scene.playDamage(result,event.position,event.weapon);audio.play('blast',event.weapon==='shock'?1:.8);
+ detonations.push({...event,position:{...event.position}});if(detonations.length>256)detonations.shift();syncWorld();scene.playDamage(result,event.position,event.weapon);audio.play('blast',event.weapon==='shock'?1:.8);
  if(result.newlyDestroyed){const epoch=world.epoch;setTimeout(()=>{if(world.epoch===epoch)audio.play('wood-impact',.75);},120);}
- if(!sandbox){const research=world.getSnapshot().research;if(previousResearch<90&&research>=90)toast('遥控爆破包已解锁');else if(previousResearch<40&&research>=40)toast('火箭弹已解锁');previousResearch=research;save();}render();
+ if(!sandbox){const research=mainResearch();if(previousResearch<120&&research>=120)toast('仓库与8格容量已解锁，下轮准备时生效。');else if(previousResearch<90&&research>=90)toast('遥控爆破包已解锁，下轮可携带。');else if(previousResearch<40&&research>=40)toast('火箭弹已解锁，下轮可携带。');previousResearch=research;save();}render();
 }
 function detonateAll(){if(!physics)return;for(const e of physics.detonateAttached())detonate(e);scene.setProjectiles(physics.getProjectiles());render();}
-function showSummary(){const result=world.finishRound();flow.settled();save();$('completion-title').textContent='本轮实验结束';$('round-summary').textContent=`建筑拆除 ${Math.round(result.destruction*100)}% · 使用 ${result.used}/${result.budget} 枚 · 获得 ${result.researchEarned} 研究。带着新工具回来，再试一次。`;$('next-map').hidden=mainResearch()<120||world.getObjective().mapId==='warehouse';($('completion-dialog') as HTMLDialogElement).showModal();render();}
-function checkSettlement(){if(!sandbox&&physics&&flow.shouldSettle(physics.getProjectiles().length,scene.hasActiveEffects()))showSummary();}
-$('finish-round').onclick=()=>{if(sandbox)return;if(world.getRound().settled){showSummary();return;}flow.requestFinish();clearPreview();paused=false;slow=false;updateTime();detonateAll();render();checkSettlement();};
-$('fire').onclick=fire;$('detonate').onclick=()=>{if(!paused&&flow.canAct())detonateAll();};
-$('delivery').addEventListener('change',e=>{delivery=(e.target as HTMLSelectElement).value as typeof delivery;clearPreview();render();});
-$('trigger').addEventListener('change',e=>{trigger=(e.target as HTMLSelectElement).value as TriggerMode;clearPreview();render();});
-$('cancel-preview').onclick=()=>{clearPreview();render();};
-document.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b=>b.onclick=()=>select(b.dataset.weapon as WeaponId));
-$('power').addEventListener('input',e=>{power=Number((e.target as HTMLInputElement).value);$('power-value').textContent=`${power}%`;clearPreview();render();});
+function fillSummary(){
+ const result=world.finishRound(),research=mainResearch(),r=world.getRound();flow.settled();save();
+ $('result-map').textContent=world.getObjective().mapId==='courtyard'?'木屋庭院':'双跨仓库';$('result-damage').innerHTML=`${Math.round(result.destruction*100)}<small>%</small>`;$('result-earned').textContent=`+${result.researchEarned}`;$('result-total').textContent=String(research);$('result-meter-fill').style.width=`${Math.round(result.destruction*100)}%`;$('round-summary').textContent=`使用 ${result.used} / ${result.budget} 格携带容量。研究已保留，重新配置后开始下一轮。`;
+ const unlocks:string[]=[];if(r.startResearch<40&&research>=40)unlocks.push('火箭弹');if(r.startResearch<90&&research>=90)unlocks.push('遥控爆破包');if(r.startResearch<120&&research>=120)unlocks.push('双跨仓库 · 携带容量8格');$('result-unlocks').textContent=unlocks.length?`新解锁：${unlocks.join(' / ')} · 下轮生效`:'少量破坏也是进展。下一轮换一种拆法。';
+ return result;
+}
+function showSummary(){fillSummary();setScreen('results','main');if(!dialog('completion-dialog').open)dialog('completion-dialog').showModal();render();}
+function checkSettlement(){
+ if(!physics||!flow.shouldSettle(physics.getProjectiles().length,scene.hasActiveEffects()))return;
+ if(sandbox){flow.settled();world.finishRound();if(navigation.snapshot.waiting){navigation.settle();render();}else prepare('free');return;}
+ if(navigation.snapshot.waiting){const result=fillSummary();navigation.settle();render();toast(`本轮已结束，获得 ${result.researchEarned} 研究，进度已保存。`);}else showSummary();
+}
 function updateTime(){scene.setTimeScale(paused?0:slow?.25:1);$('pause').classList.toggle('active',paused);$('slow').classList.toggle('active',slow);$('pause').innerHTML=paused?'▶ <span>继续</span>':'Ⅱ <span>暂停</span>';render();}
-$('pause').onclick=()=>{if(flow.state==='ending')return;paused=!paused;updateTime();};$('slow').onclick=()=>{if(flow.state==='ending')return;slow=!slow;updateTime();};$('camera').onclick=()=>{scene.resetCamera();clearPreview();render();};
-function clearTransient(){flow.reset();scene.clearEffects();clearPreview();target=null;paused=false;detonations.length=0;scene.setTarget(null);syncWorld();updateTime();}
-$('reset').onclick=()=>{($('completion-dialog') as HTMLDialogElement).close();world.reset();clearTransient();save();toast(sandbox?'自由场景已重建。':'新一轮已准备，弹药补满，研究保留。');};
-$('dismiss-intro').onclick=()=>$('intro').classList.add('hidden');$('settings').onclick=()=>{if(flow.state!=='ending')($('settings-dialog') as HTMLDialogElement).showModal();};
-function changeSandbox(enabled:boolean){if(enabled===sandbox)return;if(enabled){growSnapshot=world.getSnapshot();sandbox=true;world.reset();}else{sandbox=false;if(growSnapshot)world.restore(growSnapshot);growSnapshot=null;}weapon='charge';clearTransient();$('mode-label').textContent=sandbox?'自由模式 · 不计研究':'主模式';($('sandbox') as HTMLInputElement).checked=sandbox;render();}
-$('sandbox').addEventListener('change',e=>changeSandbox((e.target as HTMLInputElement).checked));
-$('mute').addEventListener('change',e=>audio.setMuted((e.target as HTMLInputElement).checked));$('reduce-motion').addEventListener('change',e=>{slow=(e.target as HTMLInputElement).checked;updateTime();});
-window.addEventListener('keydown',e=>{if((e.target as HTMLElement)?.matches('input,textarea,select')||$('settings-dialog').hasAttribute('open')||$('completion-dialog').hasAttribute('open'))return;if(e.code==='Space'){e.preventDefault();fire();}if(e.code==='Digit1')select('charge');if(e.code==='Digit2')select('pulse');if(e.code==='Digit3')select('shock');});
-function enterMap(id:MapId){if(flow.state==='ending')return;if(!world.loadMap(id,sandbox)){toast('主模式累计120研究后解锁仓库。');return;}clearTransient();save();}
-$('map-courtyard').onclick=()=>enterMap('courtyard');$('map-warehouse').onclick=()=>enterMap('warehouse');
-function closeCompletion(){($('completion-dialog') as HTMLDialogElement).close();}
-$('completion-dialog').addEventListener('cancel',e=>{e.preventDefault();closeCompletion();});$('next-map').onclick=()=>{closeCompletion();enterMap('warehouse');};$('retry-map').onclick=()=>{closeCompletion();$('reset').click();};$('continue-free').onclick=()=>{closeCompletion();changeSandbox(true);};$('observe-scene').onclick=closeCompletion;
+function beginFinish(){if(flow.state==='ending')return;flow.requestFinish();paused=false;slow=false;updateTime();detonateAll();render();lastFinishEvidence={flow:flow.state,paused,activeEffects:scene.hasActiveEffects(),projectiles:physics?.getProjectiles().length??0,detonations:detonations.map(e=>({id:e.id,reason:e.reason}))};checkSettlement();}
+function requestNavigation(next:GameScreen){
+ const protect=(navigation.snapshot.screen==='playing')&&flow.state!=='settled';
+ if(!navigation.request(next,sandbox?'free':'main',protect)){if(!dialog('navigation-dialog').open)dialog('navigation-dialog').showModal();return;}
+ render();
+}
+function clearTransient(){flow.reset();scene.clearEffects();scene.setTrajectory(null);target=null;paused=false;slow=reducedMotion;detonations.length=0;lastFinishEvidence=null;scene.setTarget(null);syncWorld();updateTime();$('aim-hint').textContent='＋ 点击建筑瞄准，然后发射或放置';}
+function prepare(mode:GameMode,map:MapId=selectedScene){selectedScene=map;if(mode==='main'&&selectedScene==='warehouse'&&mainResearch()<120)selectedScene='courtyard';setScreen('setup',mode);}
+function enterMain(){if(mainSession&&!mainWorld.getRound().settled){world=mainWorld;sandbox=false;setScreen('playing','main');clearTransient();toast('已继续原实验，剩余弹药与研究保持不变。');}else prepare('main',mainWorld.getObjective().mapId);}
+function startExperiment(){
+ const free=navigation.snapshot.mode==='free';
+ if(!physics||(!free&&!validateLoadout(setupLoadout,mainResearch())))return;
+ if(free){world=freeWorld;sandbox=true;world.loadMap(selectedScene,true);}else{if(!mainWorld.startRound(selectedScene,{...setupLoadout})){toast('配置不合法，请检查容量与研究解锁。');return;}world=mainWorld;sandbox=false;mainSession=true;}
+ weapon=weapons.find(id=>free?toolAvailable(id,mainResearch(),false):(world.getRound().remaining?.[id]??0)>0)??'charge';delivery='quick';trigger='automatic';$<HTMLSelectElement>('delivery').value='quick';setScreen('playing',free?'free':'main');clearTransient();previousResearch=mainResearch();save();render();
+}
+$('mode-main').onclick=enterMain;$('mode-free').onclick=()=>prepare('free');$('setup-back').onclick=()=>setScreen('home');$('start-experiment').onclick=startExperiment;
+$('game-home').onclick=()=>requestNavigation('home');$('change-scene').onclick=()=>{selectedScene=world.getObjective().mapId;requestNavigation('setup');};
+$('confirm-leave').onclick=()=>{if(navigation.confirmFinish()){dialog('navigation-dialog').close();beginFinish();}};$('cancel-leave').onclick=()=>{navigation.cancel();dialog('navigation-dialog').close();};dialog('navigation-dialog').addEventListener('cancel',()=>navigation.cancel());
+$('finish-round').onclick=()=>{if(!sandbox&&world.getRound().settled){showSummary();return;}beginFinish();};
+$('fire').onclick=fire;$('detonate').onclick=()=>{if(!paused&&flow.canAct())detonateAll();};
+$('delivery').addEventListener('change',e=>{delivery=(e.target as HTMLSelectElement).value as typeof delivery;render();});$('trigger').addEventListener('change',e=>{trigger=(e.target as HTMLSelectElement).value as TriggerMode;render();});
+for(const b of Array.from(document.querySelectorAll<HTMLButtonElement>('[data-weapon]')))b.onclick=()=>select(b.dataset.weapon as WeaponId);
+for(const b of Array.from(document.querySelectorAll<HTMLButtonElement>('[data-scene]')))b.onclick=()=>{selectedScene=b.dataset.scene as MapId;renderSetup();};
+for(const b of Array.from(document.querySelectorAll<HTMLButtonElement>('[data-adjust]')))b.onclick=()=>{const id=b.dataset.adjust as WeaponId,next=setupLoadout[id]+Number(b.dataset.delta);if(next<0||!toolAvailable(id,mainResearch(),false))return;const candidate={...setupLoadout,[id]:next};if(weapons.reduce((n,w)=>n+candidate[w]*weaponCost(w),0)>capacityForResearch(mainResearch()))return;setupLoadout=candidate;renderSetup();};
+$('power').addEventListener('input',e=>{power=Number((e.target as HTMLInputElement).value);$('power-value').textContent=`${power}%`;});
+$('reset').onclick=()=>{if(!sandbox||flow.state==='ending')return;world.reset();clearTransient();toast('自由场景已完整重建，所有待爆物已清除。主模式研究不变。');};
+$('pause').onclick=()=>{if(flow.state==='ending')return;paused=!paused;updateTime();};$('slow').onclick=()=>{if(flow.state==='ending')return;slow=!slow;updateTime();};$('camera').onclick=()=>scene.resetCamera();
+for(const id of ['settings','home-settings'])$(id).onclick=()=>{if(flow.state!=='ending')dialog('settings-dialog').showModal();};$('home-research').onclick=()=>dialog('research-dialog').showModal();
+$('mute').addEventListener('change',e=>audio.setMuted((e.target as HTMLInputElement).checked));$('reduce-motion').addEventListener('change',e=>{reducedMotion=(e.target as HTMLInputElement).checked;slow=reducedMotion;updateTime();});
+function closeCompletion(){dialog('completion-dialog').close();}
+$('retry-map').onclick=()=>{closeCompletion();prepare('main',world.getObjective().mapId);};$('change-result-scene').onclick=()=>{closeCompletion();prepare('main',world.getObjective().mapId);};$('result-home').onclick=()=>{closeCompletion();setScreen('home','main');};$('observe-scene').onclick=()=>{closeCompletion();setScreen('playing','main');};dialog('completion-dialog').addEventListener('cancel',e=>{e.preventDefault();closeCompletion();setScreen('playing','main');});
+window.addEventListener('keydown',e=>{if(navigation.snapshot.screen!=='playing'||(e.target as HTMLElement)?.matches('input,textarea,select')||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();fire();}if(e.code==='Digit1')select('charge');if(e.code==='Digit2')select('pulse');if(e.code==='Digit3')select('shock');});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});render();
-// Read-only diagnostics for real-input acceptance, never a gameplay mutation API.
-Object.assign(window,{__heping:{snapshot:()=>world.getSnapshot(),objective:()=>world.getObjective(),round:()=>world.getRound(),projectiles:()=>physics?.getProjectiles()??[],lastDetonations:()=>detonations.map(e=>({...e,position:{...e.position}})),preview:()=>preview?structuredClone(preview):null,get flow(){return flow.state;},get activeEffects(){return scene.hasActiveEffects();},get renderedProjectiles(){return scene.getRenderedProjectileCount();},get sandbox(){return sandbox;},get physicsReady(){return physics!==null;},get target(){return target;},get weapon(){return weapon;}}});
+// Read-only diagnostic snapshots, never a gameplay mutation API.
+Object.assign(window,{__heping:{snapshot:()=>world.getSnapshot(),mainSnapshot:()=>mainWorld.getSnapshot(),objective:()=>world.getObjective(),round:()=>world.getRound(),projectiles:()=>physics?.getProjectiles()??[],lastDetonations:()=>detonations.map(e=>({...e,position:{...e.position}})),preview:()=>null,get flow(){return flow.state;},get activeEffects(){return scene.hasActiveEffects();},get renderedProjectiles(){return scene.getRenderedProjectileCount();},get sandbox(){return sandbox;},get physicsReady(){return physics!==null;},get target(){return target?{...target}:null;},get weapon(){return weapon;},get screen(){return navigation.snapshot.screen;},get navigation(){return navigation.snapshot;},get mode(){return navigation.snapshot.mode;},get inventory(){return sandbox?null:{...world.getRound().remaining};},get mainResearch(){return mainResearch();},get selectedScene(){return selectedScene;},get setupLoadout(){return {...setupLoadout};},get unlimitedAmmo(){return sandbox;},get lastFinishEvidence(){return lastFinishEvidence?structuredClone(lastFinishEvidence):null;}}});

@@ -1,0 +1,15 @@
+{
+  "name": "three-voxel-destruction",
+  "repository": "https://github.com/sbobyn/three-voxel-destruction",
+  "commit": "8c4b058866d78f161181fd1404aca76d9051457b",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 Steven Bobyn",
+  "sourceFiles": [
+    {"path":"src/structure.ts", "snapshot":"upstream/structure.ts.txt", "sha256":"d4b7270f0400444dec02b9d0532b2abbc8451a78a85e61e3e2090e7f8ab1ee9a"},
+    {"path":"src/destruction.ts", "snapshot":"upstream/destruction.ts.txt", "sha256":"bfc28a2c158b337ccaf1607b5b6d447c00c614958bef25203c6484f0c1ec7fe2"},
+    {"path":"src/world.ts", "lines":"85-95", "snapshot":"upstream/random.ts.txt", "sha256":"8c4cf29028cffac76316144e3b9325aa477c0fb922cea7f3797a41e5d84b3514"}
+  ],
+  "licenseSha256": "c81c3a10411772229706a638dfaa366267319f1c7323ce07918890b4b33d7461",
+  "runtimePorts": ["structure.ts", "fragments.ts"],
+  "adapter": "../../src/structural/support.ts"
+}

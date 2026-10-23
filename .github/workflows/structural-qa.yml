@@ -1,0 +1,32 @@
+name: Isolated structural lab QA
+on:
+  push:
+    branches: [v09-structural-lab]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - id: build
+        run: npm run build:structural
+      - run: google-chrome --version
+      - name: Structural entry smoke and real screenshots
+        env:
+          QA_BROWSER_CHANNEL: chrome
+        run: |
+          python3 -m http.server 5191 --bind 127.0.0.1 --directory dist-structural >/tmp/structural-server.log 2>&1 &
+          node scripts/structural-browser-check.mjs
+      - name: Eight profile render phases (not full weapon gameplay)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          QA_BROWSER_CHANNEL: chrome
+        run: node scripts/structural-effects-browser-check.mjs

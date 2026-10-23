@@ -117,6 +117,11 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const projectileMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.58,metalness:.25});
   const projectileMeshes=new Map<WeaponId,THREE.InstancedMesh>();
   for(const weapon of ['charge','pulse','shock'] as const){const mesh=new THREE.InstancedMesh(createWeaponGeometry(weapon),projectileMaterial,MAX_PROJECTILES);mesh.count=0;mesh.castShadow=true;mesh.frustumCulled=false;scene.add(mesh);projectileMeshes.set(weapon,mesh);}
+  // Thin authored silhouette shell only, never a hit proxy or depth-disabled model.
+  const outlineMaterial=new THREE.MeshBasicMaterial({color:0x102832,side:THREE.BackSide});
+  const outlines=new Map<WeaponId,THREE.InstancedMesh>();
+  for(const [weapon,body] of projectileMeshes){const mesh=new THREE.InstancedMesh(body.geometry,outlineMaterial,MAX_PROJECTILES);mesh.count=0;mesh.frustumCulled=false;scene.add(mesh);outlines.set(weapon,mesh);}
+  const leaderMaterial=new THREE.LineBasicMaterial({color:0xb4ffd4,transparent:true,opacity:.9,depthWrite:false});
   const orientations=new Map<string,THREE.Quaternion>();
   const flameMaterial=new THREE.MeshBasicMaterial({color:0xffb94f,transparent:true,opacity:.9,depthWrite:false});
   const flameGeometry=new THREE.ConeGeometry(.22,.85,6);flameGeometry.rotateZ(Math.PI);flameGeometry.translate(0,-1.18,0);
@@ -125,19 +130,19 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_PROJECTILES*TRAIL_POINTS);
   trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
   const trails=new Map<string,THREE.Vector3[]>();
-  const fuseBadges=new Map<string,{sprite:THREE.Sprite;canvas:HTMLCanvasElement;texture:THREE.CanvasTexture;label:string}>();
-  const projectileColor=(weapon:WeaponId)=>weapon==='shock'?0x65ddff:weapon==='charge'?0xf6a040:0xffec9d;
-  const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;scene.remove(badge.sprite);badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
+  const fuseBadges=new Map<string,{sprite:THREE.Sprite;canvas:HTMLCanvasElement;texture:THREE.CanvasTexture;label:string;leader?:THREE.Line}>();
+  const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;scene.remove(badge.sprite);if(badge.leader){scene.remove(badge.leader);badge.leader.geometry.dispose();}badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
   const updateProjectiles=(views:readonly ProjectileView[])=>{
     const visible=views.slice(0,MAX_PROJECTILES), ids=new Set(visible.map(v=>v.id));
     for(const id of trails.keys())if(!ids.has(id))trails.delete(id);
     for(const id of orientations.keys())if(!ids.has(id))orientations.delete(id);
-    for(const mesh of projectileMeshes.values())mesh.count=0;flameMesh.count=0;
+    for(const mesh of projectileMeshes.values())mesh.count=0;for(const mesh of outlines.values())mesh.count=0;flameMesh.count=0;
     for(const id of fuseBadges.keys())if(!ids.has(id))releaseBadge(id);
     let trailIndex=0;
     visible.forEach((p,i)=>{
       tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.quaternion.copy(projectileOrientation(p,orientations.get(p.id)));orientations.set(p.id,tmp.quaternion.clone());tmp.scale.setScalar(p.radius);tmp.updateMatrix();
       const projectile=projectileMeshes.get(p.weapon)!;projectile.setMatrixAt(projectile.count++,tmp.matrix);
+      const outline=outlines.get(p.weapon)!;tmp.scale.setScalar(p.radius*1.045);tmp.updateMatrix();outline.setMatrixAt(outline.count++,tmp.matrix);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
       if(p.weapon==='pulse'){
         flameMesh.setMatrixAt(flameMesh.count++,tmp.matrix);
         const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
@@ -145,15 +150,22 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
         trails.set(p.id,history);
         history.forEach((position,j)=>{tmp.position.copy(position);tmp.rotation.set(0,0,0);tmp.scale.setScalar(p.radius*.50*(j+1)/history.length);tmp.updateMatrix();trailMesh.setMatrixAt(trailIndex,tmp.matrix);trailMesh.setColorAt(trailIndex++,color.setHex(0xc6c5ba));});
       }
-      if(p.fuseRemaining!==null){
+      if(p.fuseRemaining!==null || p.state==='attached'){
         let badge=fuseBadges.get(p.id);
         if(!badge){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(1.8,.9,1);scene.add(sprite);badge={sprite,canvas,texture,label:''};fuseBadges.set(p.id,badge);}
         badge.sprite.position.set(p.position.x,p.position.y+.9,p.position.z);
-        const label=Math.max(0,p.fuseRemaining).toFixed(1)+'s';
-        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=p.fuseRemaining<1?'#ff9f64':'#ffdb9a';ctx.font='bold 34px sans-serif';ctx.textAlign='center';ctx.fillText(label,64,44);badge.texture.needsUpdate=true;badge.label=label;}
+        const attached=p.state==='attached';
+        const label=attached?'attached-icon':Math.max(0,p.fuseRemaining!).toFixed(1)+'s';
+        if(attached){
+          badge.sprite.scale.set(2.6,.72,1);
+          const offset=new THREE.Vector3(1.8,1.25,0).applyQuaternion(camera.quaternion);badge.sprite.position.set(p.position.x,p.position.y,p.position.z).add(offset);
+          if(!badge.leader){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));badge.leader=new THREE.Line(geometry,leaderMaterial);badge.leader.frustumCulled=false;scene.add(badge.leader);}
+          const positions=badge.leader.geometry.getAttribute('position');positions.setXYZ(0,p.position.x,p.position.y,p.position.z);positions.setXYZ(1,badge.sprite.position.x,badge.sprite.position.y-.3,badge.sprite.position.z);positions.needsUpdate=true;
+        }
+        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
       }
     });
-    for(const mesh of projectileMeshes.values())mesh.instanceMatrix.needsUpdate=true;
+    for(const mesh of projectileMeshes.values())mesh.instanceMatrix.needsUpdate=true;for(const mesh of outlines.values())mesh.instanceMatrix.needsUpdate=true;
     flameMesh.instanceMatrix.needsUpdate=true;trailMesh.count=trailIndex;trailMesh.instanceMatrix.needsUpdate=true;
     if(trailMesh.instanceColor)trailMesh.instanceColor.needsUpdate=true;
   };
@@ -265,6 +277,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     },
     setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

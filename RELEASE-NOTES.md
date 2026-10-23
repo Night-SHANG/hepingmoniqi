@@ -1,3 +1,24 @@
+# E0 v0.3 courtyard and warehouse progression
+
+## Implemented
+- A named building objective: demolish 70% of the building. Trees, fences and other props remain destructible but are not mandatory cleanup and grant no research.
+- Start with a spinning, bouncing grenade. Building damage unlocks the directional rocket at 40 research and the attached manual remote package at 90 research.
+- Three original silhouettes: segmented grenade shell with cap/lever, pointed rocket body with fins and exhaust, strapped flat package with status light.
+- Packages attach only to live voxel faces. They never auto-detonate; use the manual detonator. Losing the host invalidates the package.
+- Courtyard completion opens a result screen and unlocks a separate twin-bay warehouse. Retry retains growth; free mode isolates damage and rewards from growth saves.
+- Strict legacy save migration retains earned research. Old transient projectiles are never restored.
+
+## Verification status
+Local 41 tests and TypeScript/production build pass. Native Three/Rapier preflight completes the courtyard in 17 mixed-tool shots and warehouse in four remote shots; this is deterministic automated targeting, not a claim of typical player completion time. Real Chrome WebGL verification for revision cd59370aa266d9919b3882af37775559f36736bd passed at https://github.com/Night-SHANG/hepingmoniqi/actions/runs/39903928429 .
+
+The real-input suite confirmed the same 17-shot courtyard and four-shot warehouse path, building-only completion, all unlocks, manual package detonation/no automatic fuse, retry and reload persistence, isolated free mode, and mobile control access. All prior roof-hole, pause, reset and yard-collision browser regressions also passed. Visual review identified small rocket/package presentation; a focused visual-only polish follows without changing gameplay or physics.
+
+## Boundaries
+Two compact E0 maps, not the complete city/planet concept. Background ground, water and distant terrain cannot be excavated. Debris remains cosmetic. This is a browser build, not an Android APK. Real device performance and subjective audio listening are not verified.
+
+---
+## Preserved previous release evidence
+
 # E0 v0.2 physical-projectile update
 
 ## Implemented

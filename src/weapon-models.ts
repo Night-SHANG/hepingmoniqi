@@ -11,13 +11,13 @@ export function createWeaponGeometry(weapon:WeaponId):THREE.BufferGeometry {
   part(new THREE.CylinderGeometry(.29,.29,.23,8),0xc8b785,0,.67);
   part(new THREE.BoxGeometry(.18,.80,.15),0xbcc8c7,.48,.52);
  }else if(weapon==='pulse'){
-  part(new THREE.CylinderGeometry(.32,.32,1.25,10),0xe1dcc8,0,-.05);
-  part(new THREE.ConeGeometry(.32,.48,10),0xe76e3c,0,.815);
-  part(new THREE.CylinderGeometry(.34,.34,.15,10),0x48565c,0,-.72);
-  for(let i=0;i<4;i++){const fin=new THREE.BoxGeometry(.08,.48,.68);fin.translate(0,-.55,.26);fin.rotateY(i*Math.PI/2);part(fin,0x536e76);}
+  part(new THREE.CylinderGeometry(.48,.48,1.25,10),0xffeed0,0,-.05);
+  part(new THREE.ConeGeometry(.48,.48,10),0xf25e27,0,.815);
+  part(new THREE.CylinderGeometry(.49,.49,.15,10),0x182e3b,0,-.72);
+  for(let i=0;i<4;i++){const fin=new THREE.BoxGeometry(.10,.48,.78);fin.translate(0,-.55,.31);fin.rotateY(i*Math.PI/2);part(fin,0x142b39);}
  }else{
-  part(new THREE.BoxGeometry(1.45,.95,.37),0xb2a277);
-  part(new THREE.BoxGeometry(1.30,.78,.08),0x667352,0,0,.225);
+  part(new THREE.BoxGeometry(1.45,.95,.37),0xffd174);
+  part(new THREE.BoxGeometry(1.30,.78,.08),0xe8ad48,0,0,.225);
   for(const x of [-.43,.43])part(new THREE.BoxGeometry(.16,1.02,.48),0x343e3c,x);
   part(new THREE.BoxGeometry(.44,.28,.10),0x28373d,0,.16,.30);
   part(new THREE.BoxGeometry(.12,.10,.03),0x9eff9a,.1,.16,.365);

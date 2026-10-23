@@ -114,10 +114,10 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   // advances their motion; trails are a bounded visual history of those transforms.
   const MAX_PROJECTILES=48, TRAIL_POINTS=12;
   const projectileGeometry=new THREE.IcosahedronGeometry(1,1);
-  const projectileMaterial=new THREE.MeshStandardMaterial({roughness:.45,metalness:.3,emissive:0xffa23a,emissiveIntensity:.3});
+  const projectileMaterial=new THREE.MeshStandardMaterial({roughness:.45,metalness:.3,emissive:0xffa23a,emissiveIntensity:.65});
   const projectileMesh=new THREE.InstancedMesh(projectileGeometry,projectileMaterial,MAX_PROJECTILES);
   projectileMesh.count=0;projectileMesh.castShadow=true;projectileMesh.frustumCulled=false;scene.add(projectileMesh);
-  const trailMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.5,depthWrite:false});
+  const trailMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.72,depthWrite:false});
   const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_PROJECTILES*TRAIL_POINTS);
   trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
   const trails=new Map<string,THREE.Vector3[]>();
@@ -218,7 +218,10 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
       const direction=new THREE.Vector3(point.x,point.y,point.z).sub(camera.position).normalize();
       const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
       const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
-      const origin=camera.position.clone().addScaledVector(direction,3).addScaledVector(right,1.1).addScaledVector(up,-1);
+      // Keep the early gravity arc inside the viewport rather than above the camera.
+      const distance=camera.position.distanceTo(new THREE.Vector3(point.x,point.y,point.z));
+      const forward=Math.min(8,distance*.25), offset=forward/8;
+      const origin=camera.position.clone().addScaledVector(direction,forward).addScaledVector(right,1.1*offset).addScaledVector(up,-2*offset);
       return {x:origin.x,y:origin.y,z:origin.z};
     },
     setVoxels(voxels){

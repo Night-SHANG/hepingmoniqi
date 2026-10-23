@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import { tsImport } from 'tsx/esm/api';
 import { createSchema7Fixture } from './v08-qa-fixtures.mjs';
 import { WEAPON_IDS, MAP_IDS, BUILDING_COUNTS, DESKTOP, MOBILE_LANDSCAPE, OPERATION_CONTROLS,
-  distinctBuildings, damagedBuildings, assertAudioBudget, overlaps, assertInsideViewport,
+  distinctBuildings, damagedBuildings, assertAudioBudget, assertFinishWaitEvidence, overlaps, assertInsideViewport,
   assertStationary, assertSideComposition } from './v08-qa-contract.mjs';
 
 // Authorized GitHub standard Ubuntu / preinstalled Chrome ONLY. Do not use this
@@ -234,8 +234,11 @@ async function aimCityGround(exactTarget) {
   }
   throw new Error('No real exposed city ground point reaches buildings in at least two city blocks with nova');
 }
-async function detonate(body) {
+async function detonate(body,{pauseAfter=false}={}) {
   await reachable('#detonate');await page.locator('#detonate').click();
+  // Detonation is disabled while paused. Pause immediately AFTER the real
+  // detonate click, before diagnostics/audio waits or slow screenshot encoding.
+  if(pauseAfter){await page.locator('#pause').click();assert.equal(await page.locator('#pause').evaluate(el=>el.classList.contains('active')),true);}
   await wait(id=>window.__heping.lastDetonations().some(e=>e.id===id),body.id);
   const s=await read(),event=s.events.find(e=>e.id===body.id);assert.equal(event.reason,'remote');assert.equal(event.weapon,body.weapon);return s;
 }
@@ -298,11 +301,11 @@ try {
   await page.locator('#slow').click();await settleEffects();assert.equal((await read()).modal,false,'Damage/effect completion never opens results automatically');
   record('heavy-real-projectile-flight-cost3-distinct-sample-no-auto-modal',{bodyId:heavy.id,initial:heavy.position,moved:flying.position});
   const placed=await placeAt('nova',centralAim.target);await audioFor(placed.body,'place',['cosmic-engine-bed']);await page.locator('#slow').click();
-  const beforeNova=(await read()).snapshot;await detonate(placed.body);await audioFor(placed.body,'detonate',['city-explosion-body','city-distant-low']);
+  const beforeNova=(await read()).snapshot;await detonate(placed.body,{pauseAfter:true});await audioFor(placed.body,'detonate',['city-explosion-body','city-distant-low']);
   s=await read();assert.equal(s.round.used,8);assert.equal(s.round.remaining.nova,0);assert.equal(s.activeEffects,true);assert.equal(s.modal,false);
   const mainNovaBuildings=damagedBuildings(beforeNova.voxels,s.snapshot.voxels);assert.ok(mainNovaBuildings.length>=2);assert.ok(affectedBlocks(mainNovaBuildings).length>=2);
   await capture('06-nova-real-multiblock-effects');await page.locator('#finish-round').click();s=await read();
-  assert.equal(s.flow,'ending');assert.equal(s.modal,false);assert.equal(s.lastFinishEvidence.activeEffects,true,'Finish observes active effects before settling');
+  assertFinishWaitEvidence(s);
   await screen('results');s=await read();assert.equal(s.activeEffects,false);assert.equal(s.pending,0);assert.equal(s.modal,true);
   record('nova-cost5-multiblock-ground-remote-finish-waits-for-effects',{buildings:mainNovaBuildings,blocks:affectedBlocks(mainNovaBuildings),finish:s.lastFinishEvidence});
   await home();const preserved=(await read()).mainSnapshot;
@@ -315,7 +318,7 @@ try {
   const freeAim=await aimCityGround(),original=(await read()).snapshot;
   const old=await placeAt('charge',freeAim.target);await detonate(old.body);await audioFor(old.body,'detonate',['grenade-blast']);
   let oldState=await read();const oldBuildings=damagedBuildings(original.voxels,oldState.snapshot.voxels);await settleEffects();assert.equal((await read()).modal,false);
-  await reset();const nova=await placeAt('nova',freeAim.target);await page.locator('#slow').click();await detonate(nova.body);await audioFor(nova.body,'detonate',['city-explosion-body','city-distant-low']);
+  await reset();const nova=await placeAt('nova',freeAim.target);await page.locator('#slow').click();await detonate(nova.body,{pauseAfter:true});await audioFor(nova.body,'detonate',['city-explosion-body','city-distant-low']);
   s=await read();const novaBuildings=damagedBuildings(original.voxels,s.snapshot.voxels),novaBlocks=affectedBlocks(novaBuildings);
   assert.ok(novaBuildings.length>oldBuildings.length,'Nova must affect more real buildings than charge at the same real ground point');assert.ok(novaBlocks.length>=2);
   assert.equal(s.activeEffects,true,'Reset scenario must begin while nova core effects are actually active');assert.equal(s.modal,false);assert.equal(s.snapshot.research,0,'Free mode grants no research');assert.deepEqual(s.mainSnapshot,preserved,'Free destruction must not mutate main save');

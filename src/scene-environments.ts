@@ -47,6 +47,18 @@ export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
  const hills=(span:number,z:number,height:number)=>{
   for(let i=0;i<25;i++){const x=-span/2+i*span/24,h=height*(.5+rand());add('hill',x,h/2-2,z-rand()*span*.12,span/18,h,span/9,palette([0x7b9686,0x88a392,0x6d8e81]));add('hill',x,h-1,z-rand()*2,span/18,1.5,span/9,0x8aa472);}
  };
+ // Decorative land never changes WORLD_BOUNDS, physics, scoring or target geometry.
+ const scenicTerrain=(minX:number,maxX:number,minZ:number,maxZ:number)=>add('scenic-terrain',(minX+maxX)/2,-8,(minZ+maxZ)/2,maxX-minX,16,maxZ-minZ,0x819378);
+ const rootedHills=(span:number,z:number,height:number)=>{
+  // Overlapping ridges share one visible foundation. Caps stay over their own column.
+  const width=span/21,depth=span/5;
+  for(let i=0;i<25;i++){
+   const x=-span/2+i*span/24,centerZ=z+Math.sin(i*.45)*span*.02,h=height*(.48+.18*Math.sin(i*.62)+rand()*.12);
+   add('hill',x,h*.15,centerZ+depth*.28,width, h*.3,depth*.7,0x7c9775);
+   add('hill',x,h/2,centerZ,width,h,depth,palette([0x7b9686,0x88a392,0x6d8e81]));
+   add('hill',x,h+.3,centerZ,width-.15,.6,depth-.15,0x8aa472);
+  }
+ };
  const clouds=(span:number,z:number,y:number)=>{for(let i=0;i<8;i++){const x=(rand()-.5)*span;add('cloud',x,y+rand()*15,z-rand()*span*.16,10+rand()*16,2,5,0xe5eeee);add('cloud',x+1,y+2+rand()*15,z-rand()*span*.16,7+rand()*9,2,5,0xf4f5e9);}};
  if(mapId==='courtyard'){
   // Original 53×43 meadow and original random seed, camera and colors are retained.
@@ -93,6 +105,8 @@ export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
   hills(180,-120,15);clouds(180,-100,45);
  }else if(mapId==='neighborhood'){
   ground(100,80,0x8c9e6e,0x74816a);
+  scenicTerrain(-150,150,-165,-40);scenicTerrain(-150,-50,-40,40);
+  scenicTerrain(50,150,-40,40);scenicTerrain(-150,150,40,65);
   // A legible street network exactly between the nine source-asset footprints.
   for(const x of [-17,17]){road(x,0,7,80);for(const side of [-1,1])curb(x+side*4.15,0,1.1,80);}
   for(const z of [-13.5,13.5]){road(0,z,100,6);for(const side of [-1,1])curb(0,z+side*3.55,100,1.1);}
@@ -106,9 +120,14 @@ export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
   for(const x of [-21.5,21.5])for(const z of [-34,-24,-5,5,24,34]){tree(x,z,.85);lamp(x+(x<0?1.9:-1.9),z,1);}
   for(const z of [-13.5,13.5])for(const x of [-17,17])for(let stripe=-2;stripe<=2;stripe++)add('crosswalk',x+stripe*.7,.035,z+4.3,.38,.025,1.6,0xf1ecda);
   for(let i=0;i<30;i++)tree(-61+i*4.2,-49-rand()*9,.9+rand()*.5);
-  hills(250,-95,24);clouds(250,-125,70);
+  rootedHills(250,-95,24);clouds(250,-125,70);
  }else{
   ground(240,200,0x8c9e77,0x75816c);
+  // Join the port and northern tree row to the city while preserving the river cutout.
+  scenicTerrain(-320,320,-340,-130);scenicTerrain(-320,124,-130,-100);
+  scenicTerrain(-320,-120,-100,100);scenicTerrain(120,124,-100,100);
+  scenicTerrain(-320,124,100,150);scenicTerrain(168,320,-130,150);
+  add('river-bed',146,-8.1,0,44,13.8,260,0x687e79);
   // Six real asset blocks. Outer roads + two avenues + central boulevard remain open.
   for(const x of [-38,38]){road(x,0,8,200);for(const side of [-1,1])curb(x+side*4.5,0,.9,200);}
   road(0,0,240,16);for(const z of [-9.2,9.2])curb(0,z,240,1.4);
@@ -134,7 +153,7 @@ export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
   for(let i=0;i<16;i++){const x=-116+i*5.5,z=-119-(i%3)*5;add('container',x,1.5,z,5,3,3.5,palette([0xb87743,0x4d7f90,0x9d624c,0x799268]));}
   for(const x of [-96,-65]){add('crane',x,10,-140,1.2,20,1.2,0xc29d59);add('crane',x+8,19,-140,24,1,1.2,0xc29d59);add('crane',x+17,13,-140,.2,12,.2,0x5f6b69);}
   for(let i=0;i<50;i++)tree(-140+i*6,-164-rand()*20,1.3+rand());
-  hills(570,-230,48);clouds(500,-275,105);
+  rootedHills(570,-230,48);clouds(500,-275,105);
  }
  const large=mapId==='city',medium=mapId==='neighborhood';
  return {mapId,bounds:{...WORLD_BOUNDS[mapId]},blocks,water,sky:mapId==='warehouse'?0xb8c7cb:mapId==='cantilever'?0xadcfdc:0xadcbd9,fog:large?[420,1000]:medium?[210,520]:[70,165],shadowExtent:large?160:medium?72:33,camera:{...cameras[mapId],position:[...cameras[mapId].position],target:[...cameras[mapId].target]}};

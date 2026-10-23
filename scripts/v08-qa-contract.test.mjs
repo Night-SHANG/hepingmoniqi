@@ -34,3 +34,13 @@ test('audio budget assertion rejects overflow and duplicate active source identi
   assert.throws(()=>assertAudioBudget({activeVoices:[{voiceId:1},{voiceId:2}],maxVoices:1}),/budget/);
   assert.throws(()=>assertAudioBudget({activeVoices:[{voiceId:1},{voiceId:1}],maxVoices:2}),/identity/);
 });
+
+test('finish evidence accepts delayed observation only after an active-effect finish boundary', async () => {
+  const { assertFinishWaitEvidence }=await import('./v08-qa-contract.mjs');
+  const boundary={flow:'ending',paused:false,activeEffects:true};
+  assertFinishWaitEvidence({flow:'ending',modal:false,activeEffects:true,lastFinishEvidence:boundary});
+  assertFinishWaitEvidence({flow:'settled',modal:true,activeEffects:false,lastFinishEvidence:boundary});
+  assert.throws(()=>assertFinishWaitEvidence({flow:'settled',modal:true,activeEffects:false,lastFinishEvidence:{...boundary,activeEffects:false}}),/active effects/);
+  assert.throws(()=>assertFinishWaitEvidence({flow:'settled',modal:true,activeEffects:true,lastFinishEvidence:boundary}),/before effects/);
+  assert.throws(()=>assertFinishWaitEvidence({flow:'ending',modal:true,activeEffects:true,lastFinishEvidence:boundary}),/before settlement/);
+});

@@ -108,3 +108,31 @@ test('city camera launch origins remain inside the real radial physics bound, in
   }
  }
 });
+
+test('scaled scenic tree trunks and every hill tier rest on visible connected terrain',async()=>{
+ const {getEnvironmentSpec}=await import('./scene-environments');
+ for(const map of ['neighborhood','city'] as const){
+  const spec=getEnvironmentSpec(map),halfX=map==='city'?120:50,halfZ=map==='city'?100:40;
+  const terrain=spec.blocks.filter(b=>b.role==='scenic-terrain');
+  assert.ok(terrain.length>0,`${map} needs a visible scenic foundation`);
+  const contains=(base:typeof terrain[number],part:typeof terrain[number])=>Math.abs(base.x-part.x)+part.sx/2<=base.sx/2+.001&&Math.abs(base.z-part.z)+part.sz/2<=base.sz/2+.001;
+  for(const trunk of spec.blocks.filter(b=>b.role==='tree'&&b.color===0x765334&&(Math.abs(b.x)>halfX||Math.abs(b.z)>halfZ))){
+   const bottom=trunk.y-trunk.sy/2;
+   assert.ok(terrain.some(base=>contains(base,trunk)&&Math.abs(base.y+base.sy/2-bottom)<.001),`${map} tree (${trunk.x},${trunk.z}) floats`);
+  }
+  const hills=spec.blocks.filter(b=>b.role==='hill');
+  for(const hill of hills){
+   const bottom=hill.y-hill.sy/2;
+   assert.ok([...terrain,...hills].some(base=>base!==hill&&contains(base,hill)&&Math.abs(base.y+base.sy/2-bottom)<.001),`${map} hill (${hill.x},${hill.z}) has no aligned support`);
+  }
+  // The northern backdrop continuously connects to the map, instead of detached islands.
+  for(let z=-halfZ;z>-(map==='city'?320:150);z-=5)assert.ok(terrain.some(b=>Math.abs(b.x)<b.sx/2&&Math.abs(z-b.z)<=b.sz/2),`${map} scenic gap at z=${z}`);
+ }
+});
+
+test('city scenic banks do not fill the visible river channel',async()=>{
+ const {getEnvironmentSpec}=await import('./scene-environments');
+ const spec=getEnvironmentSpec('city'),terrain=spec.blocks.filter(b=>b.role==='scenic-terrain');
+ assert.ok(terrain.length>0);
+ for(let z=-120;z<=120;z+=20)assert.ok(!terrain.some(b=>b.y+b.sy/2>-.5&&Math.abs(146-b.x)<b.sx/2&&Math.abs(z-b.z)<b.sz/2),'river must stay open');
+});

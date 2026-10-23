@@ -404,7 +404,7 @@ try {
   assert.equal(restoredMain.objective.destroyed, 0); assert.equal(restoredMain.round.used, 0);
 
   // The player explicitly requests results during an explosion, and only gets
-  // them after the live cosmetic effect has finished. Armed objects auto-trigger
+  // them after the live core spectacle has finished (decorative chips may remain). Armed objects auto-trigger
   // once as part of that explicitly requested ending operation.
   // A main-only automatic 70% regression must not hide behind free-mode tests.
   for (let shot = 0; shot < 6 && (await read()).objective.fraction < .7; shot++) await shootBest('shock');
@@ -412,13 +412,22 @@ try {
   assert.equal(mainSeventy.sandbox, false);
   assert.ok(mainSeventy.objective.fraction >= .7, 'Unlocked main round passes 70% within six real shots without an automatic result');
   assert.ok(mainSeventy.round.used <= 6); evidence.mainOverSeventy = compact(mainSeventy);
-  evidence.effectSettlement = await finishRound(true); await capture('11-effects-finished-before-summary'); await retry();
+  evidence.effectSettlement = await finishRound(); await capture('11-effects-finished-before-summary'); await retry();
   await select('charge'); await settings('place'); await aimGround(); const settleRemote = await execute();
-  await page.locator('#finish-round').click(); const armedEnding = await read();
+  // Observe the actual click synchronously so a slow software renderer cannot
+  // turn the assertion into an arbitrary Playwright round-trip timing race.
+  await page.evaluate(() => document.getElementById('finish-round').addEventListener('click', () => {
+    const h=window.__heping; window.__finishClickEvidence={flow:h.flow,modal:document.getElementById('completion-dialog').open,paused:document.getElementById('pause').classList.contains('active'),activeEffects:h.activeEffects,projectiles:h.projectiles(),detonations:h.lastDetonations()};
+  }, {once:true}));
+  await page.locator('#finish-round').click(); const armedEnding = await page.evaluate(()=>window.__finishClickEvidence);
+  assert.equal(armedEnding.activeEffects,true,'Core explosion is running immediately after explicit finish detonates the package');
   assert.equal(armedEnding.flow, 'ending'); assert.equal(armedEnding.modal, false); assert.equal(armedEnding.paused, false);
   assert.equal(armedEnding.projectiles.length, 0); assert.equal(armedEnding.detonations.filter(e => e.id === settleRemote.id).length, 1);
   assert.equal(armedEnding.detonations.find(e => e.id === settleRemote.id).reason, 'remote');
-  await waitFor(() => document.querySelector('#completion-dialog').open, null, 'Explicit ending triggers remote then settles', 120000); await retry();
+  await waitFor(() => document.querySelector('#completion-dialog').open, null, 'Explicit ending triggers remote then settles', 120000);
+  const observedSummary=await read(); await page.locator('#observe-scene').click(); const observedScene=await read();
+  assert.equal(observedScene.modal,false);assert.equal(observedScene.snapshot.destroyedCount,observedSummary.snapshot.destroyedCount);assert.equal(observedScene.round.settled,true);
+  await page.locator('#finish-round').click();await retry();
 
   // Reset invalidates an ending with an automatic fuse still in flight.
   await select('charge'); await settings('quick'); await aim('charge'); await page.locator('#slow').click();

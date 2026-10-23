@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation } from './weapon-models';
-import { clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
+import { effectFrameDeltas, clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
 import type { AimSurface, DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
 type Block = { x:number; y:number; z:number; sx:number; sy:number; sz:number; color:number };
@@ -227,9 +227,11 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const elapsed=document.hidden?0:Math.max(0,Math.min((now-last)/1000,1));
     last=now;controls.update();
     // Physics owns bounded fixed substeps; cosmetic effects keep their small step.
+    const {motion:dt,age:effectAge}=effectFrameDeltas(elapsed,timeScale);
+    chips=advanceEffectAges(chips,effectAge);
+    pulseAge+=effectAge;
+    // New detonations must begin at age zero and be rendered before any aging.
     options.onFrame?.(elapsed*timeScale);
-    const dt=Math.min(elapsed,.045)*timeScale;
-    chips=advanceEffectAges(chips,dt);
     chips.forEach((c,i)=>{
       c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
       if(c.p.y<c.size*.5){c.p.y=c.size*.5;c.v.y=Math.abs(c.v.y)*.24;c.v.x*=.82;c.v.z*=.82;c.spin.multiplyScalar(.75);}
@@ -239,7 +241,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
       debris.setMatrixAt(i,tmp.matrix);debris.setColorAt(i,color.setHex(c.color));
     });
     debris.count=chips.length;if(chips.length){debris.instanceMatrix.needsUpdate=true;if(debris.instanceColor)debris.instanceColor.needsUpdate=true;}
-    pulseAge+=dt;const active=pulseAge<PULSE_LIFETIME; pulse.visible=active;
+    const active=pulseAge<PULSE_LIFETIME; pulse.visible=active;
     if(active){pulse.scale.setScalar(1+pulseAge*16);pulseMaterial.opacity=(1-pulseAge/PULSE_LIFETIME)*.7;}
     flash.intensity=Math.max(0,1-pulseAge/.28)*35;
     if(target){marker.position.set(target.x,target.y,target.z);marker.quaternion.copy(camera.quaternion);marker.position.addScaledVector(new THREE.Vector3().subVectors(camera.position,marker.position).normalize(),.65);}

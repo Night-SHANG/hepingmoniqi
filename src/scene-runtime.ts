@@ -62,6 +62,8 @@ export function createTrajectoryOverlay(scene:THREE.Scene){
 }
 
 export const PULSE_LIFETIME=.65;
+// Allow the main flash and 0.777-second sound to finish, not every decorative chip.
+export const CORE_EFFECT_LIFETIME=.85;
 type TimedEffect={age:number;life:number};
 
 /** Age and remove in the same frame, so an expired chip is never still drawn. */
@@ -70,7 +72,7 @@ export function advanceEffectAges<T extends TimedEffect>(effects:readonly T[],de
 }
 
 export function hasActiveVisualEffects(pulseAge:number,chips:readonly TimedEffect[]):boolean {
-  return pulseAge<PULSE_LIFETIME||chips.some(chip=>chip.age<chip.life);
+  return pulseAge<CORE_EFFECT_LIFETIME;
 }
 
 /** Ground remains a real target; voxel faces expire with their host voxel. */
@@ -78,4 +80,5 @@ export function copyLiveAimSurface(surface:AimSurface|null,voxels:readonly {id:n
   if(!surface||(surface.voxelId!==null&&!voxels.some(voxel=>voxel.id===surface.voxelId)))return null;
   return {...surface,position:{...surface.position},normal:{...surface.normal}};
 }
-export function clearedVisualEffects<T extends {age:number;life:number}>(_chips:T[],_pulseAge:number){return {chips:[] as T[],pulseAge:PULSE_LIFETIME};}
+export function clearedVisualEffects<T extends {age:number;life:number}>(_chips:T[],_pulseAge:number){return {chips:[] as T[],pulseAge:CORE_EFFECT_LIFETIME};}
+export function effectFrameDeltas(elapsed:number,scale:number){const motion=Math.min(elapsed,.045)*scale;return {motion,age:elapsed*scale};}

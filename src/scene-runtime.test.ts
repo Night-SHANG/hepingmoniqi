@@ -59,13 +59,13 @@ test('planning endpoint uses the last simulated point without inventing an impac
   overlay.dispose();
 });
 
-test('active visual effects end exactly when the pulse and final chip expire',()=>{
+test('settlement waits for core spectacle, not six-second decorative chips',()=>{
   assert.equal(hasActiveVisualEffects(0,[]),true);
-  assert.equal(hasActiveVisualEffects(PULSE_LIFETIME,[]),false);
+  assert.equal(hasActiveVisualEffects(.85,[]),false);
   const chips=[{age:0,life:1},{age:0,life:6}];
   const survivors=advanceEffectAges(chips,1);
   assert.deepEqual(survivors,[{age:1,life:6}]);
-  assert.equal(hasActiveVisualEffects(10,survivors),true);
+  assert.equal(hasActiveVisualEffects(.85,survivors),false);
   const expired=advanceEffectAges(survivors,5);
   assert.deepEqual(expired,[]);assert.equal(hasActiveVisualEffects(10,expired),false);
 });
@@ -86,3 +86,8 @@ test('ground aiming remains valid without voxels while missing voxel faces are r
 });
 
 test('explicit scene reset clears effects regardless of next map voxel count',async()=>{const {clearedVisualEffects}=await import('./scene-runtime');const state=clearedVisualEffects([{age:0,life:6}],0);assert.equal(hasActiveVisualEffects(state.pulseAge,state.chips),false);assert.equal(state.chips.length,0);});
+
+test('effect lifetimes keep simulated seconds at 1fps while cosmetic motion stays bounded',async()=>{const {effectFrameDeltas}=await import('./scene-runtime');for(const fps of [1,2,5,60]){let effects=[{age:0,life:6}];for(let i=0;i<fps*6+1;i++){const delta=effectFrameDeltas(1/fps,1);assert.ok(delta.motion<=.045);effects=advanceEffectAges(effects,delta.age);}assert.equal(effects.length,0,`${fps}fps must not extend six-second effect into minutes`);}});
+test('effect lifetime respects intentional pause and slow motion',async()=>{const {effectFrameDeltas}=await import('./scene-runtime');assert.deepEqual(effectFrameDeltas(1,0),{motion:0,age:0});assert.equal(effectFrameDeltas(1,.25).age,.25);});
+
+ test('core settlement window covers shipped explosion and delayed impact audio',async()=>{const {readFileSync}=await import('node:fs');const {CORE_EFFECT_LIFETIME}=await import('./scene-runtime');const source=JSON.parse(readFileSync(new URL('../public/audio/SOURCES.json',import.meta.url),'utf8'));const samples=Object.values(source).find(v=>Array.isArray(v)&&v.some(x=>x.file==='blast.wav')) as {file:string;durationSeconds:number}[];assert.ok(samples);assert.ok(CORE_EFFECT_LIFETIME>=samples.find(x=>x.file==='blast.wav')!.durationSeconds);assert.ok(CORE_EFFECT_LIFETIME>=.12+samples.find(x=>x.file==='wood-impact.wav')!.durationSeconds);});

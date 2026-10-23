@@ -7,6 +7,7 @@ await fs.mkdir('artifacts',{recursive:true});
 async function capture(name) { await page.screenshot({path:`artifacts/${name}.png`}); if(process.env.CI){ const jpg=await page.screenshot({type:'jpeg',quality:35}); if(jpg.length<220000) console.log(`SCREENSHOT_BASE64 ${name} ${jpg.toString('base64')}`); } }
 const errors=[];page.on('pageerror',e=>errors.push(String(e)));
 await page.goto('http://127.0.0.1:5191',{waitUntil:'networkidle'});await page.waitForTimeout(1500);
+await page.waitForFunction(()=>window.__heping?.physicsReady,{},{timeout:60000});
 await capture('desktop-initial');
 const canvasImage=PNG.sync.read(await page.locator('canvas').screenshot());
 const colors=new Set(); let bright=0;
@@ -22,16 +23,16 @@ const targetAfterDrag=await page.evaluate(()=>window.__heping.target);
 if(targetAfterDrag!==null)throw new Error("Dragging incorrectly set an aim target");
 await page.locator('#camera').click();await page.waitForTimeout(500);
 let aim=null;
-for (let y=310;y<=550&&!aim;y+=40) for(let x=580;x<=880&&!aim;x+=40){await page.mouse.click(x,y);aim=await page.evaluate(()=>window.__heping.target);}
+for (let y=310;y<=550&&!aim;y+=40) for(let x=580;x<=880&&!aim;x+=40){await page.mouse.click(x,y);aim=await page.evaluate(()=>{const p=window.__heping.target;return p&&window.__heping.snapshot().voxels.some(v=>Math.abs(v.position.x-p.x)<.6&&Math.abs(v.position.y-p.y)<.6&&Math.abs(v.position.z-p.z)<.6)?p:null;});}
 if(!aim)throw new Error('Could not select cottage using real pointer');
-await page.locator('#fire').click();await page.waitForTimeout(800);const afterShot=await state();
+await page.locator('#fire').click();await page.waitForFunction(()=>window.__heping.lastDetonations().length>0,{},{timeout:60000});const afterShot=await state();
 await capture('desktop-damaged');
-await page.reload({waitUntil:'networkidle'});await page.waitForTimeout(500);const afterReload=await state();
+await page.reload({waitUntil:'networkidle'});await page.waitForFunction(()=>window.__heping?.physicsReady,{},{timeout:60000});const afterReload=await state();
 await page.locator('#reset').click();const afterReset=await state();
 await page.locator('#settings').click();await page.locator('#sandbox').check();await page.locator('.done').click();await page.locator('[data-weapon="shock"]').click();
 await page.mouse.click(720,450);let sandboxAim=await page.evaluate(()=>window.__heping.target);
 if(!sandboxAim)for (let y=300;y<=550&&!sandboxAim;y+=30){await page.mouse.click(720,y);sandboxAim=await page.evaluate(()=>window.__heping.target);}
-await page.locator('#fire').click();await page.waitForTimeout(800);const sandboxShot=await state();
+await page.locator('#fire').click();await page.waitForFunction(()=>window.__heping.lastDetonations().length>0,{},{timeout:60000});const sandboxShot=await state();
 if(sandboxShot.destroyed<=0)throw new Error("Sandbox shot did not destroy any cottage voxels");
 await page.locator('#settings').click();await page.locator('#sandbox').uncheck();await page.locator('.done').click();const afterSandbox=await state();
 await page.setViewportSize({width:844,height:390});await page.waitForTimeout(700);await capture('mobile-landscape');

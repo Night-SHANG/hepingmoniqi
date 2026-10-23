@@ -8,7 +8,7 @@ test('cottage is deterministic, detailed, grounded and has diverse materials', (
  const a=createWorld(), b=createWorld();
  assert.deepEqual(a.getSnapshot(),b.getSnapshot());
  assert.ok(a.getVoxels().length>700);
- assert.equal(new Set(a.getVoxels().map(v=>v.material)).size,5);
+ assert.equal(new Set(a.getVoxels().map(v=>v.material)).size,6);
  assert.ok(a.getVoxels().some(v=>v.anchored));
  assert.equal(new Set(a.getVoxels().map(v=>`${v.position.x},${v.position.y},${v.position.z}`)).size,a.getVoxels().length);
 });
@@ -62,4 +62,49 @@ test('restore rejects unsupported floating fragments and impossible reward state
 test('second clear awards base research without repeating the first milestone',()=>{
  const w=createWorld(); const clear=(prefix:string)=>{for(const v of [...w.getVoxels()])hit(w,`${prefix}-${v.id}`,v.position,'shock',3);};
  clear('first');w.reset();clear('second');assert.equal(w.getSnapshot().research,480);
+});
+test('yard props have distinct authoritative ids and every interactive category is destructible',()=>{
+ const w=createWorld(); const initial=w.getVoxels();
+ assert.ok(initial.length>1600);assert.ok(initial.length<3500);
+ for(const group of ['house','tree','fence','crate','table','planter','logs']) {
+  const groupVoxels=initial.filter(v=>(v as any).group===group);assert.ok(groupVoxels.length>0,group);
+  assert.ok(groupVoxels.some(v=>v.anchored),`${group} is grounded`);
+  const target=groupVoxels.find(v=>v.material==='wood')??groupVoxels[0];
+  const r=hit(w,`prop-${group}`,target.position,'pulse',1);
+  assert.ok(r.removed.some(v=>v.id===target.id)||w.getVoxels().find(v=>v.id===target.id)!.hp<target.hp,`${group} takes damage`);
+ }
+ assert.ok(initial.filter(v=>(v as any).group==='house').every(v=>v.id<10000));
+ assert.ok(initial.filter(v=>(v as any).group!=='house').every(v=>v.id>=10000));
+});
+test('cut tree trunk detaches crown without damaging distant cottage or other trees',()=>{
+ const w=createWorld();const houseBefore=w.getVoxels().filter(v=>(v as any).group==='house');
+ const r=hit(w,'cut-tree',{x:-16,y:2,z:6},'pulse',1);
+ assert.ok(r.detached.some(v=>(v as any).group==='tree'&&v.position.y>=5));
+ assert.deepEqual(w.getVoxels().filter(v=>(v as any).group==='house'),houseBefore);
+ assert.ok(r.detached.every(v=>Math.abs(v.position.x+16)<=4&&Math.abs(v.position.z-6)<=4));
+});
+test('expanded save schema roundtrips with props and rejects unknown versions',()=>{
+ const w=createWorld();hit(w,'yard',{x:13,y:1,z:4},'charge');const s=w.getSnapshot();
+ assert.equal((s as any).schemaVersion,2);assert.equal(createWorld().restore(s),true);
+ assert.equal(w.restore({...s,schemaVersion:99} as any),false);
+});
+test('legacy cottage saves migrate explicitly, preserving damage and RP while adding intact yard',()=>{
+ const w=createWorld();const house=w.getVoxels().filter(v=>v.group==='house');
+ const legacyVoxels=house.map(({group,objectId,...v})=>v);
+ const legacy={epoch:9,totalCount:1096,destroyedCount:0,research:37,firstRewardClaimed:false,voxels:legacyVoxels};
+ assert.equal(w.restore(legacy),true);const migrated=w.getSnapshot();
+ assert.equal(migrated.schemaVersion,2);assert.equal(migrated.research,37);assert.equal(migrated.destroyedCount,0);
+ assert.deepEqual(migrated.voxels.filter(v=>v.group==='house'),house);
+ assert.ok(migrated.voxels.some(v=>v.group==='tree'));
+ assert.equal(createWorld().restore(migrated),true);
+ const allCleared={...legacy,voxels:[],destroyedCount:1096,research:280,firstRewardClaimed:true};
+ assert.equal(w.restore(allCleared),true);assert.equal(w.getSnapshot().research,280);assert.equal(w.getSnapshot().destroyedCount,1096);
+ assert.equal(w.getVoxels().some(v=>v.group==='house'),false);assert.equal(createWorld().restore(w.getSnapshot()),true);
+ const before=w.getSnapshot();assert.equal(w.restore({...legacy,totalCount:1097}),false);assert.deepEqual(w.getSnapshot(),before);
+});
+test('prop support and group identity cannot be forged in saves; extra payload cells are rejected',()=>{
+ const w=createWorld();const before=w.getSnapshot();
+ for(const mutate of [(s:any)=>s.voxels.find((v:any)=>v.group==='tree').objectId='house',(s:any)=>s.voxels.find((v:any)=>v.group==='tree').group='house',(s:any)=>s.voxels.push(...s.voxels)]){
+  const invalid=structuredClone(before);mutate(invalid);assert.equal(w.restore(invalid),false);assert.deepEqual(w.getSnapshot(),before);
+ }
 });

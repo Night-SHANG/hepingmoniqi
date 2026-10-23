@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { DamageResult, SceneApi, SceneOptions, Vec3, Voxel, WeaponId } from './contracts';
+import type { DamageResult, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
 type Block = { x:number; y:number; z:number; sx:number; sy:number; sz:number; color:number };
 type Chip = { p:THREE.Vector3; v:THREE.Vector3; rotation:THREE.Vector3; spin:THREE.Vector3; size:number; age:number; life:number; color:number };
@@ -17,7 +17,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  renderer.domElement.setAttribute('aria-label', '可旋转的三维木屋试验场，点击木屋选择目标，拖动旋转视角');
+  renderer.domElement.setAttribute('aria-label', '可旋转的三维木屋试验场，点击庭院物体或地面选择目标，拖动旋转视角');
   renderer.domElement.style.touchAction = 'none';
   container.append(renderer.domElement);
   const camera = new THREE.PerspectiveCamera(42, 1, .2, 250);
@@ -66,28 +66,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   for(let z=7;z<22;z+=1.5) for(let j=0;j<3;j++) {
     block((j-1)*1.35 + Math.sin(z*.3)*.6,.07,z,1.18,.17,1.25,palette([0xb7af8f,0xc5bda0,0xa8a88c]));
   }
-  // Split front fence opens onto the path; the side fence frames rather than occludes the cottage.
-  const fence = (x:number,z:number,alongX:boolean,length:number) => {
-    for(let i=0;i<=length;i+=3) {
-      const px=x+(alongX?i:0), pz=z+(alongX?0:i);
-      block(px,1.15,pz,.55,2.5,.55,0x917049);
-      block(px,2.43,pz,.68,.2,.68,0xb89963);
-      if(i<length) for(const y of [.9,1.85]) block(px+(alongX?1.5:0),y,pz+(alongX?0:1.5),alongX?3:.22,.25,alongX?.22:3,0xa98450);
-    }
-  };
-  fence(-22,17,true,18); fence(5,17,true,18); fence(-22,-16,false,33); fence(23,-16,false,33); fence(-22,-16,true,45);
-  // Dense voxel foliage, readable trunks and layered crowns, with deterministic color variation.
-  const tree = (x:number,z:number,s:number) => {
-    for(let y=.5;y<6*s;y+=.75) block(x,y,z,1.25*s,.78,1.2*s,palette([0x796043,0x8e6a45,0x9c754b]));
-    for(let level=0;level<4;level++) {
-      const radius=(level===0?2.6:level===1?3.3:level===2?2.8:1.7)*s;
-      for(let a=-radius;a<=radius;a+=1.1*s) for(let b=-radius;b<=radius;b+=1.1*s) {
-        if(a*a+b*b>radius*radius || rand()<.09)continue;
-        block(x+a,5.3*s+level*1.13*s+rand()*.25,z+b,1.22*s,1.25*s,1.22*s,palette([0x547436,0x688b37,0x7e9b42,0x94ad4c,0x6c913e]));
-      }
-    }
-  };
-  tree(-16,6,1.35); tree(-17,-10,1.5); tree(16,-12,1.2); tree(21,3,.85); tree(-23,-18,.85);
+  // All trees, fences and yard props come from the authoritative destructible world.
   // Meadow wildflowers and small grass patches are batched, not individual meshes.
   for(let i=0;i<1250;i++) {
     const x=(rand()-.5)*50,z=(rand()-.5)*40;
@@ -95,20 +74,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const h=.15+rand()*.4;
     block(x,h/2+.05,z,.11,h,.15,palette([0x6d8636,0x78943e,0x9eaf54]));
     if(rand()<.2) block(x,h+.07,z,.22,.17,.22,palette([0xeec85b,0xf1e4b0,0xc6d6a8,0xdac365]));
-  }
-  // Garden beds, log pile and workbench add environmental storytelling.
-  for(const bx of [-11,11]) {
-    block(bx,.35,9,3.5,.6,2.5,0x564a30);
-    for(const z of [7.7,10.3]) block(bx,.6,z,3.9,.8,.25,0xa27c49);
-    for(const x of [bx-1.9,bx+1.9]) block(x,.6,9,.25,.8,2.6,0xb18a56);
-    for(let i=0;i<12;i++) block(bx-1.4+(i%4)*.9,1+rand()*.25,8.2+Math.floor(i/4)*.75,.55,.6,.55,palette([0x6f9343,0x88a54b,0xa9b955]));
-  }
-  for(let i=0;i<15;i++) block(-11+(i%5)*.6,.3+Math.floor(i/5)*.55,-5,.52,.5,2.1,palette([0x956f43,0xaf8a54,0x826044]));
-  block(13,1.8,4,4,.35,2,0xb18e5b);
-  for(const x of [11.5,14.5]) for(const z of [3.3,4.7]) block(x,.85,z,.25,1.8,.25,0x7d6341);
-  for(const [x,z] of [[-12,2],[11,-3],[12,-3]]) {
-    block(x,.65,z,1.2,1.3,1.2,0x936b41);
-    for(const y of [.16,1.12]) block(x,y,z,1.3,.15,1.3,0xb9935a);
   }
   // Lake beyond the meadow, broken banks, block cliffs and a quieter distant skyline.
   const waterMaterial = new THREE.MeshStandardMaterial({color:0x4a9fb5,roughness:.28,metalness:.22});
@@ -144,6 +109,45 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const debris = new THREE.InstancedMesh(box,voxelMat,MAX_DEBRIS);
   debris.instanceMatrix.setUsage(THREE.DynamicDrawUsage);debris.count=0;debris.castShadow=true;debris.frustumCulled=false;scene.add(debris);
   let chips:Chip[]=[];
+
+  // Only physics supplies projectile transforms. This renderer never detonates or
+  // advances their motion; trails are a bounded visual history of those transforms.
+  const MAX_PROJECTILES=48, TRAIL_POINTS=12;
+  const projectileGeometry=new THREE.IcosahedronGeometry(1,1);
+  const projectileMaterial=new THREE.MeshStandardMaterial({roughness:.45,metalness:.3,emissive:0xffa23a,emissiveIntensity:.3});
+  const projectileMesh=new THREE.InstancedMesh(projectileGeometry,projectileMaterial,MAX_PROJECTILES);
+  projectileMesh.count=0;projectileMesh.castShadow=true;projectileMesh.frustumCulled=false;scene.add(projectileMesh);
+  const trailMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:.5,depthWrite:false});
+  const trailMesh=new THREE.InstancedMesh(box,trailMaterial,MAX_PROJECTILES*TRAIL_POINTS);
+  trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
+  const trails=new Map<string,THREE.Vector3[]>();
+  const fuseBadges=new Map<string,{sprite:THREE.Sprite;canvas:HTMLCanvasElement;texture:THREE.CanvasTexture;label:string}>();
+  const projectileColor=(weapon:WeaponId)=>weapon==='shock'?0x65ddff:weapon==='charge'?0xf6a040:0xffec9d;
+  const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;scene.remove(badge.sprite);badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
+  const updateProjectiles=(views:readonly ProjectileView[])=>{
+    const visible=views.slice(0,MAX_PROJECTILES), ids=new Set(visible.map(v=>v.id));
+    for(const id of trails.keys())if(!ids.has(id))trails.delete(id);
+    for(const id of fuseBadges.keys())if(!ids.has(id))releaseBadge(id);
+    let trailIndex=0;
+    visible.forEach((p,i)=>{
+      tmp.position.set(p.position.x,p.position.y,p.position.z);tmp.rotation.set(p.age*2,p.age*3,0);tmp.scale.setScalar(p.radius);tmp.updateMatrix();
+      projectileMesh.setMatrixAt(i,tmp.matrix);projectileMesh.setColorAt(i,color.setHex(projectileColor(p.weapon)));
+      const history=trails.get(p.id)??[];const current=new THREE.Vector3(p.position.x,p.position.y,p.position.z);
+      if(!history.length || history[history.length-1].distanceToSquared(current)>.006){history.push(current);if(history.length>TRAIL_POINTS)history.shift();}
+      trails.set(p.id,history);
+      history.forEach((position,j)=>{tmp.position.copy(position);tmp.rotation.set(0,0,0);tmp.scale.setScalar(p.radius*.65*(j+1)/history.length);tmp.updateMatrix();trailMesh.setMatrixAt(trailIndex,tmp.matrix);trailMesh.setColorAt(trailIndex++,color.setHex(projectileColor(p.weapon)));});
+      if(p.fuseRemaining!==null){
+        let badge=fuseBadges.get(p.id);
+        if(!badge){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=64;const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(1.8,.9,1);scene.add(sprite);badge={sprite,canvas,texture,label:''};fuseBadges.set(p.id,badge);}
+        badge.sprite.position.set(p.position.x,p.position.y+.9,p.position.z);
+        const label=Math.max(0,p.fuseRemaining).toFixed(1)+'s';
+        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=p.fuseRemaining<1?'#ff9f64':'#ffdb9a';ctx.font='bold 34px sans-serif';ctx.textAlign='center';ctx.fillText(label,64,44);badge.texture.needsUpdate=true;badge.label=label;}
+      }
+    });
+    projectileMesh.count=visible.length;trailMesh.count=trailIndex;projectileMesh.instanceMatrix.needsUpdate=true;trailMesh.instanceMatrix.needsUpdate=true;
+    if(projectileMesh.instanceColor)projectileMesh.instanceColor.needsUpdate=true;if(trailMesh.instanceColor)trailMesh.instanceColor.needsUpdate=true;
+  };
+
   const marker = new THREE.Group();
   const markerMaterial = new THREE.MeshBasicMaterial({color:0xffa33c,depthTest:false,transparent:true,opacity:.92});
   const ring = new THREE.Mesh(new THREE.TorusGeometry(.48,.025,6,32),markerMaterial);
@@ -167,7 +171,11 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
     const hit=raycaster.intersectObject(house,false)[0];
-    if(hit?.instanceId!==undefined && live[hit.instanceId]) options.onAim({...live[hit.instanceId].position});
+    // Surface coordinates are never snapped back to an old voxel center. Empty roof
+    // holes continue the same aim ray to the next live surface or stable ground.
+    const ground = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), new THREE.Vector3());
+    const point = hit?.point ?? (ground && Math.abs(ground.x)<=27 && Math.abs(ground.z)<=22 ? ground : null);
+    if(point) options.onAim({x:point.x,y:point.y,z:point.z});
   };
   const cancel=(e:PointerEvent)=>{pointers.delete(e.pointerId);down=null;dragged=true;};
   renderer.domElement.addEventListener('pointerdown',pointerDown);
@@ -181,6 +189,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const animate=(now:number)=>{
     if(disposed)return;
     const dt=Math.min((now-last)/1000,.045)*timeScale;last=now;controls.update();
+    options.onFrame?.(dt);
     chips=chips.filter(c=>c.age<c.life);
     chips.forEach((c,i)=>{
       c.age+=dt;c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
@@ -199,6 +208,14 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   };
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
+    setProjectiles:updateProjectiles,
+    getLaunchOrigin(point){
+      const direction=new THREE.Vector3(point.x,point.y,point.z).sub(camera.position).normalize();
+      const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+      const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
+      const origin=camera.position.clone().addScaledVector(direction,3).addScaledVector(right,1.1).addScaledVector(up,-1);
+      return {x:origin.x,y:origin.y,z:origin.z};
+    },
     setVoxels(voxels){
       if(voxels.length>live.length){chips=[];debris.count=0;pulseAge=10;}
       live=voxels;
@@ -222,6 +239,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     },
     setTarget(point){target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();disposed=true;cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);scene.traverse(object=>{if(object instanceof THREE.Mesh){if(object.geometry!==box)object.geometry.dispose();if(object instanceof THREE.InstancedMesh)object.dispose();}});box.dispose();landscapeMat.dispose();voxelMat.dispose();waterMaterial.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

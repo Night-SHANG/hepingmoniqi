@@ -131,21 +131,48 @@ async function pixels() {
   assert.ok(colors.size >= 100 && bright >= 500, 'live WebGL canvas is blank or near-uniform'); return { colors: colors.size, bright };
 }
 async function wheelList(selector, lastSelector) {
-  const initialRect = await box(selector);
-  await page.mouse.move((initialRect.left + initialRect.right) / 2, (initialRect.top + initialRect.bottom) / 2);
-  await page.mouse.wheel(0, -10000); await page.waitForTimeout(160);
-  const before = await inspect([selector, '#start-experiment', '#capacity-section']);
-  const scroller = before.controls[selector];
-  assert.ok(['auto', 'scroll'].includes(scroller.overflowY), `${selector}: must own vertical overflow`);
-  const r = scroller.rect; await page.mouse.move((r.left + r.right) / 2, (r.top + r.bottom) / 2); await page.mouse.wheel(0, 10000);
-  await page.waitForTimeout(160);
-  const after = await inspect([selector, '#start-experiment', '#capacity-section']);
-  if (scroller.scrollHeight > scroller.clientHeight + 2) assert.ok(after.controls[selector].scrollTop > before.controls[selector].scrollTop, `${selector}: wheel did not scroll its own list`);
-  assertStationary(before.controls['#start-experiment'].rect, after.controls['#start-experiment'].rect, `${selector}: pinned start`);
-  assertStationary(before.controls['#capacity-section'].rect, after.controls['#capacity-section'].rect, `${selector}: pinned capacity`);
-  assert.deepEqual(after.documentScroll, before.documentScroll, `${selector}: panel wheel moved the page`);
-  await reachable(lastSelector, 0); await reachable('#start-experiment');
-  evidence.geometry.push({ label: `internal-scroll-${selector}`, before, after });
+  const attempt = { label: `internal-scroll-${selector}`, selector, phase: 'reset-to-top' };
+  try {
+    const initial = await inspect([selector, '#start-experiment', '#capacity-section']);
+    attempt.initial = initial;
+    const initialRect = initial.controls[selector].rect;
+    const pointer = { x: (initialRect.left + initialRect.right) / 2, y: (initialRect.top + initialRect.bottom) / 2 };
+    attempt.pointer = pointer;
+    await page.mouse.move(pointer.x, pointer.y);
+    await page.mouse.wheel(0, -10000);
+    // mouse.wheel() resolves on event dispatch, not after Chrome's compositor
+    // applies scrolling. Wait for observed scroll state, never a 160 ms guess.
+    await page.waitForFunction(selector => document.querySelector(selector).scrollTop <= 1, selector, { timeout: 15000 });
+    const before = await inspect([selector, '#start-experiment', '#capacity-section']);
+    attempt.before = before;
+    const scroller = before.controls[selector];
+    assert.ok(['auto', 'scroll'].includes(scroller.overflowY), `${selector}: must own vertical overflow`);
+    assert.ok(scroller.reachable, `${selector}: wheel midpoint is outside its clipped viewport: ${JSON.stringify(scroller)}`);
+    attempt.phase = 'scroll-to-bottom';
+    await page.mouse.move((scroller.rect.left + scroller.rect.right) / 2, (scroller.rect.top + scroller.rect.bottom) / 2);
+    await page.mouse.wheel(0, 10000);
+    if (scroller.scrollHeight > scroller.clientHeight + 2) {
+      await page.waitForFunction(selector => {
+        const el = document.querySelector(selector);
+        return el.scrollTop > 0 && el.scrollHeight - el.clientHeight - el.scrollTop <= 1;
+      }, selector, { timeout: 15000 });
+    }
+    const after = await inspect([selector, '#start-experiment', '#capacity-section']);
+    attempt.after = after; attempt.phase = 'assert-pinned-footer-and-last-item';
+    if (scroller.scrollHeight > scroller.clientHeight + 2) assert.ok(after.controls[selector].scrollTop > scroller.scrollTop, `${selector}: wheel did not scroll its own list`);
+    assertStationary(before.controls['#start-experiment'].rect, after.controls['#start-experiment'].rect, `${selector}: pinned start`);
+    assertStationary(before.controls['#capacity-section'].rect, after.controls['#capacity-section'].rect, `${selector}: pinned capacity`);
+    assert.deepEqual(after.documentScroll, before.documentScroll, `${selector}: panel wheel moved the page`);
+    await reachable(lastSelector, 0); await reachable('#start-experiment');
+    attempt.phase = 'passed';
+  } catch (error) {
+    attempt.failure = String(error);
+    attempt.afterFailure = await inspect([selector, '#start-experiment', '#capacity-section']).catch(() => null);
+    console.log('V07_SCROLL_FAILURE ' + JSON.stringify(attempt));
+    throw error;
+  } finally {
+    evidence.geometry.push(attempt);
+  }
 }
 async function setupGeometry(label, desktop = true) {
   const sample = await inspect(['.scene-panel', '.loadout-panel', '.scene-choices', '.loadout-rows', '#start-experiment', '#capacity-section']);

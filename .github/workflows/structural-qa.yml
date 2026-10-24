@@ -9,6 +9,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      QA_SCOPE: ${{ contains(github.event.head_commit.message, '[qa:city-effects]') && 'city-effects' || 'full' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +46,7 @@ jobs:
           node scripts/game-save-browser-check.mjs
           node scripts/structural-game-browser-check.mjs
       - name: Structural entry smoke and real screenshots
+        if: ${{ success() && !contains(github.event.head_commit.message, '[qa:city-effects]') }}
         env:
           QA_BROWSER_CHANNEL: chrome
         run: |

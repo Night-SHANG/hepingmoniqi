@@ -8,6 +8,12 @@ import type { AimSurface, DamageResult, MapId, SceneApi, SceneOptions, Projectil
 
 export { createVoxelInstanceRenderer } from './voxel-renderer';
 import { createVoxelInstanceRenderer } from './voxel-renderer';
+import {createCompactSurfaceRenderer} from './compact/surface-renderer';
+import {createCompactSurfaceSource} from './compact/surface-source';
+import type {StructuralCompactQueries} from './structural/types';
+
+/** Static previews and paused scenes draw only on actual visual changes. */
+export function shouldRenderScene(timeScale:number,requested:boolean,shadowsDirty:boolean){return timeScale>0||requested||shadowsDirty;}
 
 /** Shadow maps depend on caster geometry and light setup, not the camera or
  * UI timer labels. Retain only the last rendered projectile matrices. */
@@ -72,6 +78,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   container.append(renderer.domElement);
   const camera = new THREE.PerspectiveCamera(42, 1, .2, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
+  let renderRequested=true,renderCount=0,lastRenderAt=0,lastRenderedMap:MapId|null=null;controls.addEventListener('change',()=>{renderRequested=true;});
   controls.enableDamping = true;
   controls.dampingFactor = .075;
   controls.minDistance = 19;
@@ -115,6 +122,17 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   let live: readonly Voxel[]=[];
   const voxelRenderer=createVoxelInstanceRenderer(scene,box,voxelMat);
   let house=voxelRenderer.mesh;
+  let compactRenderer:ReturnType<typeof createCompactSurfaceRenderer>|null=null,compactBinding:StructuralCompactQueries|null=null,compactCursor:number|undefined,compactGeneration:number|undefined;
+  function setCompactWorld(binding:StructuralCompactQueries|null){
+    if(!binding){compactRenderer?.dispose();compactRenderer=null;compactBinding=null;compactCursor=compactGeneration=undefined;renderRequested=true;shadowRefresh.invalidate();return;}
+    const different=compactBinding!==binding||compactGeneration!==binding.source.generation;
+    if(!different&&compactCursor===binding.revision)return;
+    if(different){voxelRenderer.set([]);live=[];compactRenderer??=createCompactSurfaceRenderer(scene,box,voxelMat,{chunkSize:16});compactRenderer.bind(createCompactSurfaceSource(binding.source));compactBinding=binding;compactGeneration=binding.source.generation;compactCursor=binding.revision;renderRequested=true;shadowRefresh.invalidate();}
+    const prior=compactRenderer!.getDiagnostics().revision,batch=binding.changesSince(compactCursor);
+    if(batch.reset)compactRenderer!.bind(createCompactSurfaceSource(binding.source));else compactRenderer!.applyEdits(batch.edits);
+    compactRenderer!.flush();compactRenderer!.setMoving(binding.movingViews());compactCursor=batch.revision;
+    if(prior!==compactRenderer!.getDiagnostics().revision){renderRequested=true;shadowRefresh.invalidate();}
+  }
   // Only physics supplies projectile transforms. This renderer never detonates or
   // advances their motion; trails are a bounded visual history of those transforms.
   const MAX_COSMETIC_PROJECTILES=64, TRAIL_POINTS=12;
@@ -203,13 +221,13 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     if(!start || start.id!==e.pointerId || dragged || performance.now()-start.time>420)return;
     const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
-    const hit=house?raycaster.intersectObject(house,false)[0]:undefined;
+    const hit=compactRenderer?raycaster.intersectObjects(compactRenderer.raycastObjects,true)[0]:house?raycaster.intersectObject(house,false)[0]:undefined;
     // No invisible y=0 plane can cover a crater. Clicks continue through holes
     // to the next actual authority surface, including rotated falling rubble.
     const point=hit?.point??null;
-    aimSurface=null;
+    aimSurface=compactRenderer&&hit?compactRenderer.resolveIntersection(hit):null;
     const voxel=hit?.instanceId===undefined?undefined:voxelRenderer.getVoxel(hit.instanceId);
-    if(hit?.instanceId!==undefined&&hit.face&&voxel){
+    if(!compactRenderer&&hit?.instanceId!==undefined&&hit.face&&voxel){
       const matrix=new THREE.Matrix4();house.getMatrixAt(hit.instanceId,matrix);matrix.premultiply(house.matrixWorld);
       const normal=hit.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(matrix)).normalize();
       aimSurface={position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:normal.x,y:normal.y,z:normal.z},voxelId:voxel.id};
@@ -222,7 +240,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   renderer.domElement.addEventListener('pointerup',pointerUp);
   renderer.domElement.addEventListener('pointercancel',cancel);
   renderer.domElement.addEventListener('pointerleave',cancel);
-  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();};
+  const resize=()=>{const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();renderRequested=true;};
   const observer=new ResizeObserver(resize);observer.observe(container);resize();
   let frame=0,disposed=false,last=performance.now();
   const resetClock=()=>{last=performance.now();};
@@ -239,14 +257,14 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     effects.render();
     if(target){marker.position.set(target.x,target.y,target.z);marker.quaternion.copy(camera.quaternion);marker.position.addScaledVector(new THREE.Vector3().subVectors(camera.position,marker.position).normalize(),.65);}
     trajectory.faceCamera(camera.quaternion);
-    if(shadowRefresh.consume()){renderer.shadowMap.needsUpdate=true;sun.shadow.needsUpdate=true;}
-    renderer.render(scene,camera);frame=requestAnimationFrame(animate);
+    const shadowsDirty=shadowRefresh.consume();if(shadowsDirty){renderer.shadowMap.needsUpdate=true;sun.shadow.needsUpdate=true;}
+    if(shouldRenderScene(timeScale,renderRequested,shadowsDirty)){renderer.render(scene,camera);renderCount++;lastRenderAt=performance.now();lastRenderedMap=mapId;renderRequested=false;}frame=requestAnimationFrame(animate);
   };
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
     setMap(next){if(next===mapId)return;effects.clear();aimSurface=null;target=null;marker.visible=false;trajectory.setPreview(null);applyMapEnvironment(next);},
     setReducedMotion(value){reducedMotion=!!value;updateReducedEffects();},
-    getDiagnostics(){return {mapId,camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:house.count,voxelRender:voxelRenderer.getDiagnostics(),effects:effects.getDiagnostics()};},
+    getDiagnostics(){return {mapId,renderCount,lastRenderAt,lastRenderedMap,camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:compactRenderer?compactRenderer.getDiagnostics().movingCells:house.count,representation:compactRenderer?'chunk-surfaces':'voxel-instances',renderedSurfaceFaces:compactRenderer?.getDiagnostics().faces??0,voxelRender:compactRenderer?.getDiagnostics()??voxelRenderer.getDiagnostics(),effects:effects.getDiagnostics()};},
     projectPoint(point){camera.updateMatrixWorld();const p=new THREE.Vector3(point.x,point.y,point.z).project(camera);return {x:(p.x+1)*.5*container.clientWidth,y:(1-p.y)*.5*container.clientHeight,visible:Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.z>=-1&&p.z<=1&&Math.abs(p.x)<=1&&Math.abs(p.y)<=1};},
     setProjectiles:updateProjectiles,
     setTrajectory:trajectory.setPreview,
@@ -254,17 +272,18 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     hasActiveEffects(){return !disposed&&effects.hasActiveCore();},
     playStructuralEvent(event){effects.add(event);},
     getRenderedProjectileCount(){return [...projectileMeshes.values()].reduce((count,pool)=>count+pool.mesh.count,0);},
-    getAimSurface(){return copyLiveAimSurface(aimSurface,live);},
+    getAimSurface(){if(compactBinding){if(!aimSurface||aimSurface.voxelId===null)return null;const c=compactBinding.cell(aimSurface.voxelId);return c&&c.state!=='gone'?structuredClone(aimSurface):null;}return copyLiveAimSurface(aimSurface,live);},
     getLaunchOrigin(point){return getSceneLaunchOrigin(camera,point);},
-    setVoxels(voxels){const previous=house;live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;const geometry=voxelRenderer.getDiagnostics();shadowRefresh.voxels({matrixWrites:geometry.matrixWrites,visible:geometry.visible,rebuilt:previous!==house});},
+    setCompactWorld,
+    setVoxels(voxels){if(compactBinding)setCompactWorld(null);const previous=house;live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;const geometry=voxelRenderer.getDiagnostics();shadowRefresh.voxels({matrixWrites:geometry.matrixWrites,visible:geometry.visible,rebuilt:previous!==house});},
     playDamage(result:DamageResult,point:Vec3,weapon:WeaponId,power=1){
       if(!result.accepted)return;
       // Legacy call path only: detached cells remain live authoritative geometry,
       // never sampled, replaced with fake chips, aged out, or globally pulsed.
       effects.add({id:`legacy-damage:${++damageSequence}`,epoch:effects.getDiagnostics().epoch??1,position:point,kind:'detonation',tool:weapon,scale:Math.sqrt(Math.max(.01,power))});
     },
-    setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
+    setTarget(point){renderRequested=true;if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){renderer.domElement.removeEventListener('webglcontextrestored',invalidateShadows);effects.dispose();environment.dispose();voxelRenderer.dispose();motionPreference?.removeEventListener('change',updateReducedEffects);trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();voxelMat.dispose();markerMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){renderer.domElement.removeEventListener('webglcontextrestored',invalidateShadows);effects.dispose();environment.dispose();compactRenderer?.dispose();voxelRenderer.dispose();motionPreference?.removeEventListener('change',updateReducedEffects);trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();voxelMat.dispose();markerMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

@@ -14,17 +14,52 @@ export interface StructuralEventCursor {readonly epoch:number;readonly index:num
 export interface StructuralEventChanges {readonly cursor:StructuralEventCursor;readonly reset:boolean;readonly events:readonly ImmutableStructuralEvent[]}
 export interface SceneFixture { id:string; cells:Cell[] }
 export interface BlastCommand { id:string; epoch:number; position:Point; radius:number; damage:number; impulse:number }
-export interface StructuralSimulationOptions {maxActiveBodies?:number;initialEpoch?:number}
+export interface CompactSupportGraph extends SupportGraph {reset():void;dispose?():void}
+export interface StructuralSimulationOptions {
+ maxActiveBodies?:number;initialEpoch?:number;
+ /** Optional prevalidated support adapter. The same kernel owns all physics. */
+ compactSupportFactory?:(store:import('../compact/store.js').CompactAuthorityStore)=>CompactSupportGraph|Promise<CompactSupportGraph>;
+ /** Called once after awaited pristine-support validation, immediately before
+  * allocating the first native world. Never called by reset or restore. */
+ beforeWorldCreate?:()=>void;
+}
+export interface StructuralCellSave {id:number;hp:number;loss:number;state:CellView['state'];position:Point;rotation:Rotation;chunkId?:string}
+export interface StructuralLocalCell {id:number;position:Point;rotation:Rotation}
+export interface StructuralChunkSave {transforms:StructuralLocalCell[];id:string;cells:number[];rootShotId:string;status:'active'|'queued'|'rubble';position:Point;rotation:Rotation;linvel:Point;angvel:Point;quiet:number}
+export interface StructuralContactEpisode {n:number;credited:boolean}
+export interface StructuralSaveMetadata {fixtureId:string;fixtureSignature:string;maxActiveBodies:number;epoch:number;tick:number;accumulator:number;serial:number;cells:StructuralCellSave[];bodies:StructuralChunkSave[];queue:string[];shots:string[];processed:string[];episodes:[string,StructuralContactEpisode][];episodeCounts:[string,number][];research:number;events:StructuralEvent[]}
+export interface StructuralSnapshot extends StructuralSaveMetadata {schema:'structural-simulation/v1'}
+export interface SparseStructuralSnapshot extends StructuralSaveMetadata {schema:'structural-simulation-changes/v1'}
+export interface CompactStructuralSnapshot extends StructuralSaveMetadata {schema:'structural-simulation-compact/v1'}
+type CompactStore=import('../compact/store.js').CompactAuthorityStore;
+/** Sparse runtime query port. Reset means rebuild from the immutable descriptor
+ * and sparse changes, not request a full-world CellView array. */
+export interface StructuralCompactQueries {
+ readonly fixture:import('../compact/fixture.js').CompactFixture;
+ readonly source:Pick<CompactStore,'fixture'|'staticIdAt'|'colorOf'|'hpOf'|'maxHpOf'|'materialOf'>&{readonly generation:number};
+ readonly revision:number;
+ changesSince(sinceRevision?:number):ReturnType<CompactStore['changesSince']>;
+ cell(id:number):ImmutableCellView|null;
+ /** All edited cells only, for sparse cursor reset/replacement. */
+ changedCells():readonly ImmutableCellView[];
+ movingViews():readonly ImmutableCellView[];
+ aggregate():ReturnType<CompactStore['aggregate']>;
+ diagnostics():ReturnType<CompactStore['diagnostics']>;
+}
 export interface StructuralSimulation {
  readonly epoch:number;
+ readonly compact?:StructuralCompactQueries;
  blast(command:BlastCommand):boolean;
  step(dt:number):void;
- /** Independently owned, mutable deep snapshot. */
+ /** Independently owned, mutable deep snapshot. Compact mode: diagnostic-only
+  * full materialization; production consumers must use the compact query port. */
  views():CellView[];
- /** Cached immutable values. Retained arrays and cells never change under callers. */
+ /** Immutable values. Dense mode caches the full array; compact mode explicitly
+  * materializes a diagnostic array. Retained values never change under callers. */
  liveViews():readonly ImmutableCellView[];
  readonly viewRevision:number;
- /** First/expired/pre-replacement cursors require replacing the complete consumer view. */
+ /** Dense-only: expired cursors replace the full view. Compact mode throws;
+  * use compact.changesSince and changedCells for sparse cursor resets. */
  viewChanges(sinceRevision?:number):StructuralViewChanges;
  /** Index is epoch-local; reset also signals a gap in the bounded event log. */
  eventsSince(cursor?:StructuralEventCursor):StructuralEventChanges;
@@ -32,7 +67,8 @@ export interface StructuralSimulation {
  pending():number;
  research():number;
  snapshot():unknown;
- /** Owned sparse cells plus complete save metadata; expand before strict restore. */
+ /** Owned sparse cells plus complete save metadata. Legacy dense schema needs
+  * expansion; compact schema is validated/restored directly, without expansion. */
  snapshotSparse():unknown;
  restore(snapshot:unknown):boolean;
  reset():void;

@@ -1,0 +1,49 @@
+name: Compact game performance and physics
+on:
+  push:
+    branches: [perf/compact-city-ab]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - '.github/workflows/compact-game-performance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - name: Compile exact immutable support assets
+        run: |
+          node --import tsx scripts/compile-compact-support.ts --ensure
+          node --import tsx scripts/compile-compact-support.ts --check
+      - name: Full regression suite and production build
+        run: |
+          npm test
+          npm run build
+      - run: google-chrome --version
+      - name: Serve unchanged game UI
+        run: |
+          python3 -m http.server 5191 --bind 127.0.0.1 --directory dist >/tmp/compact-game-server.log 2>&1 &
+          python3 - <<'PYREADY'
+          import time,urllib.request
+          for attempt in range(50):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:5191/',timeout=1)
+                  break
+              except OSError: time.sleep(.1)
+          else: raise RuntimeError('Game server unavailable')
+          PYREADY
+      - name: Real game interaction, physics and performance evidence
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          GAME_URL: http://127.0.0.1:5191/
+          CI: 'true'
+        run: node scripts/compact-game-browser-check.mjs

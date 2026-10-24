@@ -35,6 +35,7 @@ export interface SceneApi {
  setMap(mapId:MapId):void;
  setReducedMotion(reduced:boolean):void;
  setVoxels(voxels: readonly Voxel[]): void;
+ setCompactWorld(binding:import('./structural/types').StructuralCompactQueries|null):void;
  setProjectiles(projectiles: readonly ProjectileView[]): void;
  setTrajectory(preview:TrajectoryPreview|null):void;
  hasActiveEffects():boolean;

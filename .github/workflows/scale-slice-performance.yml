@@ -25,6 +25,7 @@ jobs:
         run: |
           npm test
           node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/scale-slice/*.test.ts
+          node --test scripts/scale-slice-measurement.test.mjs
           npx tsc --noEmit
           npx vite build --config vite.scale-slice.config.ts
       - name: Serve isolated slice

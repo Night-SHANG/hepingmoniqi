@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
 
 // PREPARED HARNESS ONLY until separately authorized CI dispatch. --self-test
 // imports/launches/connects no browser. Never use a local-computer fallback.
@@ -15,14 +16,76 @@ const gates=row=>({
  actualRender:row.renderCount>0,
  naturalRecovery:row.settled===true&&row.finalDebtMs<100,
 });
+// Pure reducers are shared by the executable and browser-free regression tests.
+// A frame is a real renderer submission, not GPU completion or screen presentation.
+export function createDamageMeasurement(damage){
+ return {damage:{...damage},poses:new Map(),renders:new Map(),uploads:new Map(),firstEligibleReceivedPose:null,fixedPose:null,poseRender:null,skippedEligiblePoseCount:0,firstDamagedChunkRender:null,firstVfxRender:null,allPatchUploads:null,allStaticRender:null,staticObservedAt:null};
+}
+function poseKey(p){return `${p.epoch}:${p.tick}:${p.geometryRevision}:${p.sentAt}:${p.receivedAt}`;}
+function uploadKey(u){return `${u.epoch}:${u.key}:${u.revision}:${u.at}`;}
+function eligiblePose(p,d){return p?.epoch===d.epoch&&p.geometryRevision>=d.geometryRevision&&Number.isFinite(p.receivedAt)&&p.receivedAt>=d.committedAt&&Number.isFinite(p.sentAt)&&p.sentAt>=d.committedAt;}
+function changedUpload(u,d){return u?.epoch===d.epoch&&u.revision>=d.geometryRevision&&u.at>=d.committedAt;}
+function damagedUpload(u,d){return changedUpload(u,d)&&u.damageIds?.includes(d.id);}
+export function observeDamageMeasurement(m,d){
+ const damage=m.damage;
+ for(const p of d.poses??[])if(eligiblePose(p,damage))m.poses.set(poseKey(p),{...p});
+ for(const r of d.renders??[])if(r.at>=damage.committedAt&&Number.isFinite(r.finishedAt))m.renders.set(r.renderNo,r);
+ for(const u of d.uploads??[])if(changedUpload(u,damage))m.uploads.set(uploadKey(u),u);
+ const poses=[...m.poses.values()].sort((a,b)=>a.receivedAt-b.receivedAt),frames=[...m.renders.values()].sort((a,b)=>a.finishedAt-b.finishedAt||a.renderNo-b.renderNo);
+ m.firstEligibleReceivedPose??=poses[0]??null;
+ // Latest-wins presentation may skip a received snapshot. Only an exact snapshot
+ // recorded in an actual frame qualifies; freeze the first such frame forever.
+ if(!m.poseRender){const r=frames.find(r=>eligiblePose(r.pose,damage)&&m.poses.has(poseKey(r.pose))&&r.at>=r.pose.receivedAt);if(r){m.fixedPose={...r.pose};m.poseRender=r;m.skippedEligiblePoseCount=poses.filter(p=>p.receivedAt<r.pose.receivedAt&&!frames.some(f=>f.pose&&poseKey(f.pose)===poseKey(p))).length;}}
+ m.firstDamagedChunkRender??=frames.find(r=>r.renderedChunks?.some(u=>damagedUpload(u,damage)&&u.at<=r.finishedAt))??null;
+ m.firstVfxRender??=frames.find(r=>r.effectIds?.includes(damage.id))??null;
+ const mesh=d.summary?.mesh,drained=d.summary?.epoch===damage.epoch&&d.summary.geometryRevision>=damage.geometryRevision&&mesh?.pendingDirty===0&&mesh.inFlightPatches===0&&d.presentation?.pending===0;
+ if(!m.allStaticRender&&drained){
+  const uploads=[...m.uploads.values()];
+  if(uploads.some(u=>damagedUpload(u,damage))){
+   const at=Math.max(...uploads.map(u=>u.at));
+   m.allPatchUploads={at,observedAt:d.at,count:uploads.length,damageTaggedCount:uploads.filter(u=>damagedUpload(u,damage)).length,geometryRevision:d.summary.geometryRevision};
+   const r=frames.find(r=>r.at>=at);
+   if(r){m.allStaticRender=r;m.staticObservedAt=d.at;}
+  }
+ }
+ return m;
+}
+export function damageMeasurementResult(m){
+ const since=at=>Number.isFinite(at)?at-m.damage.committedAt:null;
+ return {firstVfxVisibleMs:since(m.firstVfxRender?.finishedAt),firstDamagedChunkVisibleMs:since(m.firstDamagedChunkRender?.finishedAt),allPatchUploadsMs:since(m.allPatchUploads?.at),fixedPoseVisibleMs:since(m.poseRender?.finishedAt),staticVisibleMs:since(m.allStaticRender?.finishedAt),visibleMs:m.allStaticRender&&m.poseRender?since(Math.max(m.allStaticRender.finishedAt,m.poseRender.finishedAt)):null,
+  firstVfxEvidence:m.firstVfxRender,firstDamagedChunkEvidence:m.firstDamagedChunkRender,allPatchUploadsEvidence:m.allPatchUploads,
+  staticVisibleEvidence:{observedAt:m.staticObservedAt,geometryRevision:m.allPatchUploads?.geometryRevision??null,allPatchUploads:m.allPatchUploads,render:m.allStaticRender},
+  completeVisibleEvidence:{firstEligibleReceivedPose:m.firstEligibleReceivedPose,pose:m.fixedPose,render:m.poseRender,skippedEligiblePoseCount:m.skippedEligiblePoseCount,staticRender:m.allStaticRender}};
+}
+function boundedFrame(r){
+ if(!r)return null;
+ return {renderNo:r.renderNo,at:r.at,finishedAt:r.finishedAt,geometryRevision:r.geometryRevision,pose:r.pose,installedChunkCount:r.installedChunks?.length??0,installedChunks:(r.installedChunks??[]).slice(0,8),renderedChunkCount:r.renderedChunks?.length??0,renderedChunks:(r.renderedChunks??[]).slice(0,8),effectIds:(r.effectIds??[]).slice(0,8),renderInfo:r.renderInfo??r.rendererInfo??r.info??null};
+}
+function flattenNumbers(value,prefix='',result={}){
+ for(const [key,v]of Object.entries(value??{})){const name=prefix?`${prefix}.${key}`:key;if(Number.isFinite(v))result[name]=v;else if(v&&typeof v==='object'&&!Array.isArray(v))flattenNumbers(v,name,result);}return result;
+}
+export function summarizeAttribution(costs,renders,glMetrics,start,finish){
+ const inWindow=row=>row.at>=start&&row.at<=finish,cs=costs.filter(inWindow),rs=renders.filter(inWindow),segments={};
+ for(const kind of [...new Set(cs.map(c=>c.kind))].sort()){const values=cs.filter(c=>c.kind===kind).map(c=>c.ms).filter(Number.isFinite);segments[kind]={...stats(values),totalMs:values.reduce((a,b)=>a+b,0)};}
+ const topCosts=cs.filter(c=>Number.isFinite(c.ms)).sort((a,b)=>b.ms-a.ms).slice(0,8).map(c=>Object.fromEntries(Object.entries(c).filter(([,v])=>v===null||['string','number','boolean'].includes(typeof v)).slice(0,16)));
+ const numeric=rs.map(r=>flattenNumbers(r.renderInfo??r.rendererInfo??r.info??{})),renderInfo={};
+ for(const name of [...new Set(numeric.flatMap(r=>Object.keys(r)))].sort().slice(0,24))renderInfo[name]=stats(numeric.map(r=>r[name]).filter(Number.isFinite));
+ const glRows=(glMetrics?.rows??[]).filter(inWindow),windowMethods={};
+ for(const method of [...new Set(glRows.map(r=>r.method))].sort().slice(0,32)){const rows=glRows.filter(r=>r.method===method),values=rows.map(r=>r.ms).filter(Number.isFinite);windowMethods[method]={...stats(values),totalMs:values.reduce((a,b)=>a+b,0),phases:[...new Set(rows.map(r=>r.phase))].sort().slice(0,8)};}
+ return {segments,topCosts,renderInfo,renderCount:rs.length,gl:{windowMethods,topCalls:glRows.filter(r=>Number.isFinite(r.ms)).sort((a,b)=>b.ms-a.ms).slice(0,8).map(({method,phase,at,ms})=>({method,phase,at,ms})),cumulativeMethods:Object.fromEntries(Object.entries(glMetrics?.calls??{}).slice(0,32)),dropped:glMetrics?.dropped??null,available:!!glMetrics,windowMethodsAreRecordedSlowCallsOnly:true,recordingThresholdMs:1}};
+}
+function boundedMeasurement(row){return {firstVfxVisibleMs:row.firstVfxVisibleMs,firstDamagedChunkVisibleMs:row.firstDamagedChunkVisibleMs,allPatchUploadsMs:row.allPatchUploadsMs,fixedPoseVisibleMs:row.fixedPoseVisibleMs,firstVfxRender:boundedFrame(row.firstVfxEvidence),firstDamagedChunkRender:boundedFrame(row.firstDamagedChunkEvidence),allPatchUploads:row.allPatchUploadsEvidence,staticRender:boundedFrame(row.staticVisibleEvidence?.render),fixedPoseRender:boundedFrame(row.completeVisibleEvidence?.render),firstEligibleReceivedPose:row.completeVisibleEvidence?.firstEligibleReceivedPose,skippedEligiblePoseCount:row.completeVisibleEvidence?.skippedEligiblePoseCount};}
 function selfTest(){
  assert.equal(distance({x:0,y:0,z:0},{x:3,y:4,z:0}),5);
+ const fixture={structureCount:36,idAtOrdinal:i=>i,objectiveOf:()=>true,roleOf:()=> 'building',objectIdOf:i=>i,originalPosition:i=>({x:i*3,y:5,z:0}),idAt:(x,y,z)=>y===5&&z===0&&x%3===0&&x>=0&&x<108?x/3:null};
+ const candidates=makeCandidates(fixture),candidate=candidates.find(c=>c.normal.z===1);assert.ok(candidate);assert.equal(visibleInRecipe(fixture,candidate,{...candidate.point,z:10}),true);
+ const m=createDamageMeasurement({id:'test',epoch:1,geometryRevision:1,committedAt:0});observeDamageMeasurement(m,{poses:[],uploads:[],renders:[]});assert.equal(damageMeasurementResult(m).visibleMs,null);assert.equal(boundedMeasurement(damageMeasurementResult(m)).staticRender,null);assert.equal(summarizeAttribution([],[],{rows:[],calls:{}},0,1).renderCount,0);
  const good={inputMs:[9,12],trustedProbe:true,longTaskAPI:true,longTasks:[],damageCommitMs:249,staticVisibleMs:499,visibleMs:499,renderCount:1,settled:true,finalDebtMs:0};
  assert.ok(Object.values(gates(good)).every(Boolean));
  for(const [field,value,gate] of [['inputMs',[100],'input'],['longTasks',[{duration:100}],'mainLongTasks'],['damageCommitMs',250,'damageCommit'],['staticVisibleMs',500,'staticVisible'],['visibleMs',500,'completeVisible'],['inputMs',[],'trustedInputObserved'],['longTaskAPI',false,'mainLongTasks'],['renderCount',0,'actualRender'],['settled',false,'naturalRecovery']])assert.equal(gates({...good,[field]:value})[gate],false);
  console.log('Scale browser gate self-tests passed. No browser imported, launched or connected.');
 }
-if(process.argv.includes('--self-test'))selfTest();else await main();
+
 
 async function main(){
  assert.equal(process.env.GITHUB_ACTIONS,'true','Only separately authorized GitHub CI may run this harness');
@@ -34,14 +97,14 @@ async function main(){
  assert.equal(fixture.count,454913);assert.equal(fixture.terrainCount,401800);assert.equal(fixture.structureCount,53113);assert.equal(fixture.bounds.minY,-8);
  const url=process.env.GAME_URL??'http://127.0.0.1:5192/scale-slice.html',output=process.env.QA_OUTPUT??'artifacts/scale-slice-browser';
  const limit=Number(process.env.QA_OVERALL_TIMEOUT_MS??540000);assert.ok(Number.isSafeInteger(limit)&&limit>=60000&&limit<=570000);
- const evidence={schema:'scale-priority-real-browser/v1',status:'running',startedAt:new Date().toISOString(),url,targets:TARGETS,
+ const evidence={schema:'scale-priority-real-browser/v2',status:'running',startedAt:new Date().toISOString(),url,targets:TARGETS,
   provenance:{execution:'Separately authorized GitHub CI, preinstalled Chrome, software WebGL',commit:process.env.GITHUB_SHA??null,runId:process.env.GITHUB_RUN_ID??null,attempt:process.env.GITHUB_RUN_ATTEMPT??null},
   scope:{entry:'isolated scale-slice.html; normal game untouched',city:{cells:454913,terrain:401800,structures:53113,buildings:36,layers:8,bounds:fixture.bounds},novaCount:3,distinctCenters:true,radius:48,damage:20,power:1,resetBetweenShots:false,hiddenStateMutations:false,clockOverrides:false,observationLimitMs:limit},
-  limitations:['One bounded software-rendered run is evidence, not a statistical performance guarantee.','Static visible update means changed mesh queues drained and a subsequent real render submission; not GPU completion or physical screen presentation.','Dynamic pose delivery is separately reported when the entry exposes a pose revision; absent evidence remains unknown.','Natural recovery is real wall-clock unpaused work; reset, forced GC, artificial clock jumps and screenshots are forbidden during pressure.','Browser read-only diagnostics add overhead. CDP heap measures the page realm, not the Node candidate inventory; WASM/GPU residency is unknown. Candidate inventory generation uses the same immutable city but no second native physics world.','Regional HP/support is intentionally approximate; no exact legacy per-voxel damage equivalence is asserted.'],
+  limitations:['One bounded software-rendered run is evidence, not a statistical performance guarantee.','Static visible update retains the 500 ms ALL changed mesh target: queues drained and first render after the final observed patch installation. First damaged chunk and VFX timings are separate, not substitutes. Times use renderer completion timestamps, with polling observation times retained separately; not GPU completion or physical screen presentation.','Dynamic pose timing freezes the earliest eligible post-damage snapshot that is actually present in a rendered frame and exactly matches received pose history. Superseded, never-rendered snapshots are reported as skipped, not credited. It never chases the changing latest pose.','Natural recovery is real wall-clock unpaused work; reset, forced GC, artificial clock jumps and screenshots are forbidden during pressure.','Browser read-only diagnostics add overhead. CDP heap measures the page realm, not the Node candidate inventory; WASM/GPU residency is unknown. Candidate inventory generation uses the same immutable city but no second native physics world.','Regional HP/support is intentionally approximate; no exact legacy per-voxel damage equivalence is asserted.'],
   shots:[],errors:[],consoleErrors:[],workers:[],screenshots:[],memory:[],statusSamples:[],performanceVerdict:'unassessed'};
  await fs.mkdir(output,{recursive:true});const persist=()=>fs.writeFile(`${output}/results.json`,JSON.stringify(evidence,null,2));
  const start=Date.now(),deadline=()=>assert.ok(Date.now()-start<limit,'Observation limit reached; unfinished work is not settlement or a pass');
- let browser,page,fatal,stage='boot';const costs=new Map(),renders=new Map();
+ let browser,page,fatal,stage='boot',activeMeasurement=null,activeRow=null;const costs=new Map(),renders=new Map(),uploads=new Map(),poses=new Map(),glRows=new Map();let glMetrics=null;
  const watchdog=setTimeout(()=>{evidence.status='incomplete-observation-limit';evidence.failure=`Timed out during ${stage}`;void persist().finally(()=>browser?.close());},limit);watchdog.unref();
  try{
   browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-webgl']});
@@ -60,8 +123,11 @@ async function main(){
    deadline();if(fatal)throw new Error(fatal);
    const d=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),...window.__scaleSlice.diagnostics()}));
    assert.deepEqual(d.errors,[]);for(const c of d.costs)costs.set(`${c.kind}:${c.at}`,c);for(const r of d.renders)renders.set(r.renderNo,r);
+   for(const u of d.uploads??[])uploads.set(uploadKey(u),u);for(const p of d.poses??[])poses.set(poseKey(p),p);
+   if(d.glMetrics){for(const g of d.glMetrics.rows??[])glRows.set(`${g.method}:${g.phase}:${g.at}`,g);glMetrics={...d.glMetrics,rows:[...glRows.values()]};}
+   if(activeMeasurement){observeDamageMeasurement(activeMeasurement,d);Object.assign(activeRow,damageMeasurementResult(activeMeasurement));}
    if(evidence.statusSamples.length>=6000)throw new Error('Read-only status record limit exceeded; do not silently truncate recovery');
-   evidence.statusSamples.push({at:d.at,stats:d.summary?.stats,geometryRevision:d.summary?.geometryRevision,mesh:d.summary?.mesh,presentation:d.presentation,currentMesh:d.currentMesh});return d;
+   evidence.statusSamples.push({at:d.at,stats:d.summary?.stats,geometryRevision:d.summary?.geometryRevision,mesh:d.summary?.mesh,presentation:{epoch:d.presentation.epoch,pending:d.presentation.pending,bytes:d.presentation.bytes,appliedCount:d.presentation.applied?.length??0},currentMesh:d.currentMesh});return d;
   };
   const wait=async(label,predicate,{probe=false}={})=>{
    stage=label;let lastProbe=0;
@@ -80,7 +146,7 @@ async function main(){
   const capture=async label=>{let data=await page.locator('#viewport canvas').screenshot({type:'jpeg',quality:60});const name=`${label}.jpg`;if((label==='pristine'||label==='shot-3-settled')&&data.length>240000)data=await page.locator('#viewport canvas').screenshot({type:'jpeg',quality:30});await fs.writeFile(`${output}/${name}`,data);evidence.screenshots.push({name,bytes:data.length,outsidePressure:true});if(label==='pristine'||label==='shot-3-settled'){assert.ok(data.length<=300000,'Bounded screenshot log exceeded; do not emit an unbounded file');console.log('SCREENSHOT_BASE64 '+JSON.stringify({name,data:data.toString('base64')}));}};
   await page.locator('#map').selectOption('city');const initStart=Date.now();evidence.initialize=await accepted(await issue('initialize'));
   const pristine=await wait('complete initial city mesh',d=>d.ready&&meshReady(d));
-  evidence.initialize.wallToInitialMeshMs=Date.now()-initStart;evidence.initial=pristine.summary;
+  evidence.initialize.wallToInitialMeshMs=Date.now()-initStart;evidence.initialize.prewarm=pristine.prewarm??null;evidence.initial=pristine.summary;
   assert.equal(evidence.workers.length,1);assert.equal(pristine.worldsReported,1);assert.equal(pristine.summary.stats.model.aliveCells,454913);assert.equal(pristine.summary.stats.model.regionCount,18447);assert.equal(pristine.summary.stats.physics.colliderCount,23339);
   assert.ok(pristine.summary.fixture,'immutable actual runtime inventory identity is required');assert.equal(pristine.summary.fixture.cellCount,454913);assert.equal(pristine.summary.fixture.buildingCount,36);assert.equal(pristine.summary.fixture.terrainCount,401800);assert.equal(pristine.summary.fixture.structureCount,53113);assert.deepEqual(pristine.summary.fixture.bounds,fixture.bounds);
   await page.locator('#weapon').selectOption('nova');await memory('pristine');await capture('pristine');
@@ -103,10 +169,11 @@ async function main(){
    const committed=await wait(`shot ${shot} committed`,d=>d.events.some(e=>e.kind==='damage'&&e.id===`${trigger.id}:0`),{probe:true});
    const damage=committed.events.find(e=>e.id===`${trigger.id}:0`);assert.equal(damage.weapon,'nova');assert.equal(damage.transaction.accepted,true);assert.ok(distance(damage.position,selection.target.position)<1e-6);
    assert.ok(Number.isSafeInteger(damage.geometryRevision),'damage must identify its geometry revision separately from authority revision');row.damage=damage;row.damageCommitMs=damage.committedAt-trigger.sentAt;row.nativeTransactionMs=damage.totalMs;row.authorityMs=damage.modelMs;row.colliderSyncMs=damage.collisionSyncMs;
-   const geometry=await wait(`shot ${shot} changed mesh installed`,d=>meshReady(d)&&d.summary.geometryRevision>=damage.geometryRevision&&d.renders.at(-1).finishedAt>=Math.max(damage.committedAt,...d.uploads.map(u=>u.at)),{probe:true});
-   row.staticVisibleMs=geometry.at-damage.committedAt;row.staticVisibleEvidence={observedAt:geometry.at,geometryRevision:geometry.summary.geometryRevision,presentation:geometry.presentation,mesh:geometry.summary.mesh,render:geometry.renders.at(-1),dynamicPose:geometry.lastPose??null};
-   const visible=await wait(`shot ${shot} post-damage dynamic pose rendered`,d=>meshReady(d)&&d.lastPose?.epoch===damage.epoch&&d.lastPose.geometryRevision>=damage.geometryRevision&&d.lastPose.sentAt>=damage.committedAt&&d.renders.at(-1).pose?.receivedAt>=d.lastPose.receivedAt,{probe:true});
-   row.visibleMs=visible.at-damage.committedAt;row.completeVisibleEvidence={pose:visible.lastPose,render:visible.renders.at(-1)};
+   assert.ok(Array.isArray(committed.poses),'bounded pose receipt history is required; latest lastPose alone cannot prove first visibility');
+   assert.ok(committed.renders.length&&committed.renders.every(r=>Array.isArray(r.renderedChunks)&&Array.isArray(r.effectIds)),'actual chunk/effect renderer submission evidence is required, not mere scene installation');
+   activeRow=row;activeMeasurement=createDamageMeasurement(damage);
+   observeDamageMeasurement(activeMeasurement,{...committed,poses:[...poses.values()],uploads:[...uploads.values()],renders:[...renders.values()]});Object.assign(row,damageMeasurementResult(activeMeasurement));
+   await wait(`shot ${shot} first VFX, damaged chunk, ALL patches and fixed post-damage pose rendered`,()=>!!(activeMeasurement.firstVfxRender&&activeMeasurement.firstDamagedChunkRender&&activeMeasurement.allStaticRender&&activeMeasurement.poseRender),{probe:true});
    const settled=await wait(`shot ${shot} natural recovery`,idle,{probe:true});row.finishedAt=settled.at;row.naturalRecoveryWallMs=settled.at-damage.committedAt;row.after=settled.summary;
    assert.ok(settled.summary.stats.model.research>before.summary.stats.model.research,'accepted nova must commit actual objective loss, not only VFX');
    assert.equal(settled.summary.paused,false);assert.equal(settled.summary.hidden,false);assert.equal(settled.summary.stats.clock.discardedMs,0,'no reset/clock truncation can fake natural recovery');
@@ -117,8 +184,10 @@ async function main(){
    row.inputMs=settled.inputs.filter(i=>i.eventAt>=row.startedAt&&i.eventAt<=row.finishedAt&&Number.isFinite(i.renderAt)).map(i=>i.renderAt-i.eventAt);
    row.renderCount=[...renders.values()].filter(r=>r.at>=row.startedAt&&r.at<=row.finishedAt).length;
    row.renderCpu=stats([...costs.values()].filter(c=>c.kind==='render'&&c.at>=row.startedAt&&c.at<=row.finishedAt).map(c=>c.ms));
+   row.attribution=summarizeAttribution([...costs.values()],[...renders.values()],glMetrics,row.startedAt,row.finishedAt);
+   row.longTaskAttribution=row.longTasks.slice().sort((a,b)=>b.duration-a.duration).slice(0,8).map(t=>({at:t.at,duration:t.duration,...summarizeAttribution([...costs.values()],[...renders.values()],glMetrics,t.at,t.at+t.duration)}));
    row.rafGaps=stats(observer.rafGaps.filter(r=>r.at>=row.startedAt&&r.at<=row.finishedAt).map(r=>r.gap));
-   row.settled=true;row.finalDebtMs=settled.summary.stats.clock.debtMs;row.gates=gates(row);await memory(`shot-${shot}-settled`);await capture(`shot-${shot}-settled`);await persist();
+   row.settled=true;row.finalDebtMs=settled.summary.stats.clock.debtMs;row.gates=gates(row);activeMeasurement=null;activeRow=null;await memory(`shot-${shot}-settled`);await capture(`shot-${shot}-settled`);await persist();
   }
   assert.equal(new Set(centers.map(p=>JSON.stringify(p))).size,3);assert.equal(usedObjects.size,3);
   const final=await read();assert.equal(final.summary.stats.physics.activeBodyCount,0);assert.ok(final.summary.stats.model.rubbleRegions>0,'city run cannot pass solely by deleting coarse bodies');
@@ -130,7 +199,7 @@ async function main(){
   evidence.status='completed-real-browser-observations';evidence.performanceVerdict=evidence.shots.every(r=>Object.values(r.gates).every(Boolean))?'single-run-static-and-input-targets-observed':'one-or-more-targets-failed';
   if(evidence.performanceVerdict==='one-or-more-targets-failed')process.exitCode=1;
  }catch(error){evidence.status='failed-or-incomplete';evidence.performanceVerdict='not-passed';evidence.failure=String(error?.stack??error);process.exitCode=1;}
- finally{clearTimeout(watchdog);evidence.finishedAt=new Date().toISOString();await persist();console.log('SCALE_BROWSER_RESULT '+JSON.stringify({status:evidence.status,performanceVerdict:evidence.performanceVerdict,initialize:evidence.initialize,initial:evidence.initial,memory:evidence.memory,savedBytes:evidence.savedBytes,restored:evidence.restored,screenshots:evidence.screenshots,shots:evidence.shots.map(r=>({shot:r.shot,gates:r.gates,damageCommitMs:r.damageCommitMs,staticVisibleMs:r.staticVisibleMs,visibleMs:r.visibleMs,naturalRecoveryWallMs:r.naturalRecoveryWallMs,input:stats(r.inputMs??[]),longTasks:stats((r.longTasks??[]).map(t=>t.duration)),after:r.after})),failure:evidence.failure??null,limitations:evidence.limitations}));await browser?.close();}
+ finally{clearTimeout(watchdog);evidence.finishedAt=new Date().toISOString();await persist();console.log('SCALE_BROWSER_RESULT '+JSON.stringify({status:evidence.status,performanceVerdict:evidence.performanceVerdict,initialize:evidence.initialize,initial:evidence.initial,memory:evidence.memory,savedBytes:evidence.savedBytes,restored:evidence.restored,screenshots:evidence.screenshots,shots:evidence.shots.map(r=>({shot:r.shot,gates:r.gates,damageCommitMs:r.damageCommitMs,staticVisibleMs:r.staticVisibleMs,visibleMs:r.visibleMs,naturalRecoveryWallMs:r.naturalRecoveryWallMs,nativeTransactionMs:r.nativeTransactionMs,authorityMs:r.authorityMs,colliderSyncMs:r.colliderSyncMs,visibility:boundedMeasurement(r),renderCpu:r.renderCpu,rafGaps:r.rafGaps,attribution:r.attribution,longTaskAttribution:r.longTaskAttribution,input:stats(r.inputMs??[]),longTasks:stats((r.longTasks??[]).map(t=>t.duration)),after:r.after})),failure:evidence.failure??null,limitations:evidence.limitations}));await browser?.close();}
 }
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);}
 function makeCandidates(fixture){
@@ -149,3 +218,6 @@ function visibleInRecipe(fixture,candidate,camera){
  for(let count=0;count<5000;count++){const id=fixture.idAt(cell.x,cell.y,cell.z);if(id!==null)return id===candidate.id;const axis=next.x<=next.y&&next.x<=next.z?'x':next.y<=next.z?'y':'z';if(next[axis]>1)return false;cell[axis]+=step[axis];next[axis]+=stride[axis];}
  throw new Error('Immutable recipe ray exceeded its finite traversal bound');
 }
+
+// Keep dispatch last: await main must never suspend initialization of a helper.
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){if(process.argv.includes('--self-test'))selfTest();else await main();}

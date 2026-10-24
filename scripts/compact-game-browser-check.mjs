@@ -156,6 +156,16 @@ async function finishTiming(mark,extra={}){
  const row={label:mark.label,at:new Date().toISOString(),...result,...extra};evidence.timings.push(row);
  progress('timing-complete',{label:row.label,durationMs:row.durationMs,maxRAFGapMs:row.maxRAFGapMs,longTaskCount:row.longTaskCount,...extra});await persist();return row;
 }
+async function firstRenderAfter(mark,map){
+ await wait(`${mark.label}-first-render-frame-milestone`,({previous,map})=>{
+  const frames=window.__heping.sceneDiagnostics().recentRenders??[];
+  return frames.some(r=>r.count>previous&&r.mapId===map&&r.nextFrameAt!==null);
+ },{previous:mark.baseline.renderCount,map});
+ return page.evaluate(({previous,map})=>{
+  const record=window.__heping.sceneDiagnostics().recentRenders.find(r=>r.count>previous&&r.mapId===map);
+  return {...record,measurement:'First matching render CPU submission and next scene animation callback, not GPU completion or physical presentation'};
+ },{previous:mark.baseline.renderCount,map});
+}
 async function chooseMap(map,label){
  const selector=`[data-scene="${map}"]`,mark=await arm(label,selector);
  await page.locator(selector).click({timeout:stepTimeout});
@@ -163,8 +173,9 @@ async function chooseMap(map,label){
   const h=window.__heping,d=h.sceneDiagnostics();
   return h.screen==='setup'&&h.selectedScene===map&&h.previewMap===map&&d.lastRenderedMap===map&&d.renderCount>previous;
  },{map,previous:mark.baseline.renderCount});
+ const firstFrame=await firstRenderAfter(mark,map);
  const submitted=await page.evaluate(()=>{const d=window.__heping.sceneDiagnostics();return {renderCount:d.renderCount,renderSubmittedAt:d.lastRenderAt,faces:d.renderedSurfaceFaces};});
- const timing=await finishTiming(mark,submitted);timing.clickToRenderSubmissionMs=submitted.renderSubmittedAt-timing.startedAt;
+ const timing=await finishTiming(mark,{...submitted,firstFrame});timing.clickToRenderSubmissionMs=firstFrame.finishedAt-timing.startedAt;timing.clickToFirstNextFrameMs=firstFrame.nextFrameAt-timing.startedAt;timing.firstRenderCpuMs=firstFrame.finishedAt-firstFrame.startedAt;
  assert.ok(timing.clickToRenderSubmissionMs>=0);assert.ok(submitted.faces>0);await persist();return timing;
 }
 function cityIdentity(state){
@@ -224,10 +235,12 @@ async function startCity(cycle){
  const mark=await arm(`city-start-${cycle}`,'#start-experiment');
  await page.locator('#start-experiment').click({timeout:stepTimeout});
  await wait(`city-${cycle}-real-playing`,previous=>{const h=window.__heping,d=h.sceneDiagnostics();return h.screen==='playing'&&h.physicsReady&&d.lastRenderedMap==='city'&&d.renderCount>previous;},mark.baseline.renderCount);
+ const firstFrame=await firstRenderAfter(mark,'city'),startup=await page.evaluate(()=>window.__heping.startupEvidence());
  await lifecycle(1);const state=await read(),identity=cityIdentity(state);assert.equal(state.pending,0);assert.equal(state.compact.storage.mutableStates,0);
  const aim=await aimCell(-4649);assert.equal(aim.cell.role,'terrain');
- const timing=await finishTiming(mark,{endCondition:'actual city bound, rendered, real terrain ray picked; fire enabled',identity,aimedCell:aim.cell.id});
+ const timing=await finishTiming(mark,{endCondition:'actual city bound, rendered, real terrain ray picked; fire enabled',firstFrame,startup,identity,aimedCell:aim.cell.id});
  assert.equal(await page.locator('#fire').isEnabled(),true);
+ timing.clickToFirstRenderMs=firstFrame.finishedAt-timing.startedAt;timing.clickToFirstNextFrameMs=firstFrame.nextFrameAt-timing.startedAt;timing.firstRenderCpuMs=firstFrame.finishedAt-firstFrame.startedAt;await persist();
  return {state,identity,timing,aim,mark};
 }
 async function fireOne(index,tool,aim,{visual=false,startMark=null}={}){

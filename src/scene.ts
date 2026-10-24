@@ -12,8 +12,32 @@ import {createCompactSurfaceRenderer} from './compact/surface-renderer';
 import {createCompactSurfaceSource} from './compact/surface-source';
 import type {StructuralCompactQueries} from './structural/types';
 
-/** Static previews and paused scenes draw only on actual visual changes. */
-export function shouldRenderScene(timeScale:number,requested:boolean,shadowsDirty:boolean){return timeScale>0||requested||shadowsDirty;}
+/** Simulation ticks continue independently; submit only changed visuals. */
+export function shouldRenderScene(timeScale:number,requested:boolean,shadowsDirty:boolean,animatedVisuals=false){return requested||shadowsDirty||timeScale>0&&animatedVisuals;}
+
+/** Appearance revisions change the canvas, not a caster's shadow geometry. */
+export function compactSurfaceInvalidation(
+ previous:{revision:number;movingCells:number},
+ current:{revision:number;movingCells:number;movingMatrixWrites:number;lastRebuild:{chunks:number}},
+ reset=false,
+){
+ return {render:reset||previous.revision!==current.revision,shadows:reset||current.lastRebuild.chunks>0||current.movingMatrixWrites>0||previous.movingCells!==current.movingCells};
+}
+
+/** CPU submit milestones and the next callback opportunity, never a GPU fence. */
+export function createSceneRenderHistory(){
+ type RenderRecord={count:number;mapId:MapId;startedAt:number;finishedAt:number;nextFrameAt:number|null};
+ let renderCount=0,lastRenderAt=0,lastRenderedMap:MapId|null=null,lastRenderStartedAt=0,lastRenderCpuMs=0;
+ const recentRenders:RenderRecord[]=[];
+ return {
+  beginFrame(now:number){const latest=recentRenders.at(-1);if(latest&&latest.nextFrameAt===null)latest.nextFrameAt=now;},
+  record(map:MapId,startedAt:number,finishedAt:number){
+   renderCount++;lastRenderedMap=map;lastRenderStartedAt=startedAt;lastRenderAt=finishedAt;lastRenderCpuMs=finishedAt-startedAt;
+   recentRenders.push({count:renderCount,mapId:map,startedAt,finishedAt,nextFrameAt:null});if(recentRenders.length>16)recentRenders.shift();
+  },
+  getDiagnostics(){return {renderCount,lastRenderAt,lastRenderedMap,lastRenderStartedAt,lastRenderCpuMs,recentRenders:recentRenders.map(record=>({...record}))};},
+ };
+}
 
 /** Shadow maps depend on caster geometry and light setup, not the camera or
  * UI timer labels. Retain only the last rendered projectile matrices. */
@@ -78,7 +102,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   container.append(renderer.domElement);
   const camera = new THREE.PerspectiveCamera(42, 1, .2, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
-  let renderRequested=true,renderCount=0,lastRenderAt=0,lastRenderedMap:MapId|null=null;controls.addEventListener('change',()=>{renderRequested=true;});
+  let renderRequested=true,projectileCount=0;const renderHistory=createSceneRenderHistory();controls.addEventListener('change',()=>{renderRequested=true;});
   controls.enableDamping = true;
   controls.dampingFactor = .075;
   controls.minDistance = 19;
@@ -127,11 +151,12 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     if(!binding){compactRenderer?.dispose();compactRenderer=null;compactBinding=null;compactCursor=compactGeneration=undefined;renderRequested=true;shadowRefresh.invalidate();return;}
     const different=compactBinding!==binding||compactGeneration!==binding.source.generation;
     if(!different&&compactCursor===binding.revision)return;
-    if(different){voxelRenderer.set([]);live=[];compactRenderer??=createCompactSurfaceRenderer(scene,box,voxelMat,{chunkSize:16});compactRenderer.bind(createCompactSurfaceSource(binding.source));compactBinding=binding;compactGeneration=binding.source.generation;compactCursor=binding.revision;renderRequested=true;shadowRefresh.invalidate();}
-    const prior=compactRenderer!.getDiagnostics().revision,batch=binding.changesSince(compactCursor);
+    if(different){voxelRenderer.set([]);live=[];compactRenderer??=createCompactSurfaceRenderer(scene,box,voxelMat,{chunkSize:32});compactRenderer.bind(createCompactSurfaceSource(binding.source));compactBinding=binding;compactGeneration=binding.source.generation;compactCursor=binding.revision;renderRequested=true;shadowRefresh.invalidate();}
+    const prior=compactRenderer!.getDiagnostics(),batch=binding.changesSince(compactCursor);
     if(batch.reset)compactRenderer!.bind(createCompactSurfaceSource(binding.source));else compactRenderer!.applyEdits(batch.edits);
     compactRenderer!.flush();compactRenderer!.setMoving(binding.movingViews());compactCursor=batch.revision;
-    if(prior!==compactRenderer!.getDiagnostics().revision){renderRequested=true;shadowRefresh.invalidate();}
+    const invalidation=compactSurfaceInvalidation(prior,compactRenderer!.getDiagnostics(),batch.reset);
+    if(invalidation.render)renderRequested=true;if(invalidation.shadows)shadowRefresh.invalidate();
   }
   // Only physics supplies projectile transforms. This renderer never detonates or
   // advances their motion; trails are a bounded visual history of those transforms.
@@ -153,8 +178,9 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   trailMesh.count=0;trailMesh.frustumCulled=false;scene.add(trailMesh);
   const trails=new Map<string,THREE.Vector3[]>();
   const fuseBadges=new Map<string,{sprite:THREE.Sprite;canvas:HTMLCanvasElement;texture:THREE.CanvasTexture;label:string;leader?:THREE.Line}>();
-  const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;scene.remove(badge.sprite);if(badge.leader){scene.remove(badge.leader);badge.leader.geometry.dispose();}badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
+  const releaseBadge=(id:string)=>{const badge=fuseBadges.get(id);if(!badge)return;renderRequested=true;scene.remove(badge.sprite);if(badge.leader){scene.remove(badge.leader);badge.leader.geometry.dispose();}badge.texture.dispose();badge.sprite.material.dispose();fuseBadges.delete(id);};
   const updateProjectiles=(views:readonly ProjectileView[])=>{
+    projectileCount=views.length;
     shadowRefresh.beginProjectiles();
     const ids=new Set(views.map(v=>v.id));
     const trailIds=new Set(views.filter(v=>v.weapon==='pulse'&&v.state!=='attached').slice(0,MAX_COSMETIC_PROJECTILES).map(v=>v.id));
@@ -188,7 +214,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
           if(!badge.leader){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));badge.leader=new THREE.Line(geometry,leaderMaterial);badge.leader.frustumCulled=false;badge.leader.renderOrder=ATTACHED_ANNOTATION.renderOrder-1;scene.add(badge.leader);}
           const positions=badge.leader.geometry.getAttribute('position');positions.setXYZ(0,p.position.x,p.position.y,p.position.z);positions.setXYZ(1,badge.sprite.position.x,badge.sprite.position.y-.3,badge.sprite.position.z);positions.needsUpdate=true;
         }
-        if(label!==badge.label){const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached&&!emitting){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
+        if(label!==badge.label){renderRequested=true;const ctx=badge.canvas.getContext('2d')!;ctx.clearRect(0,0,128,64);ctx.fillStyle='rgba(16,32,40,.9)';ctx.beginPath();ctx.roundRect(6,7,116,50,12);ctx.fill();ctx.fillStyle=attached?'#b4ffd4':p.fuseRemaining!<1?'#ff9f64':'#ffdb9a';ctx.font=attached?'bold 27px sans-serif':'bold 34px sans-serif';ctx.textAlign='center';if(attached&&!emitting){ctx.strokeStyle='#b4ffd4';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(47,33);ctx.lineTo(59,44);ctx.lineTo(82,21);ctx.stroke();}else{ctx.fillText(label,64,44);}badge.texture.needsUpdate=true;badge.label=label;}
       }else releaseBadge(p.id);
     });
     shadowRefresh.endProjectiles();
@@ -207,7 +233,7 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const trajectory=createTrajectoryOverlay(scene);
   const effects=createSceneEffectChannel(scene);
   let timeScale=1,target:Vec3|null=null,damageSequence=0;
-  const updateReducedEffects=()=>effects.setReducedMotion(motionReduced());
+  const updateReducedEffects=()=>{effects.setReducedMotion(motionReduced());renderRequested=true;};
   motionPreference?.addEventListener('change',updateReducedEffects);updateReducedEffects();
   const raycaster = new THREE.Raycaster();const pointer=new THREE.Vector2();
   let down:{x:number;y:number;time:number;id:number}|null=null;let dragged=false;
@@ -247,6 +273,8 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   document.addEventListener('visibilitychange',resetClock);
   const animate=(now:number)=>{
     if(disposed)return;
+    renderHistory.beginFrame(performance.now());
+    const frameTimeScale=timeScale,animatedVisuals=projectileCount>0||effects.getDiagnostics().active>0;
     const elapsed=document.hidden?0:Math.max(0,Math.min((now-last)/1000,1));
     last=now;controls.update();
     // Physics owns bounded fixed substeps; cosmetic effects keep their small step.
@@ -258,29 +286,31 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     if(target){marker.position.set(target.x,target.y,target.z);marker.quaternion.copy(camera.quaternion);marker.position.addScaledVector(new THREE.Vector3().subVectors(camera.position,marker.position).normalize(),.65);}
     trajectory.faceCamera(camera.quaternion);
     const shadowsDirty=shadowRefresh.consume();if(shadowsDirty){renderer.shadowMap.needsUpdate=true;sun.shadow.needsUpdate=true;}
-    if(shouldRenderScene(timeScale,renderRequested,shadowsDirty)){renderer.render(scene,camera);renderCount++;lastRenderAt=performance.now();lastRenderedMap=mapId;renderRequested=false;}frame=requestAnimationFrame(animate);
+    // Sample activity before stepping: deleting the final smoke/projectile still
+    // needs one clearing frame. Camera and explicit edits also draw while paused.
+    if(shouldRenderScene(frameTimeScale,renderRequested,shadowsDirty,animatedVisuals)){const startedAt=performance.now();renderer.render(scene,camera);renderHistory.record(mapId,startedAt,performance.now());renderRequested=false;}frame=requestAnimationFrame(animate);
   };
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
     setMap(next){if(next===mapId)return;effects.clear();aimSurface=null;target=null;marker.visible=false;trajectory.setPreview(null);applyMapEnvironment(next);},
     setReducedMotion(value){reducedMotion=!!value;updateReducedEffects();},
-    getDiagnostics(){return {mapId,renderCount,lastRenderAt,lastRenderedMap,camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:compactRenderer?compactRenderer.getDiagnostics().movingCells:house.count,representation:compactRenderer?'chunk-surfaces':'voxel-instances',renderedSurfaceFaces:compactRenderer?.getDiagnostics().faces??0,voxelRender:compactRenderer?.getDiagnostics()??voxelRenderer.getDiagnostics(),effects:effects.getDiagnostics()};},
+    getDiagnostics(){return {mapId,...renderHistory.getDiagnostics(),camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:compactRenderer?compactRenderer.getDiagnostics().movingCells:house.count,representation:compactRenderer?'chunk-surfaces':'voxel-instances',renderedSurfaceFaces:compactRenderer?.getDiagnostics().faces??0,voxelRender:compactRenderer?.getDiagnostics()??voxelRenderer.getDiagnostics(),effects:effects.getDiagnostics()};},
     projectPoint(point){camera.updateMatrixWorld();const p=new THREE.Vector3(point.x,point.y,point.z).project(camera);return {x:(p.x+1)*.5*container.clientWidth,y:(1-p.y)*.5*container.clientHeight,visible:Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.z>=-1&&p.z<=1&&Math.abs(p.x)<=1&&Math.abs(p.y)<=1};},
     setProjectiles:updateProjectiles,
-    setTrajectory:trajectory.setPreview,
-    clearEffects(){effects.clear();},
+    setTrajectory(preview){trajectory.setPreview(preview);renderRequested=true;},
+    clearEffects(){effects.clear();renderRequested=true;},
     hasActiveEffects(){return !disposed&&effects.hasActiveCore();},
-    playStructuralEvent(event){effects.add(event);},
+    playStructuralEvent(event){effects.add(event);renderRequested=true;},
     getRenderedProjectileCount(){return [...projectileMeshes.values()].reduce((count,pool)=>count+pool.mesh.count,0);},
     getAimSurface(){if(compactBinding){if(!aimSurface||aimSurface.voxelId===null)return null;const c=compactBinding.cell(aimSurface.voxelId);return c&&c.state!=='gone'?structuredClone(aimSurface):null;}return copyLiveAimSurface(aimSurface,live);},
     getLaunchOrigin(point){return getSceneLaunchOrigin(camera,point);},
     setCompactWorld,
-    setVoxels(voxels){if(compactBinding)setCompactWorld(null);const previous=house;live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;const geometry=voxelRenderer.getDiagnostics();shadowRefresh.voxels({matrixWrites:geometry.matrixWrites,visible:geometry.visible,rebuilt:previous!==house});},
+    setVoxels(voxels){if(compactBinding)setCompactWorld(null);const previous=house;live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;const geometry=voxelRenderer.getDiagnostics();if(geometry.colorWrites>0)renderRequested=true;shadowRefresh.voxels({matrixWrites:geometry.matrixWrites,visible:geometry.visible,rebuilt:previous!==house});},
     playDamage(result:DamageResult,point:Vec3,weapon:WeaponId,power=1){
       if(!result.accepted)return;
       // Legacy call path only: detached cells remain live authoritative geometry,
       // never sampled, replaced with fake chips, aged out, or globally pulsed.
-      effects.add({id:`legacy-damage:${++damageSequence}`,epoch:effects.getDiagnostics().epoch??1,position:point,kind:'detonation',tool:weapon,scale:Math.sqrt(Math.max(.01,power))});
+      effects.add({id:`legacy-damage:${++damageSequence}`,epoch:effects.getDiagnostics().epoch??1,position:point,kind:'detonation',tool:weapon,scale:Math.sqrt(Math.max(.01,power))});renderRequested=true;
     },
     setTarget(point){renderRequested=true;if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,

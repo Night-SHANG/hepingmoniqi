@@ -38,3 +38,12 @@ initialized in approximately 1.61 seconds, with 34.6 MB JS heap after forced GC.
 Its process memory includes JS, WASM and runtime overhead; it is not GPU memory.
 Full game interaction and repeated destruction/scene lifecycle checks are separate
 acceptance gates. A preview result alone does not qualify a playable release.
+
+The first integrated Chrome run (40064477963, commit 015cec17) completed twenty
+real cumulative city detonations and ten city enter/leave cycles. It passed the
+functional assertions, but start-to-interactive observation still took
+3.49–5.08 seconds, so performance was not accepted. Natural city JS heap during
+destruction was roughly 30–34 MB; separate backing-storage, WASM, and GPU costs
+must not be conflated with that number. Subsequent changes reduce repeated
+validation work and unnecessary idle render submissions without changing the
+world or weakening validators. Their browser performance verdict is pending.

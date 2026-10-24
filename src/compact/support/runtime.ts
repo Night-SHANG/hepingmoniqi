@@ -20,18 +20,22 @@ export async function sha256Browser(input:Uint8Array|ArrayBuffer|string):Promise
 export async function recipeDigestBrowser(recipe:Recipe):Promise<string> {return digestOwned(new TextEncoder().encode(recipeText(recipe)));}
 /** Internal measurement/encoding helper. Web Crypto is nonstreaming: it needs
  * one transient contiguous topology byte buffer, NOT a full-city JSON snapshot.
- * Two bounded streaming passes count then fill it, avoiding an additional full
- * numeric buffer. The 64 KiB stream batch and small intern/string suffix remain.
+ * One canonical streaming pass fills the fixed numeric size plus a small suffix
+ * reserve. Only unusually large interned strings grow the bounded owned buffer;
+ * no second source enumeration or retained per-cell records are needed.
  * Native Web Crypto may additionally copy its input; that is platform-owned.
  */
 export function _topologyBytes(source:IdentifiedLattice,options:TopologyOptions={}):Uint8Array<ArrayBuffer> {
  const n=source.count,max=options.maxTopologyBytes??MAX_COMPILED_BYTES;
  if(!Number.isInteger(n)||n<0||n>=2**31)throw new Error('Invalid source count');
  if(!Number.isSafeInteger(max)||max<0||max>MAX_COMPILED_BYTES||20+28*n+9>max)throw new Error('Topology byte capacity exceeded');
- let size=0;writeTopology(source,bytes=>{size+=bytes.length;if(size>max)throw new Error('Topology byte capacity exceeded');});
- const owned=new Uint8Array(size);let at=0;
- writeTopology(source,bytes=>{if(at+bytes.length>size)throw new Error('Topology changed during encoding');owned.set(bytes,at);at+=bytes.length;});
- if(at!==size)throw new Error('Topology changed during encoding');return owned;
+ let owned=new Uint8Array(Math.min(max,20+28*n+9+4096)),at=0;
+ writeTopology(source,bytes=>{
+  const required=at+bytes.length;if(required>max)throw new Error('Topology byte capacity exceeded');
+  if(required>owned.length){const grown=new Uint8Array(Math.min(max,Math.max(required,owned.length*2)));grown.set(owned);owned=grown;}
+  owned.set(bytes,at);at=required;
+ });
+ return owned.subarray(0,at);
 }
 export async function topologyDigestBrowser(source:IdentifiedLattice,options:TopologyOptions={}):Promise<string> {return digestOwned(_topologyBytes(source,options));}
 export async function decodePristineBrowser(input:Uint8Array|ArrayBuffer,expected:CompiledManifest):Promise<DecodedPristine> {

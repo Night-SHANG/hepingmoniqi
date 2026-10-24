@@ -17,8 +17,10 @@ https://github.com/sbobyn/three-voxel-destruction/tree/8c4b058866d78f161181fd140
 
 `pristine-core.ts`, `node-codec.ts`, `node-validation.ts`, and `runtime.ts` reuse
 the proven compiled-support and native-WebCrypto code. Their original SHA-256
-hashes are recorded in `provenance-inputs.json`. Changes are import relocation
-and the source-bound reset token factory. That factory consumes an already
+hashes are recorded in `provenance-inputs.json`. Changes are import relocation, the source-bound reset token factory, and
+`runtime.ts` one-pass bounded canonical topology buffering. Its output is
+byte-for-byte identical to the original two-pass driver; native hashing and all
+semantic validation remain unchanged. That factory consumes an already
 validated, single-use token and retains its owned tables privately; each reset
 receives independent cloned arrays in a new source-bound single-use token.
 Duplicate member, object, root, connected-material, reciprocal geometric edge,
@@ -28,7 +30,11 @@ capacity, padding, digest, recipe, and token checks are not weakened.
 sorted structure-ID typed array and ranks contiguous negative geology IDs
 arithmetically. It never enumerates complete city Cell records, retains a
 terrain ID map, or reads mutable live-neighbor occupancy. It rejects overlapping
-structure occupancy and invalid IDs before graph construction.
+structure occupancy and invalid IDs before graph construction. Its optional
+scalar fast paths prove sorted contiguous structure IDs and all eight terrain
+layers against original occupancy and inverse coordinates before replacing
+repeated lookups. Noncanonical inputs retain the original accessor route.
+Exact ordered-neighbor, topology-byte, and twenty-cut regressions cover parity.
 
 `index.ts` integrates CompactAuthorityStore departures. Initial construction
 validates before creating a graph; synchronous reset hydrates the original

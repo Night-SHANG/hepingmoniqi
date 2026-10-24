@@ -8,11 +8,19 @@ const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE
 const camera=new THREE.PerspectiveCamera(42,1440/900,.1,1000);camera.position.copy(center).add(new THREE.Vector3(size*.65,size*.55,size*.75));camera.lookAt(center);camera.updateMatrixWorld();
 const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(.98,.98,.98),new THREE.MeshBasicMaterial(),fixture.cells.length),ray=new THREE.Raycaster(),matrix=new THREE.Matrix4();
 function sync(){const views=sim.views();views.forEach((v,i)=>{matrix.compose(new THREE.Vector3(v.position.x,v.position.y,v.position.z),new THREE.Quaternion(v.rotation.x,v.rotation.y,v.rotation.z,v.rotation.w),new THREE.Vector3().setScalar(v.state==='gone'?0:1));mesh.setMatrixAt(i,matrix);});mesh.computeBoundingSphere();mesh.updateMatrixWorld();return views;}
+// Prove the initial terrain click through the exact rendered .98 cube mesh.
+const intact=sync();
+const soilCandidates=intact.filter(v=>v.role==='terrain'&&v.position.y===-1).sort((a,b)=>Math.hypot(a.position.x+8,a.position.z-2)-Math.hypot(b.position.x+8,b.position.z-2));
+let soilHit:any=null;
+for(const v of soilCandidates){const ndc=new THREE.Vector3(v.position.x,v.position.y,v.position.z).project(camera),pixel={x:(ndc.x+1)*720,y:(1-ndc.y)*450};if(pixel.x<400||pixel.x>1380||pixel.y<80||pixel.y>840)continue;ray.setFromCamera(new THREE.Vector2(ndc.x,ndc.y),camera);const hit=ray.intersectObject(mesh)[0];if(hit?.instanceId===undefined||intact[hit.instanceId].id!==v.id)continue;soilHit={id:v.id,pixel,point:{x:hit.point.x,y:hit.point.y,z:hit.point.z}};break;}
+assert.ok(soilHit,'A real visible soil face must exist');assert.equal(soilHit.id,3037,'Browser uses this exact native-proven soil ID');
+sim.blast({id:'soil-preflight',epoch:sim.epoch,position:soilHit.point,radius:3.5,damage:12,impulse:6});assert.ok(sim.views().some(v=>v.role==='terrain'&&v.state==='gone'));
+const soilSave=sim.snapshot(),soilViews=sim.views();sim.reset();assert.ok(sim.restore(soilSave));assert.deepEqual(sim.views(),soilViews);console.log(JSON.stringify({soilHit,soilGone:soilViews.filter(v=>v.role==='terrain'&&v.state==='gone').length}));sim.reset();
 const plan=[];let before=sim.views();
 for(let shot=0;shot<6;shot++){
  const views=sync();const candidates=views.filter(v=>v.state==='static'&&(v.role==='foundation'||v.role==='terrain')&&v.position.y>=-1&&v.position.x>=-14&&v.position.x<=0&&v.position.z>=-9&&v.position.z<=3).sort((a,b)=>Math.hypot(a.position.x+8,a.position.z)-Math.hypot(b.position.x+8,b.position.z));
  let found=false;for(const v of candidates){const ndc=new THREE.Vector3(v.position.x,v.position.y,v.position.z).project(camera);ray.setFromCamera(new THREE.Vector2(ndc.x,ndc.y),camera);const hit=ray.intersectObject(mesh)[0];if(hit?.instanceId===undefined||views[hit.instanceId].id!==v.id)continue;
-  const point={x:hit.point.x,y:hit.point.y,z:hit.point.z};sim.blast({id:`lab:${shot+1}`,epoch:sim.epoch,position:point,radius:5,damage:12,impulse:12});plan.push({id:v.id,point});found=true;break;
+  const point={x:hit.point.x,y:hit.point.y,z:hit.point.z};sim.blast({id:`lab:${shot+1}`,epoch:sim.epoch,position:point,radius:5,damage:12,impulse:12});plan.push({id:v.id,point,pixel:{x:(ndc.x+1)*720,y:(1-ndc.y)*450}});found=true;break;
  }
  if(!found)break;
  const post=sim.views();console.log(JSON.stringify({shot:shot+1,hit:plan.at(-1),buildingDynamic:post.filter(v=>(v.role==='building'||v.role==='foundation')&&v.state==='dynamic').length,pending:sim.pending()}));

@@ -14,8 +14,10 @@ try{
  await page.waitForFunction(()=>window.__structural?.project,null,{timeout:60000});const initial=await read();assert.ok(initial.views.length>100);assert.equal(initial.pending,0,'Intact authored fixture must start supported');await capture('01-intact-lab');
  // This isolated lab uses canvas blasts. Selecting a profile is NOT an eight-weapon gameplay test.
  await page.locator('#tool').selectOption('heavy');
- const soil=initial.views.filter(v=>v.role==='terrain'&&v.position.y===-1).sort((a,b)=>Math.hypot(a.position.x+8,a.position.z-2)-Math.hypot(b.position.x+8,b.position.z-2));
- let clicked=false;for(const v of soil.slice(0,80)){if(await clickCell(v)){clicked=true;break;}}assert.ok(clicked,'A visible destructible terrain cell must be clickable');
+ // Native preflight proves this exposed soil face at approximately (632,581),
+ // outside the HUD. Keep live ray-hit/DOM checks instead of trusting a screen coordinate.
+ const soil=initial.views.find(v=>v.id===3037);assert.ok(soil&&soil.role==='terrain'&&soil.position.y===-1);
+ assert.ok(await clickCell(soil),'Preflight soil 3037 must be visibly clickable through the real canvas');
  await page.waitForFunction(()=>window.__structural.views().some(v=>v.role==='terrain'&&v.state==='gone'),null,{timeout:15000});await page.locator('#pause').click();const dug=await read();assert.ok(dug.views.some(v=>v.role==='terrain'&&v.state==='gone'));await capture('02-real-terrain-cut');
  await page.locator('#save').click();const saved=await read();await page.locator('#reset').click();const reset=await read();assert.ok(reset.epoch>saved.epoch);assert.equal(reset.pending,0);assert.ok(reset.views.every(v=>v.state==='static'));
  await page.locator('#load').click();const loaded=await read();assert.ok(loaded.epoch>reset.epoch);assert.deepEqual(loaded.views,saved.views,'Snapshot restores exact authority, not merely a crater picture');

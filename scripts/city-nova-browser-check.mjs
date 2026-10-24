@@ -29,7 +29,7 @@ const evidence={
   samples:'Read-only diagnostics at animation callbacks. Actual render records are retained separately; callback scalar samples are not claimed as samples inside renderer.render. Instrumentation has overhead.',
   revisions:'Authority/surface revision deltas and observed lastRebuild reports only. Existing diagnostics provide no cumulative reset/full-bind counter; null is unknown, never zero.',
   screenshots:'Normal-speed, unpaused screenshots may overlap a shot observation window and add overhead; each capture interval and actual effect age are reported.',
-  memory:'CDP JS heap and backingStorageSize reported separately. Geometry typed-buffer bytes are an estimate, not GPU residency. No forced collection during gameplay.',
+  memory:'CDP JS heap and backingStorageSize reported separately. Geometry typed-buffer bytes are an estimate, not GPU residency. No forced collection during gameplay. Post-settlement samples include diagnostic sparse-snapshot allocations; their count and read duration are reported. Later GC may include probe allocations, so this is instrumented QA, not a probe-free benchmark.',
   persistence:'This harness verifies main-save isolation from free destruction and durable main progress. It does not claim browser restoration of the damaged free city. scripts/profile-city-nova-authority.ts is a separate native save/restore probe, not evidence unless independently run.'
  },
  timings:[],memory:[],blasts:[],screenshots:[],errors:[],consoleErrors:[],gaps:[],statusSamples:[],
@@ -62,7 +62,7 @@ try{
  // CPU fixture only: scalar immutable structure columns and bounded candidate
  // IDs. Never activate a native world or materialize 454,913 city CellViews.
  const cityFixture=createCompactGameFixture('city');
- const groups=new Map(),trackingIds=[];
+ const groups=new Map();
  for(let ordinal=0;ordinal<cityFixture.structureCount;ordinal++){
   const id=cityFixture.idAtOrdinal(ordinal);
   if(!cityFixture.objectiveOf(id)||!['building','foundation'].includes(cityFixture.roleOf(id)))continue;
@@ -75,8 +75,6 @@ try{
  const candidates=[];
  for(const group of groups.values()){
   const center={x:(group.minX+group.maxX)/2,z:(group.minZ+group.maxZ)/2};
-  // Twelve deterministic cells per building for a bounded final rubble check.
-  for(let i=0;i<12;i++)trackingIds.push(group.ids[Math.floor(i*(group.ids.length-1)/11)]);
   if(Math.abs(center.x)>62||Math.abs(center.z)>58)continue;
   const faces=[];
   for(const id of group.ids){
@@ -95,9 +93,8 @@ try{
   const seen=new Set();for(const c of selected){const key=`${c.id}/${c.normal.x}/${c.normal.y}`;if(!seen.has(key)){seen.add(key);candidates.push(c);}}
  }
  candidates.sort((a,b)=>Math.hypot(a.center.x,a.center.z)-Math.hypot(b.center.x,b.center.z)||a.score-b.score);
- assert.ok(candidates.length>=24);assert.ok(trackingIds.length<=432);
- const tracking=trackingIds.map(id=>({id,original:cityFixture.originalPosition(id),objectId:cityFixture.objectIdOf(id)}));
- evidence.targetPlan={source:'Immutable production compact city fixture; actual browser ray acceptance still required',candidateCount:candidates.length,trackingCells:tracking.length,maxCenterAbsX:62,maxCenterAbsZ:58,distinctBuildingsPreferred:true,repeatSurvivingBuildingFallback:true};
+ assert.ok(candidates.length>=24);
+ evidence.targetPlan={source:'Immutable production compact city fixture; actual browser ray acceptance still required',candidateCount:candidates.length,rubbleSampling:{source:'actual post-settlement sparse rubble-body member IDs',maxReturnedCells:64},maxCenterAbsX:62,maxCenterAbsZ:58,distinctBuildingsPreferred:true,repeatSurvivingBuildingFallback:true};
  progress('fixture-ready',evidence.targetPlan);
 
  browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-webgl']});
@@ -168,7 +165,7 @@ try{
  async function saveReady(){await wait('save-transaction-complete',()=>!window.__heping.saveStatus().pending);const s=await page.evaluate(()=>window.__heping.saveStatus());assert.equal(s.error,null);assert.equal(s.readFailed,false);return s;}
  async function memory(stage){
   const heap=await cdp.send('Runtime.getHeapUsage'),dom=await cdp.send('Memory.getDOMCounters'),state=await read();
-  const row={stage,at:new Date().toISOString(),forcedGC:false,heap,dom,compact:state.compact,surface:state.scene.voxelRender,lifecycle:state.lifecycle,nativeWasmBytes:null,gpuResidentBytes:null,geometryTypedBufferEstimateBytes:state.scene.voxelRender?.typedBufferBytes??null};
+  const row={stage,at:new Date().toISOString(),forcedGC:false,priorDiagnosticSparseSnapshotReads:evidence.rubbleSnapshotReads??0,heap,dom,compact:state.compact,surface:state.scene.voxelRender,lifecycle:state.lifecycle,nativeWasmBytes:null,gpuResidentBytes:null,geometryTypedBufferEstimateBytes:state.scene.voxelRender?.typedBufferBytes??null};
   assert.ok(Number.isFinite(heap.usedSize));evidence.memory.push(row);progress('memory',{stage,jsHeapBytes:heap.usedSize,backingStorageBytes:heap.backingStorageSize??null});await persist();return row;
  }
  async function capture(name,shotId=null){
@@ -179,7 +176,12 @@ try{
    actualEffectAtStart:before.scene.effects.events.find(e=>e.id===shotId)??null,actualEffectAtEnd:after.scene.effects.events.find(e=>e.id===shotId)??null,
    renderCountBefore:before.scene.renderCount,renderCountAfter:after.scene.renderCount,aggregateBefore:before.compact?.aggregate??null,aggregateAfter:after.compact?.aggregate??null,
    note:'Capture interval overlaps live simulation; effect before/after do not identify an exact physical presentation instant.'};
-  evidence.screenshots.push(row);progress('screenshot-complete',{name,bytes:bytes.length,actualEffectAtStart:row.actualEffectAtStart,actualEffectAtEnd:row.actualEffectAtEnd});await persist();return row;
+  row.logExport={format:'SCREENSHOT_BASE64',emitted:bytes.length<=220000,byteLimit:220000};
+  evidence.screenshots.push(row);progress('screenshot-complete',{name,bytes:bytes.length,actualEffectAtStart:row.actualEffectAtStart,actualEffectAtEnd:row.actualEffectAtEnd});
+  // Export the SAME JPEG bytes once, never retake a screenshot for log size.
+  if(bytes.length<=220000)console.log(`SCREENSHOT_BASE64 ${name} ${bytes.toString('base64')}`);
+  else progress('screenshot-log-export-skipped',{name,bytes:bytes.length,byteLimit:220000,reason:'Existing JPEG exceeds log export limit; file retained, screenshot not retaken'});
+  await persist();return row;
  }
  async function arm(label,selector,{shot=false,shotId=null}={}){
   await page.locator(selector).scrollIntoViewIfNeeded();
@@ -227,7 +229,58 @@ try{
   }
   throw new Error(`No real visible surviving objective building ray among ${candidates.length} bounded candidates; ${rejected.length} rejected checks. No soil fallback or synthetic aim allowed.`);
  }
- async function rubbleSample(){return page.evaluate(tracking=>tracking.map(t=>{const c=window.__heping.authorityCell(t.id);return c?{...t,state:c.state,position:c.position,rotation:c.rotation,hp:c.hp}:null;}).filter(Boolean),tracking);}
+ // The surviving debris can be a single arbitrary terrain or building cell.
+ // Sample actual authoritative rubble-body membership, not a fixed grid of
+ // original building IDs. All sparse snapshot work is OUTSIDE shot timings and
+ // stays inside the page; only scalars and at most 64 owned cell records return.
+ async function rubbleSample(stage){
+  activeStage=`${stage}-read-current-rubble`;
+  const sample=await page.evaluate(limit=>{
+   const h=window.__heping,startedAt=performance.now(),before=h.compactDiagnostics();
+   if(h.pendingWork()!==0||h.activeEffects)throw new Error('Rubble sampling requires natural completed settlement');
+   const snapshot=h.snapshot(),simulation=snapshot.structural?.simulation;
+   if(!simulation||!Array.isArray(simulation.bodies)||!Array.isArray(simulation.changes))throw new Error('Missing real sparse snapshot body membership');
+   const selected=new Map();let rubbleBodies=0,rubbleBodyMembers=0,nonRubbleBodies=0;
+   for(const body of simulation.bodies){
+    if(body.status!=='rubble'){nonRubbleBodies++;continue;}rubbleBodies++;
+    for(const id of body.cells){rubbleBodyMembers++;if(selected.size<limit&&!selected.has(id))selected.set(id,{bodyId:body.id,rootShotId:body.rootShotId});}
+   }
+   const saved=new Map();for(const row of simulation.changes)if(selected.has(row[0]))saved.set(row[0],row);
+   const cells=[];
+   for(const [id,body] of selected){
+    const c=h.authorityCell(id),row=saved.get(id);
+    if(!c||c.state!=='rubble'||!row||row[3]!==2||row.length!==12)throw new Error(`Rubble body member ${id} has no matching authoritative/saved rubble cell`);
+    cells.push({id,...body,role:c.role,objectId:c.objectId,state:c.state,hp:c.hp,position:{...c.position},rotation:{...c.rotation},saved:{hp:row[1],stateIndex:row[3],position:{x:row[4],y:row[5],z:row[6]},rotation:{x:row[7],y:row[8],z:row[9],w:row[10]},bodyId:row[11]}});
+   }
+   return {startedAt,finishedAt:performance.now(),epoch:before.epoch,revision:before.revision,aggregate:before.aggregate,pending:h.pendingWork(),primaryEffects:h.activeEffects,snapshot:{schemaVersion:snapshot.schemaVersion,simulationSchema:simulation.schema,tick:simulation.tick,sparseChangeRows:simulation.changes.length,rubbleBodies,rubbleBodyMembers,nonRubbleBodies},cells,limit,sampling:'Actual sparse rubble body IDs; no full snapshot or full-city cell array crossed the browser boundary'};
+  },64);
+  evidence.rubbleSnapshotReads=(evidence.rubbleSnapshotReads??0)+1;
+  assert.equal(sample.pending,0);assert.equal(sample.primaryEffects,false);assert.equal(sample.snapshot.nonRubbleBodies,0);
+  assert.equal(sample.snapshot.rubbleBodyMembers,sample.aggregate.rubble,'Every aggregate rubble cell must belong to an actual saved rubble body');
+  assert.equal(sample.cells.length,Math.min(sample.limit,sample.aggregate.rubble),'Actual current rubble must be sampled even when only one cell survives');
+  for(const c of sample.cells){
+   const original=cityFixture.originalPosition(c.id);assert.ok(original,`Rubble ${c.id} must exist in the immutable production fixture`);
+   assert.equal(c.role,cityFixture.roleOf(c.id));assert.equal(c.objectId,cityFixture.objectIdOf(c.id));assert.equal(c.state,'rubble');assert.ok(c.hp>0);
+   assert.equal(c.saved.hp,c.hp);assert.equal(c.saved.bodyId,c.bodyId);assert.deepEqual(c.saved.position,c.position);assert.deepEqual(c.saved.rotation,c.rotation);
+   c.original=original;c.originalRole=cityFixture.roleOf(c.id);c.originalObjective=cityFixture.objectiveOf(c.id);
+   c.verticalDrop=original.y-c.position.y;c.displacement=Math.hypot(c.position.x-original.x,c.position.y-original.y,c.position.z-original.z);
+   c.fallenBelowOriginal=c.verticalDrop>.25;
+  }
+  sample.stage=stage;sample.snapshotReadMs=sample.finishedAt-sample.startedAt;sample.fallenBelowOriginal=sample.cells.filter(c=>c.fallenBelowOriginal).length;
+  sample.roleCounts=Object.fromEntries([...new Set(sample.cells.map(c=>c.role))].map(role=>[role,sample.cells.filter(c=>c.role===role).length]));
+  sample.note='Rubble is the authoritative settled-body state. Original terrain and original building debris are distinguished; falling below the original height is reported, not assumed for every surviving cell.';
+  if(sample.cells.length){
+   // No blast or reset occurs in this interval. Ordinary live callbacks keep
+   // running; rereading the same real IDs proves persistence, not a fake pose.
+   await wait(`${stage}-rubble-persists-with-live-clock`,at=>{const h=window.__heping,p=window.__cityNovaQA;return performance.now()-at>=350&&p.lastRAF>at&&h.pendingWork()===0&&!h.activeEffects;},sample.finishedAt);
+   const later=await page.evaluate(ids=>{const h=window.__heping;return {at:performance.now(),epoch:h.compactDiagnostics().epoch,pending:h.pendingWork(),cells:ids.map(id=>{const c=h.authorityCell(id);return c?{id,state:c.state,hp:c.hp,position:{...c.position},rotation:{...c.rotation}}:null;})};},sample.cells.map(c=>c.id));
+   assert.equal(later.epoch,sample.epoch);assert.equal(later.pending,0);assert.ok(later.at-sample.finishedAt>=350);
+   assert.deepEqual(later.cells,sample.cells.map(c=>({id:c.id,state:c.state,hp:c.hp,position:c.position,rotation:c.rotation})),'Settled rubble IDs and exact real poses must persist through live unpaused callbacks');
+   sample.persistence={verified:true,elapsedMs:later.at-sample.finishedAt,unchangedCells:later.cells.length,at:later.at,resetUsed:false};
+  }else sample.persistence={verified:false,reason:'No rubble present at this settlement'};
+  progress('actual-rubble-sampled',{stage,aggregateRubble:sample.aggregate.rubble,returnedCells:sample.cells.length,roleCounts:sample.roleCounts,fallenBelowOriginal:sample.fallenBelowOriginal,persistence:sample.persistence,snapshotReadMs:sample.snapshotReadMs});
+  return sample;
+ }
 
  progress('navigation-start',{url});await page.goto(url,{waitUntil:'networkidle',timeout:remaining()});
  await wait('formal-game-ready',()=>window.__heping?.physicsReady&&typeof window.__heping.authorityCell==='function'&&typeof window.__heping.actionTiming==='function');await lifecycle(0);await saveReady();
@@ -294,15 +347,25 @@ try{
   row.actionLatency={deploymentClickToRequestMs:event('deployment-request').at-(placementTiming?.startedAt??shotTiming.startedAt),deploymentClickToAcceptedMs:event('deployment-result').at-(placementTiming?.startedAt??shotTiming.startedAt),deploymentRequestToAcceptedMs:event('deployment-result').at-event('deployment-request').at,detonationReceivedToDamageStartMs:startDamage.at-event('detonation-received').at,damageMs:endDamage.at-startDamage.at,surfaceSyncMs:surfaceEnd.at-event('surface-sync-start').at,firstActualPostDamageRender:renderAfterDamage,damageStartToRenderSubmissionMs:renderAfterDamage.finishedAt-startDamage.at,damageStartToNextSceneCallbackMs:renderAfterDamage.nextFrameAt-startDamage.at,triggerClickToDetonationReceivedMs:index===1?event('detonation-received').at-shotTiming.startedAt:null,triggerClickToRenderSubmissionMs:index===1?renderAfterDamage.finishedAt-shotTiming.startedAt:null,triggerClickToNextSceneCallbackMs:index===1?renderAfterDamage.nextFrameAt-shotTiming.startedAt:null};
   row.responsiveness={measurement:'Observed actual main-thread damage interval, overlapping long tasks, and real animation callback gaps; no unsupported claim of UI responsiveness during synchronous damage',damageMs:row.actionLatency.damageMs,longTasksOverlappingDamage:shotTiming.longTasks.filter(t=>t.start<endDamage.at&&t.start+t.duration>startDamage.at),maxObservedRAFGapMs:shotTiming.maxRAFGapMs,inputEventTimingAvailable:shotTiming.inputEventTimingAvailable,observedInputEvents:shotTiming.inputEvents};
   await page.evaluate(()=>{window.__cityNovaQA.activeShot=null;});
+  row.settledRubble=await rubbleSample(`after-nova-${index}`);
+  // Later real novas may legitimately destroy previously persistent debris.
+  // Record that history without requiring first-shot debris to survive attacks.
+  if(index>1){
+   const previous=evidence.blasts[index-2].settledRubble.cells;
+   row.previousRubbleAfterThisBlast=await page.evaluate(ids=>ids.map(id=>{const c=window.__heping.authorityCell(id);return {id,state:c?.state??'unavailable',position:c?{...c.position}:null,hp:c?.hp??null};}),previous.map(c=>c.id));
+  }
   await memory(`city-after-nova-${index}`);progress('nova-naturally-settled',{index,pending:after.pending,objectiveDestroyed:after.objective.destroyed,rubble:after.compact.aggregate.rubble});await persist();
   if(index===1)await capture('city-nova-1-aftermath',projectile.id);
  }
  assert.equal(evidence.blasts.length,3);assert.equal(new Set(evidence.blasts.map(b=>b.projectileId)).size,3);
  const finalCity=await read();assert.equal(finalCity.pending,0);assert.equal(finalCity.activeEffects,false);assert.ok(finalCity.compact.aggregate.rubble>0,'Natural final state must retain actual rubble');
- const cells=await rubbleSample(),fallen=cells.filter(c=>c.state==='rubble'&&c.position.y<c.original.y-.25);
- evidence.finalCity={aggregate:finalCity.compact.aggregate,objective:finalCity.objective,epoch:finalCity.compact.epoch,distinctTargetBuildings:usedBuildings.size,fallenRubbleSample:fallen.slice(0,24),trackedCellCount:cells.length,surface:finalCity.scene.voxelRender};
- assert.ok(fallen.length>0,'Bounded read-only cell samples must show actual settled rubble below its original building position');
- await capture('city-after-three-novas-fallen-rubble');
+ const currentRubble=evidence.blasts.at(-1).settledRubble,fallen=currentRubble.cells.filter(c=>c.fallenBelowOriginal);
+ evidence.finalCity={aggregate:finalCity.compact.aggregate,objective:finalCity.objective,epoch:finalCity.compact.epoch,distinctTargetBuildings:usedBuildings.size,currentRubbleSample:currentRubble.cells,fallenRubbleSample:fallen.slice(0,24),sampledRubbleCount:currentRubble.cells.length,rubblePersistence:currentRubble.persistence,surface:finalCity.scene.voxelRender};
+ assert.equal(currentRubble.aggregate.rubble,finalCity.compact.aggregate.rubble);
+ assert.ok(currentRubble.cells.length>0&&currentRubble.persistence.verified,'Bounded real rubble-body IDs and their authoritative settled poses must persist with no reset');
+ assert.ok(currentRubble.cells.some(c=>c.displacement>1e-3||Math.abs(c.rotation.w)<1-1e-6),'Actual surviving rubble must differ from its immutable original pose, not just an aggregate or cosmetic effect');
+ assert.ok(finalCity.objective.destroyed>0,'True building damage remains a separate strict requirement from the original material of final surviving rubble');
+ await capture('city-after-three-novas-persistent-rubble');
  const end=await arm('city-natural-end','#finish-round');await page.locator('#finish-round').click();
  await wait('city-ended-without-reset',()=>{const h=window.__heping;return h.screen==='setup'&&h.flow==='settled'&&h.pendingWork()===0&&!h.activeEffects;});
  await lifecycle(0);await timing(end,{endCondition:'real End control returns naturally settled free city to setup',pendingBeforeEnd:finalCity.pending});

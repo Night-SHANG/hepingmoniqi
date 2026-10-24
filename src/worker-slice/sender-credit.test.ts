@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {SenderCredit} from './sender-credit.js';
+test('sender bounds posted gameplay before worker can receive it and never drops accepted IDs',()=>{const c=new SenderCredit(2);assert.equal(c.reserve('a','place'),true);assert.equal(c.reserve('b','detonate'),true);assert.equal(c.reserve('c','place'),false);assert.equal(c.reserve('ack','event-ack'),true);assert.equal(c.size,2);c.release('unknown');assert.equal(c.reserve('d','launch'),false);c.release('a');assert.equal(c.reserve('d','launch'),true);});
+test('reset clears old sender credits without altering a later epoch',()=>{const c=new SenderCredit(1);c.reserve('old','place');c.clear();assert.equal(c.reserve('new','place'),true);c.release('old');assert.equal(c.size,1);});

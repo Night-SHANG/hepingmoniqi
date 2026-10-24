@@ -21,7 +21,9 @@ export interface StructuralGameWorld {
  readonly epoch:number;readonly physicsHost:StructuralPhysicsHost|null;readonly migrationPending:boolean;readonly revision:number;
  activate():Promise<void>;suspend():void;getRenderBinding():StructuralCompactQueries|null;getResearch():number;getVoxel(id:number):Voxel|null;getVoxels():readonly Voxel[];getObjective():ObjectiveState;getRound():RoundState;
  startRound(map:MapId,loadout:Loadout):Promise<boolean>;loadMap(map:MapId,free?:boolean):Promise<boolean>;reset():Promise<void>;
- recordShot(weapon?:WeaponId):boolean;damage(command:DamageCommand):DamageResult;finishRound():RoundResult;
+ recordShot(weapon?:WeaponId):boolean;
+ /** details:false skips legacy removed/detached payloads; all summary fields and authoritative effects remain unchanged. */
+ damage(command:DamageCommand,options?:{details?:boolean}):DamageResult;finishRound():RoundResult;
  getSnapshot():WorldSnapshot;restore(snapshot:WorldSnapshot):Promise<boolean>;step(dt:number):void;pending():number;events():StructuralEvent[];eventsSince(cursor?:StructuralEventCursor):StructuralEventChanges;
 }
 const clone=<T>(value:T):T=>structuredClone(value);
@@ -67,17 +69,18 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
  let sim:Simulation|null=null,host:StructuralPhysicsHost|null=null,cachedSimulation:CompactSimulation|null=null,unregisterSync:(()=>void)|undefined;
  let epoch=epochSerial++,research=0,round=freshRound(0),migrationPending=false,legacyObjective:SavedGame['legacyObjective'];
  let completedMaps:MapId[]=[],rewardedLoss=0,creditedResearch=0,suppressedRoots=new Set<string>();
- // Only edited IDs have retained game records. Pristine voxels are composed on demand.
- let changedVoxels=new Map<number,Voxel|null>(),diagnosticVoxels:readonly Voxel[]|undefined,diagnosticRevision:number|undefined,lossById=new Map<number,number>();
+ // Retain only immutable sparse authority views, not duplicate legacy Voxels.
+ // Legacy presentation values are composed only when a caller requests them.
+ let changedViews=new Map<number,ImmutableCellView>(),diagnosticVoxels:readonly Voxel[]|undefined,diagnosticRevision:number|undefined,lossById=new Map<number,number>();
  let destroyed=0,objectiveDestroyed=0,revision=0,viewCursor:number|undefined,eventCursor:{epoch:number;index:number}|undefined,eventHistory:StructuralEvent[]=[];
  let eventIds=new Set<string>(),lastRoot:string|undefined;
  function ensureFixture(){
   if(fixture)return;
   fixture=getManagedCompactGameFixture(mapId);totalTargets=fixture.objectiveCount;
-  changedVoxels.clear();diagnosticVoxels=undefined;lossById.clear();destroyed=objectiveDestroyed=0;revision++;
+  changedViews.clear();diagnosticVoxels=undefined;lossById.clear();destroyed=objectiveDestroyed=0;revision++;
  }
  function pristineVoxel(id:number):Voxel|null {const base=fixture!.original(id);return base?freezeVoxel(gameCellVoxel(base as GameCell)):null;}
- function cachedVoxel(id:number):Voxel|null {return changedVoxels.has(id)?changedVoxels.get(id)!:pristineVoxel(id);}
+ function cachedVoxel(id:number):Voxel|null {const view=changedViews.get(id);return view?viewVoxel(view):pristineVoxel(id);}
  function viewVoxel(view:ImmutableCellView):Voxel|null {return view.state==='gone'?null:freezeVoxel(gameCellVoxel(view,{group:fixture!.groupOf(view.id)} as GameCell));}
  function currentVoxel(id:number):Voxel|null {const binding=sim?.compact;if(!binding)return cachedVoxel(id);const view=binding.cell(id);return view?viewVoxel(view):null;}
  function allowed(root:string|undefined){return !free&&!round.settled&&!!root&&root!=='initial'&&!suppressedRoots.has(root);}
@@ -94,16 +97,17 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   const targetRoots=new Map<number,string>();
   for(const event of eventBatch.events){if(!eventIds.has(event.id)){eventIds.add(event.id);eventHistory.push(clone(event));}if(event.targetId!==undefined)targetRoots.set(event.targetId,event.rootShotId);if(event.kind==='detach'||event.kind==='impact')lastRoot=event.rootShotId;}
   if(eventHistory.length>8192){eventHistory=eventHistory.slice(-8192);eventIds=new Set(eventHistory.map(e=>e.id));}
-  const nextVoxels=batch.reset?new Map<number,Voxel|null>():changedVoxels,nextLoss=batch.reset?new Map<number,number>():lossById;
-  let changed=batch.reset&&changedVoxels.size>0;
-  for(const view of views){const base=fixture!.original(view.id);if(!base)continue;
-   const prior=cachedVoxel(view.id),isDestroyed=view.state!=='static';
-   if(base.objective){const before=lossById.get(view.id)??0,next=isDestroyed?1:Math.max(0,1-view.hp/base.maxHp),delta=Math.max(0,next-before);nextLoss.set(view.id,next);if(account&&delta&&allowed(directRoot??targetRoots.get(view.id)??lastRoot))rewardedLoss+=delta;}
-   if(view.state==='gone'){nextVoxels.set(view.id,null);if(prior){changed=true;collect?.(prior,null);}continue;}
-   if(prior&&prior.hp===view.hp&&prior.structuralState===view.state){nextVoxels.set(view.id,prior);continue;}
-   const next=viewVoxel(view)!;nextVoxels.set(view.id,next);changed=true;collect?.(prior,next);
+  const nextViews=batch.reset?new Map<number,ImmutableCellView>():changedViews,nextLoss=batch.reset?new Map<number,number>():lossById;
+  let changed=batch.reset&&changedViews.size>0;
+  for(const view of views){const originalHp=fixture!.hpOf(view.id);if(!Number.isFinite(originalHp))continue;
+   const prior=changedViews.get(view.id),isDestroyed=view.state!=='static';
+   if(fixture!.objectiveOf(view.id)){const before=lossById.get(view.id)??0,next=isDestroyed?1:Math.max(0,1-view.hp/fixture!.maxHpOf(view.id)),delta=Math.max(0,next-before);nextLoss.set(view.id,next);if(account&&delta&&allowed(directRoot??targetRoots.get(view.id)??lastRoot))rewardedLoss+=delta;}
+   if((prior?.hp??originalHp)===view.hp&&(prior?.state??'static')===view.state){nextViews.set(view.id,prior??view);continue;}
+   // A summary caller has no use for either old or new legacy Voxel payloads.
+   const priorVoxel=collect?cachedVoxel(view.id):null;
+   nextViews.set(view.id,view);changed=true;collect?.(priorVoxel,viewVoxel(view));
   }
-  changedVoxels=nextVoxels;lossById=nextLoss;
+  changedViews=nextViews;lossById=nextLoss;
   const totals=binding.aggregate();destroyed=totals.departed;objectiveDestroyed=totals.objectiveDeparted;
   if(account&&!free&&!round.settled){const next=totalTargets?Math.min(200,Math.ceil(Math.max(0,rewardedLoss)*200/totalTargets)):0;research+=Math.max(0,next-creditedResearch);creditedResearch=Math.max(creditedResearch,next);}
   if(changed){diagnosticVoxels=undefined;revision++;}
@@ -117,7 +121,7 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
  function releaseSimulation(preserve:boolean){if(!sim)return;if(preserve){sync();cachedSimulation=encodeGameSimulation(fixture!,sim.snapshotSparse() as SimulationSave);
    // Preserve only sparse latest poses when the authoritative world is released.
    // Active gameplay never refreshes these redundant presentation records per step.
-   for(const view of sim.compact!.movingViews())changedVoxels.set(view.id,viewVoxel(view));
+   for(const view of sim.compact!.movingViews())changedViews.set(view.id,view);
    diagnosticVoxels=undefined;diagnosticRevision=undefined;
   }epoch=sim.epoch;unregisterSync?.();unregisterSync=undefined;sim.dispose();sim=null;host=null;if(active===api)active=null;}
  function suspend(){releaseSimulation(true);}
@@ -141,21 +145,21 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   }catch(error){engine.dispose();throw error;}
  }
 
- function clearScene(){releaseSimulation(false);fixture=undefined;changedVoxels.clear();diagnosticVoxels=undefined;lossById.clear();cachedSimulation=null;destroyed=objectiveDestroyed=0;rewardedLoss=creditedResearch=0;suppressedRoots.clear();eventHistory=[];eventIds.clear();lastRoot=undefined;viewCursor=eventCursor=undefined;migrationPending=false;legacyObjective=undefined;epoch=epochSerial++;revision++;}
+ function clearScene(){releaseSimulation(false);fixture=undefined;changedViews.clear();diagnosticVoxels=undefined;lossById.clear();cachedSimulation=null;destroyed=objectiveDestroyed=0;rewardedLoss=creditedResearch=0;suppressedRoots.clear();eventHistory=[];eventIds.clear();lastRoot=undefined;viewCursor=eventCursor=undefined;migrationPending=false;legacyObjective=undefined;epoch=epochSerial++;revision++;}
  async function fresh(map:MapId,loadout?:Loadout){clearScene();mapId=map;round=freshRound(research);if(loadout){round.loadout={...loadout};round.remaining={...loadout};}await activateNow();}
  const objective=():ObjectiveState=>{ensureFixture();sync();const total=legacyObjective?.total??totalTargets,removed=legacyObjective?.destroyed??objectiveDestroyed;return{mapId,title:mapTitle(mapId),total,destroyed:removed,fraction:total?removed/total:0,goal:1,complete:removed===total,completedMaps:[...completedMaps]};};
  function result(accepted=false):DamageResult{return{accepted,removed:[],detached:[],newlyDestroyed:0,researchEarned:0,destruction:fixture?.count?destroyed/fixture.count:0};}
- function damage(command:DamageCommand):DamageResult {
+ function damage(command:DamageCommand,options:{details?:boolean}={}):DamageResult {
   if(!sim||round.settled||migrationPending||requiresLoadoutReselection(round)||!command||typeof command.id!=='string'||!command.id||command.id.length>160||command.epoch!==epoch||!Object.hasOwn(TOOLS,command.weapon)||!Number.isFinite(command.power)||command.power<=0||command.power>3||!command.target||![command.target.x,command.target.y,command.target.z].every(n=>Number.isFinite(n)&&Math.abs(n)<=10000))return result();
   sync();const oldResearch=research,oldDestroyed=destroyed,tool=TOOLS[command.weapon],radius=tool.radius*Math.sqrt(command.power);
   // Removed moving cells must report their true pre-hit pose. Retain immutable
   // views only for the sparse moving subset inside this blast, never the city.
-  const movingBefore=new Map<number,ImmutableCellView>();
-  for(const view of sim.compact!.movingViews())if(Math.hypot(view.position.x-command.target.x,view.position.y-command.target.y,view.position.z-command.target.z)<=radius)movingBefore.set(view.id,view);
+  const movingBefore=options.details===false?undefined:new Map<number,ImmutableCellView>();
+  if(movingBefore)for(const view of sim.compact!.movingViews())if(Math.hypot(view.position.x-command.target.x,view.position.y-command.target.y,view.position.z-command.target.z)<=radius)movingBefore.set(view.id,view);
   const accepted=sim.blast({id:command.id,epoch:sim.epoch,position:command.target,radius,damage:tool.strength*command.power,impulse:Math.min(16,tool.strength*.6*Math.sqrt(command.power))});
   if(!accepted)return result();if(command.reward===false)suppressedRoots.add(command.id);
   const removed:Voxel[]=[],detached:Voxel[]=[];
-  sync(command.id,true,(prior,next)=>{if(prior&&!next)removed.push(clone(movingBefore.has(prior.id)?viewVoxel(movingBefore.get(prior.id)!)!:prior));else if(prior?.structuralState==='static'&&next&&next.structuralState!=='static')detached.push(clone(next));});
+  sync(command.id,true,movingBefore?(prior,next)=>{if(prior&&!next)removed.push(clone(movingBefore.has(prior.id)?viewVoxel(movingBefore.get(prior.id)!)!:prior));else if(prior?.structuralState==='static'&&next&&next.structuralState!=='static')detached.push(clone(next));}:undefined);
   return{accepted:true,removed,detached,newlyDestroyed:destroyed-oldDestroyed,researchEarned:research-oldResearch,destruction:destroyed/fixture!.count};
  }
  async function restoreNow(input:WorldSnapshot):Promise<boolean>{
@@ -211,7 +215,7 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
    if(!candidate.restore(restored)){candidate.dispose();throw new Error('Validated structural state could not restore');}
   }
   fixture=targetFixture!;totalTargets=targetCount;mapId=input.mapId!;research=input.research;round=clone(input.round as InventoryRound);completedMaps=[...input.completedMaps!];migrationPending=s.migrationPending;legacyObjective=clone(s.legacyObjective);rewardedLoss=s.rewardedLoss;creditedResearch=s.creditedResearch;suppressedRoots=new Set(s.suppressedRoots);cachedSimulation=null;
-  changedVoxels.clear();diagnosticVoxels=undefined;lossById.clear();destroyed=objectiveDestroyed=0;eventHistory=[];eventIds.clear();lastRoot=undefined;
+  changedViews.clear();diagnosticVoxels=undefined;lossById.clear();destroyed=objectiveDestroyed=0;eventHistory=[];eventIds.clear();lastRoot=undefined;
   install(candidate);revision++;return true;
  }
  const api:StructuralGameWorld={

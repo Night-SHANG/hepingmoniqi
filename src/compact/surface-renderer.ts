@@ -28,11 +28,11 @@ export function createCompactSurfaceRenderer(scene:THREE.Scene,box:THREE.BufferG
  const surfaceMaterial=material.clone();surfaceMaterial.vertexColors=true;
  const moving=createSparseMovingRenderer(scene,box,material),chunks=new Map<string,Chunk>(),registered=new Set<string>(),topologyDirty=new Set<string>(),appearanceDirty=new Set<string>();
  const topologyRevisions=new Map<number,number>(),appearanceRevisions=new Map<number,number>(),color=new THREE.Color(),staticBounds=new THREE.Box3(),worldNormal=new THREE.Vector3();
- let source:CompactSurfaceSource|null=null,revision=0,disposed=false,lastReport=emptyReport();
+ let source:CompactSurfaceSource|null=null,revision=0,disposed=false,lastReport=emptyReport(),changedRevisionEntries=0;
  let pristineFixture:CompactFixture|null=null,meshesPristine=false,lastBindReused=false;
  const disposeChunk=(chunk:Chunk)=>{group.remove(chunk.mesh);chunk.mesh.geometry.dispose();};
  const assertAlive=()=>{if(disposed)throw new Error('Compact surface renderer has been disposed');};
- function clearBinding(){meshesPristine=false;pristineFixture=null;for(const chunk of chunks.values())disposeChunk(chunk);chunks.clear();registered.clear();topologyDirty.clear();appearanceDirty.clear();topologyRevisions.clear();appearanceRevisions.clear();source=null;staticBounds.makeEmpty();moving.set([]);}
+ function clearBinding(){meshesPristine=false;pristineFixture=null;for(const chunk of chunks.values())disposeChunk(chunk);chunks.clear();registered.clear();topologyDirty.clear();appearanceDirty.clear();topologyRevisions.clear();appearanceRevisions.clear();changedRevisionEntries=0;source=null;staticBounds.makeEmpty();moving.set([]);}
  function buildChunk(key:string){
   const s=source!,b=s.bounds,[cx,cy,cz]=key.split(',').map(Number);
   const minX=Math.max(cx*size,b.minX),maxX=Math.min(cx*size+size-1,b.maxX),minY=Math.max(cy*size,b.minY),maxY=Math.min(cy*size+size-1,b.maxY),minZ=Math.max(cz*size,b.minZ),maxZ=Math.min(cz*size+size-1,b.maxZ);
@@ -97,7 +97,7 @@ export function createCompactSurfaceRenderer(scene:THREE.Scene,box:THREE.BufferG
    assertAlive();const fixture=pristineSurfaceFixture(next);
    lastBindReused=fixture!==null&&meshesPristine&&pristineFixture===fixture;
    if(lastBindReused){
-    source=next;topologyDirty.clear();appearanceDirty.clear();topologyRevisions.clear();appearanceRevisions.clear();moving.set([]);revision++;lastReport=emptyReport();return lastReport;
+    source=next;topologyDirty.clear();appearanceDirty.clear();topologyRevisions.clear();appearanceRevisions.clear();changedRevisionEntries=0;moving.set([]);revision++;lastReport=emptyReport();return lastReport;
    }
    clearBinding();source=next;const b=next.bounds;staticBounds.set(new THREE.Vector3(b.minX-.5,b.minY-.5,b.minZ-.5),new THREE.Vector3(b.maxX+.5,b.maxY+.5,b.maxZ+.5));next.forEachChunk(size,(cx,cy,cz)=>registered.add(chunkKey(cx,cy,cz)));for(const key of registered)topologyDirty.add(key);revision++;
    const report=flush();pristineFixture=fixture;meshesPristine=fixture!==null;return report;
@@ -106,6 +106,9 @@ export function createCompactSurfaceRenderer(scene:THREE.Scene,box:THREE.BufferG
    assertAlive();if(!source)throw new Error('Bind a surface source before applying edits');
    for(const edit of edits){
     const topology=edit.topologyChanged&&edit.revision>(topologyRevisions.get(edit.id)??-Infinity),appearance=edit.appearanceChanged&&edit.revision>(appearanceRevisions.get(edit.id)??-Infinity);if(!topology&&!appearance)continue;
+    // Count the existing ledgers' union once per new ID, not on every frame's
+    // diagnostic reads. No extra history collection or dirty-state change.
+    if(!topologyRevisions.has(edit.id)&&!appearanceRevisions.has(edit.id))changedRevisionEntries++;
     meshesPristine=false;
     const{x,y,z}=edit.position,cx=Math.floor(x/size),cy=Math.floor(y/size),cz=Math.floor(z/size),own=chunkKey(cx,cy,cz);
     if(appearance){appearanceRevisions.set(edit.id,edit.revision);if(registered.has(own))appearanceDirty.add(own);}
@@ -128,7 +131,7 @@ export function createCompactSurfaceRenderer(scene:THREE.Scene,box:THREE.BufferG
    return {voxelId:id,position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:worldNormal.x,y:worldNormal.y,z:worldNormal.z}};
   },
   getBounds(target=new THREE.Box3()){return target.copy(staticBounds).union(moving.bounds);},
-  getDiagnostics(){let faces=0,typedBufferBytes=0;for(const chunk of chunks.values()){faces+=chunk.faces;typedBufferBytes+=chunk.bytes;}return {chunkSize:size,registeredChunks:registered.size,staticMeshes:chunks.size,faces,typedBufferBytes,drawCallsUpperBound:chunks.size+(moving.count?1:0),movingCells:moving.count,movingCapacity:moving.mesh.instanceMatrix.count,movingMatrixWrites:moving.matrixWrites,movingColorWrites:moving.colorWrites,revision,dirtyChunks:topologyDirty.size,appearanceDirtyChunks:appearanceDirty.size,changedRevisionEntries:new Set([...topologyRevisions.keys(),...appearanceRevisions.keys()]).size,retainedCellViews:0,sparseTransformEntries:moving.count,retainedHaloBytes:0,lastBindReused,meshesPristine,lastRebuild:lastReport};},
+  getDiagnostics(){let faces=0,typedBufferBytes=0;for(const chunk of chunks.values()){faces+=chunk.faces;typedBufferBytes+=chunk.bytes;}return {chunkSize:size,registeredChunks:registered.size,staticMeshes:chunks.size,faces,typedBufferBytes,drawCallsUpperBound:chunks.size+(moving.count?1:0),movingCells:moving.count,movingCapacity:moving.mesh.instanceMatrix.count,movingMatrixWrites:moving.matrixWrites,movingColorWrites:moving.colorWrites,revision,dirtyChunks:topologyDirty.size,appearanceDirtyChunks:appearanceDirty.size,changedRevisionEntries,retainedCellViews:0,sparseTransformEntries:moving.count,retainedHaloBytes:0,lastBindReused,meshesPristine,lastRebuild:lastReport};},
   dispose(){if(disposed)return;clearBinding();moving.dispose();scene.remove(group);surfaceMaterial.dispose();disposed=true;},
  };
 }

@@ -1,0 +1,57 @@
+name: Isolated authority worker verification
+on:
+  push:
+    branches: [perf/compact-city-ab]
+    paths:
+      - 'src/worker-slice/**'
+      - 'worker-slice.html'
+      - 'vite.worker-slice.config.ts'
+      - 'scripts/worker-slice*'
+      - '.github/workflows/worker-slice-performance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - name: Existing semantics and isolated real Worker tests
+        id: build
+        run: |
+          npm test
+          node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/worker-slice/*.test.ts
+          npx tsc --noEmit
+          npx vite build --config vite.worker-slice.config.ts
+      - name: Serve only isolated entry
+        run: |
+          python3 -m http.server 5192 --bind 127.0.0.1 --directory dist-worker-slice >/tmp/worker-slice-server.log 2>&1 &
+          python3 - <<'PYREADY'
+          import time,urllib.request
+          for _ in range(50):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:5192/worker-slice.html',timeout=1)
+                  break
+              except OSError: time.sleep(.1)
+          else: raise RuntimeError('Isolated entry unavailable')
+          PYREADY
+      - name: Actual worker small-scene functional check
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          QA_WORKER_SCENARIO: courtyard-smoke
+          GAME_URL: http://127.0.0.1:5192/worker-slice.html
+          QA_OUTPUT: artifacts/worker-slice-courtyard
+        run: node scripts/worker-slice-browser-check.mjs
+      - name: Actual city three-center fixed-cadence stress
+        if: "!cancelled() && steps.build.outcome == 'success'"
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          QA_WORKER_SCENARIO: city-three-stress
+          GAME_URL: http://127.0.0.1:5192/worker-slice.html
+          QA_OUTPUT: artifacts/worker-slice-city
+        run: node scripts/worker-slice-browser-check.mjs

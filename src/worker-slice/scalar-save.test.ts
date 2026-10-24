@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {scalarSaveInput} from './scalar-save.js';
+test('scalar save digest reads encoded schema9 change rows, not nonexistent expanded cells',()=>{const s={schemaVersion:9,mapId:'city',research:1400,round:{used:0},completedMaps:[],structural:{simulation:{changes:[[3,7,2,0],[1,0,9,3,8,9,10,0,0,0,1,'chunk']]}}};const input=JSON.parse(scalarSaveInput(JSON.stringify({snapshot:s})));assert.deepEqual(input.cells,[[1,0,9,3],[3,7,2,0]]);assert.equal(input.research,1400);});

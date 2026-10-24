@@ -1,3 +1,4 @@
+import {buildMaterialPatch} from '../material-slice/patch.js';
 import {createAuthorityRuntime} from './authority-runtime.js';
 import type {AuthorityCommand,AuthorityEnvelope,AuthorityMessage,AuthoritySummary} from './protocol.js';
 import {configureCompactSupportAssetLoader} from '../compact/support/index.js';
@@ -5,12 +6,13 @@ import {loadCompactSupportAsset} from '../compact/support/assets.js';
 import {createCompactSurfaceSource,type CompactSurfaceSource} from '../compact/surface-source.js';
 import type {StructuralCompactQueries} from '../structural/types.js';
 import {MeshCreditQueue,type MeshPatchHeader} from './mesh-credit-queue.js';
+import {buildGreedyChunk} from '../regional-slice/greedy-chunk-mesh.js';
 import {buildChunk} from './chunk-mesh.js';
 const scope=globalThis as unknown as {postMessage:(message:unknown,transfer?:Transferable[])=>void;onmessage:((event:MessageEvent)=>void)|null};
 configureCompactSupportAssetLoader(loadCompactSupportAsset);
 const now=()=>performance.timeOrigin+performance.now();
 let binding:StructuralCompactQueries|null=null,source:CompactSurfaceSource|null=null,queue:MeshCreditQueue|null=null,cursor:number|undefined,epoch=0,generation=0,lastSummary:AuthoritySummary|null=null,lastStats=0;
-let statsInFlight=false,statsSequence=0;let lastOversized='';let registered=new Set<string>();let buildCount=0,buildMs=0,maxBuildMs=0;const size=32;
+let meshMode:'baseline'|'greedy'|'material'='baseline';let statsInFlight=false,statsSequence=0;let lastOversized='';let registered=new Set<string>();let buildCount=0,buildMs=0,maxBuildMs=0;const size=32;
 function committed(next:StructuralCompactQueries,_events:unknown,summary:AuthoritySummary){
  lastSummary=summary;const env:AuthorityEnvelope={worldId:summary.worldId,epoch:summary.epoch,sequence:summary.sequence,mapRecipeHash:summary.mapRecipeHash};
  if(binding!==next||epoch!==summary.epoch||generation!==next.source.generation){
@@ -27,9 +29,9 @@ function committed(next:StructuralCompactQueries,_events:unknown,summary:Authori
 function emit(message:AuthorityMessage,transfer?:Transferable[]){if(message.kind==='summary')lastSummary=message.summary;scope.postMessage(message,transfer);}
 const runtime=createAuthorityRuntime({now,emit,onCommitted:committed});
 function meshPump(){if(!queue||!source)return;const start=now();let count=0;
- while(count<4&&now()-start<4){const out=queue.takeNext(key=>{const at=now(),result=buildChunk(source!,key,size),ms=now()-at;buildCount++;buildMs+=ms;maxBuildMs=Math.max(maxBuildMs,ms);return result;},now());if(out.status==='patch'){scope.postMessage({kind:'mesh-patch',...out.patch,at:now()},out.transfer);count++;}else{if(out.status==='oversized'){const key=`${epoch}:${out.key}:${out.bindingRevision}`;if(key!==lastOversized){lastOversized=key;scope.postMessage({kind:'mesh-fault',reason:'oversized-chunk',...out});}}break;}}
- if(!statsInFlight&&now()-lastStats>100){lastStats=now();statsInFlight=true;statsSequence++;scope.postMessage({kind:'mesh-stats',epoch,statsSequence,at:now(),queue:queue.diagnostics(now()),buildCount,buildMs,maxBuildMs,authority:lastSummary?.authorityRevision??0,bindingRevision:lastSummary?.bindingRevision??0});}
+ while(count<4&&now()-start<4){const out=queue.takeNext(key=>{const at=now(),result=(meshMode==='material'?buildMaterialPatch({...source!,materialOf:id=>binding!.source.materialOf(id)},key,size):(meshMode==='greedy'?buildGreedyChunk:buildChunk)(source!,key,size)),ms=now()-at;buildCount++;buildMs+=ms;maxBuildMs=Math.max(maxBuildMs,ms);return result;},now());if(out.status==='patch'){scope.postMessage({kind:'mesh-patch',...out.patch,at:now()},out.transfer);count++;}else{if(out.status==='oversized'){const key=`${epoch}:${out.key}:${out.bindingRevision}`;if(key!==lastOversized){lastOversized=key;scope.postMessage({kind:'mesh-fault',reason:'oversized-chunk',...out});}}break;}}
+ if(!statsInFlight&&now()-lastStats>100){lastStats=now();statsInFlight=true;statsSequence++;scope.postMessage({kind:'mesh-stats',meshMode,epoch,statsSequence,at:now(),queue:queue.diagnostics(now()),buildCount,buildMs,maxBuildMs,authority:lastSummary?.authorityRevision??0,bindingRevision:lastSummary?.bindingRevision??0});}
 }
 const timer=setInterval(()=>{try{runtime.pump(now());meshPump();}catch(error){scope.postMessage({kind:'fatal',message:String(error)});clearInterval(timer);}},8);
-scope.onmessage=event=>{const message=event.data;if(message.kind==='mesh-stats-ack'){if(message.statsSequence===statsSequence)statsInFlight=false;return;}if(message.kind==='mesh-ack'){queue?.acknowledge(message.header as MeshPatchHeader);return;}
+scope.onmessage=event=>{const message=event.data;if(message.kind==='mesh-config'){if(binding)throw new Error('Mesh mode is immutable after initialization');meshMode=message.mode==='material'?'material':message.mode==='greedy'?'greedy':'baseline';return;}if(message.kind==='mesh-stats-ack'){if(message.statsSequence===statsSequence)statsInFlight=false;return;}if(message.kind==='mesh-ack'){queue?.acknowledge(message.header as MeshPatchHeader);return;}
  void runtime.handle(message as AuthorityCommand).then(ack=>{if(ack.status==='accepted'&&message.kind==='dispose'){queue?.dispose();queue=null;source=binding=null;cursor=undefined;scope.postMessage({kind:'mesh-disposed',epoch:ack.epoch});}}).catch(error=>scope.postMessage({kind:'fatal',message:String(error)}));};

@@ -76,3 +76,20 @@ test('invalid builder output does not reserve credits or lose dirty work',()=>{
  assert.throws(()=>queue.takeNext(()=>mesh('1,0,0')));assert.throws(()=>queue.takeNext(key=>({...mesh(key),normal:new Int8Array(1)})));
  assert.equal(queue.diagnostics().inFlightBytes,0);assert.equal(queue.diagnostics().pendingDirty,1);assert.equal(next(queue).patch.header.chunkRevision,1);
 });
+
+test('indexed greedy quads reserve and transfer the index bytes with owned vertex buffers',()=>{
+ const q=new MeshCreditQueue({envelope:envelope(),chunkKeys:['0,0,0'],maxInFlightBytes:132});q.markDirty('0,0,0',1,0);
+ const indexed={...mesh('0,0,0'),position:new Float32Array(12),normal:new Int8Array(12),color:new Float32Array(12),index:new Uint32Array([0,1,2,2,1,3]),stats:{queriedCells:27,temporaryBytes:243,outputBytes:132}};
+ const out=next(q,()=>indexed);assert.equal(out.transfer.length,4);assert.equal(q.diagnostics().inFlightBytes,132);const receiver=structuredClone(out.patch,{transfer:out.transfer});assert.equal(indexed.index.byteLength,0);assert.equal(receiver.mesh.index!.length,6);assert.equal(q.acknowledge(out.patch.header),132);
+});
+test('indexed replacement rejects out-of-range triangle indices without reserving credit',()=>{
+ const q=new MeshCreditQueue({envelope:envelope(),chunkKeys:['0,0,0']});q.markDirty('0,0,0',1,0);
+ const indexed={...mesh('0,0,0'),position:new Float32Array(12),normal:new Int8Array(12),color:new Float32Array(12),index:new Uint32Array([0,1,2,2,1,8]),stats:{queriedCells:27,temporaryBytes:243,outputBytes:132}};
+ assert.throws(()=>q.takeNext(()=>indexed,0),/index/i);assert.equal(q.diagnostics().inFlightBytes,0);
+});
+
+test('material textures consume byte credit and transfer ownership with geometry',()=>{
+ const make=(key:string)=>{const m=mesh(key);const cellColors={key,origin:[0,0,0],dimensions:[1,1,1],paletteIndex:new Uint8Array([1]),palette:new Float32Array(8),paletteWidth:2,paletteHeight:1,shade:new Float32Array([.8]),stats:{queriedCells:1,occupiedCells:1,airTexels:0,indexBytes:1,paletteBytes:32,shadeBytes:4,totalTextureBytes:37}};return {...m,cellColors,stats:{...m.stats,outputBytes:199}} as unknown as ChunkMesh;};
+ const q=new MeshCreditQueue({envelope:envelope(),chunkKeys:['0,0,0'],maxInFlightBytes:199});q.markDirty('0,0,0',1);const result=next(q,make);assert.equal(result.transfer.length,6);assert.equal(q.diagnostics().inFlightBytes,199);const received=structuredClone(result.patch,{transfer:result.transfer});assert.equal((result.patch.mesh as any).cellColors.palette.byteLength,0);assert.equal((received.mesh as any).cellColors.palette.byteLength,32);assert.equal(q.acknowledge(received.header),199);
+ const tooSmall=new MeshCreditQueue({envelope:envelope(),chunkKeys:['0,0,0'],maxInFlightBytes:198});tooSmall.markDirty('0,0,0',1);assert.equal(tooSmall.takeNext(make).status,'oversized');
+});

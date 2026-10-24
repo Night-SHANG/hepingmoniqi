@@ -1,0 +1,2 @@
+/** Diagnostic scalar comparison only: intentionally excludes pose, clocks and event history. */
+export function scalarSaveInput(saveText:string){const s=JSON.parse(saveText).snapshot;if(s?.schemaVersion!==9||!Array.isArray(s.structural?.simulation?.changes))throw new Error('Expected encoded settled schema9 save');return JSON.stringify({mapId:s.mapId,research:s.research,round:s.round,completedMaps:s.completedMaps,cells:s.structural.simulation.changes.map((row:unknown[])=>row.slice(0,4)).sort((a:number[],b:number[])=>a[0]-b[0])});}

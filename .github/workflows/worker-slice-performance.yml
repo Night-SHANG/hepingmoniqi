@@ -1,9 +1,12 @@
-name: Isolated authority worker verification
+name: Isolated material mesh A/B verification
 on:
   push:
     branches: [perf/compact-city-ab]
     paths:
       - 'src/worker-slice/**'
+      - 'src/material-slice/**'
+      - 'src/regional-slice/**'
+      - 'scripts/material-*'
       - 'worker-slice.html'
       - 'vite.worker-slice.config.ts'
       - 'scripts/worker-slice*'
@@ -25,7 +28,7 @@ jobs:
         id: build
         run: |
           npm test
-          node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/worker-slice/*.test.ts
+          node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/worker-slice/*.test.ts src/regional-slice/*.test.ts src/material-slice/*.test.ts
           npx tsc --noEmit
           npx vite build --config vite.worker-slice.config.ts
       - name: Serve only isolated entry
@@ -40,18 +43,10 @@ jobs:
               except OSError: time.sleep(.1)
           else: raise RuntimeError('Isolated entry unavailable')
           PYREADY
-      - name: Actual worker small-scene functional check
+      - name: Same-city baseline and cell-color material A/B
         env:
           QA_BROWSER_CHANNEL: chrome
-          QA_WORKER_SCENARIO: courtyard-smoke
+          QA_MATERIAL_BROWSER_AUTHORIZED: 'true'
           GAME_URL: http://127.0.0.1:5192/worker-slice.html
-          QA_OUTPUT: artifacts/worker-slice-courtyard
-        run: node scripts/worker-slice-browser-check.mjs
-      - name: Actual city three-center fixed-cadence stress
-        if: "!cancelled() && steps.build.outcome == 'success'"
-        env:
-          QA_BROWSER_CHANNEL: chrome
-          QA_WORKER_SCENARIO: city-three-stress
-          GAME_URL: http://127.0.0.1:5192/worker-slice.html
-          QA_OUTPUT: artifacts/worker-slice-city
-        run: node scripts/worker-slice-browser-check.mjs
+          QA_OUTPUT: artifacts/material-browser
+        run: node scripts/material-browser-check.mjs

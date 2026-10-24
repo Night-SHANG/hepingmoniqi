@@ -42,8 +42,17 @@ function validRevision(value:number){return Number.isSafeInteger(value)&&value>=
 function validHeader(header:MeshPatchHeader){return validEnvelope(header)&&typeof header.key==='string'&&validRevision(header.bindingRevision)&&Number.isSafeInteger(header.chunkRevision)&&header.chunkRevision>0;}
 function meshBytes(mesh:ChunkMesh,key:string):number {
  if(mesh.key!==key||!Number.isSafeInteger(mesh.faces)||mesh.faces<0||!(mesh.position instanceof Float32Array)||!(mesh.normal instanceof Int8Array)||!(mesh.color instanceof Float32Array))throw new TypeError('Invalid complete mesh replacement');
- const arrays=[mesh.position,mesh.normal,mesh.color],expected=mesh.faces*18;
- if(arrays.some(a=>a.length!==expected||!(a.buffer instanceof ArrayBuffer)||a.byteOffset!==0||a.byteLength!==a.buffer.byteLength)||new Set(arrays.map(a=>a.buffer)).size!==3)throw new TypeError('Mesh outputs must own separate complete buffers');
+ const vertices=[mesh.position,mesh.normal,mesh.color],expected=mesh.faces*(mesh.index?12:18);
+ if(vertices.some(a=>a.length!==expected))throw new TypeError('Invalid mesh vertex lengths');
+ if(mesh.index&&(!(mesh.index instanceof Uint32Array)||mesh.index.length!==mesh.faces*6||mesh.index.some(i=>i>=expected/3)))throw new TypeError('Invalid mesh index');
+ const arrays:Array<Float32Array<ArrayBuffer>|Int8Array<ArrayBuffer>|Uint32Array<ArrayBuffer>|Uint8Array<ArrayBuffer>|Uint16Array<ArrayBuffer>>=mesh.index?[...vertices,mesh.index]:vertices;
+ if(mesh.cellColors){
+  const d=mesh.cellColors,n=d.dimensions.reduce((a,b)=>a*b,1);
+  if(d.key!==key||mesh.faces===0||!d.dimensions.every(v=>Number.isSafeInteger(v)&&v>0&&v<=64)||!d.origin.every(Number.isSafeInteger)||!(d.paletteIndex instanceof Uint8Array||d.paletteIndex instanceof Uint16Array)||d.paletteIndex.length!==n||!(d.palette instanceof Float32Array)||!Number.isSafeInteger(d.paletteWidth)||d.paletteWidth<1||!Number.isSafeInteger(d.paletteHeight)||d.paletteHeight<1||d.palette.length!==d.paletteWidth*d.paletteHeight*4||(d.shade!==null&&(!(d.shade instanceof Float32Array)||d.shade.length!==n)))throw new TypeError('Invalid cell-color texture payload');
+  if(d.stats.totalTextureBytes!==d.paletteIndex.byteLength+d.palette.byteLength+(d.shade?.byteLength??0))throw new TypeError('Invalid texture byte count');
+  arrays.push(d.paletteIndex,d.palette);if(d.shade)arrays.push(d.shade);
+ }
+ if(arrays.some(a=>!(a.buffer instanceof ArrayBuffer)||a.byteOffset!==0||a.byteLength!==a.buffer.byteLength)||new Set(arrays.map(a=>a.buffer)).size!==arrays.length)throw new TypeError('Mesh outputs must own separate complete buffers');
  const bytes=arrays.reduce((total,a)=>total+a.byteLength,0);
  if(mesh.stats.outputBytes!==bytes)throw new TypeError('Mesh output byte count does not match buffers');
  return bytes;
@@ -100,7 +109,7 @@ export class MeshCreditQueue {
    if(state.chunkRevision===Number.MAX_SAFE_INTEGER)throw new Error('Mesh chunk revision exhausted');
    const header:MeshPatchHeader={...this.envelope,key,chunkRevision:++state.chunkRevision,bindingRevision:dirty.bindingRevision};
    this.dirty.delete(key);this.flights.set(key,{header:{...header},bytes,since:now});this.bytes+=bytes;this.sentPatches++;
-   return {status:'patch',patch:{header,mesh},transfer:[mesh.position.buffer,mesh.normal.buffer,mesh.color.buffer]};
+   return {status:'patch',patch:{header,mesh},transfer:[mesh.position.buffer,mesh.normal.buffer,mesh.color.buffer,...(mesh.index?[mesh.index.buffer]:[]),...(mesh.cellColors?[mesh.cellColors.paletteIndex.buffer,mesh.cellColors.palette.buffer,...(mesh.cellColors.shade?[mesh.cellColors.shade.buffer]:[])]:[])]};
   }
   return {status:'blocked',pendingDirty:this.dirty.size,inFlightBytes:this.bytes,availableBytes:available};
  }

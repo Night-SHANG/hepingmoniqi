@@ -1,3 +1,4 @@
+import type {CellColorData} from '../material-slice/cell-colors';
 import {Color} from 'three';
 import type {CompactSurfaceSource,SurfaceBounds} from '../compact/surface-source';
 
@@ -7,6 +8,10 @@ export interface ChunkMesh {
  readonly normal:Int8Array<ArrayBuffer>;
  readonly color:Float32Array<ArrayBuffer>;
  readonly faces:number;
+ /** Optional indexed quads for isolated exact-greedy experiments. */
+ readonly index?:Uint32Array<ArrayBuffer>;
+ /** Isolated material experiment: all texture buffers share the mesh credit ledger. */
+ readonly cellColors?:CellColorData;
  /** Bounds of emitted vertices, not a solid occupancy/collision proxy. */
  readonly bounds:SurfaceBounds|null;
  readonly stats:{readonly queriedCells:number;readonly temporaryBytes:number;readonly outputBytes:number};

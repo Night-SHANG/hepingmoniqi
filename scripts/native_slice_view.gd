@@ -28,6 +28,13 @@ var _has_selection := false
 var _paused := false
 var _loading := false
 var _generation := 0
+var _startup_view_profile: Dictionary = {}
+func startup_view_metrics() -> Dictionary: return _startup_view_profile.duplicate(true)
+func _record_ready_draw(generation: int, started: int) -> void:
+ if generation != _generation or not is_inside_tree(): return
+ _startup_view_profile.ready_draw_ms=(Time.get_ticks_usec()-started)/1000.0
+ _startup_view_profile.process_to_ready_draw_ms=Time.get_ticks_usec()/1000.0
+ print("NATIVE_STARTUP_DRAW ",JSON.stringify(_startup_view_profile))
 var _hud_elapsed := 0.0
 var _status_label: Label
 var _selection_label: Label
@@ -269,6 +276,8 @@ func _start_session() -> void:
  _loading = true
  _generation += 1
  var generation := _generation
+ var started := Time.get_ticks_usec()
+ _startup_view_profile={"generation":generation,"entry_usec":started,"ready_draw_ms":null,"process_to_ready_draw_ms":null}
  _set_buttons_enabled(false)
  if not ResourceLoader.exists(SESSION_PATH):
   _loading = false
@@ -289,6 +298,10 @@ func _start_session() -> void:
  _loading = false
  _set_buttons_enabled(_session.is_ready)
  if _session.is_ready:
+  _startup_view_profile.session_ready_ms=(Time.get_ticks_usec()-started)/1000.0
+  _startup_view_profile.authority=_session.startup_metrics()
+  if DisplayServer.get_name() != "headless":
+   RenderingServer.frame_post_draw.connect(_record_ready_draw.bind(generation,started), CONNECT_ONE_SHOT)
   _message_label.text = "城市已就绪。先点选表面；放置炸药不会自动引爆。"
  else:
   _message_label.text = "城市未就绪，请查看状态中的实际错误。"

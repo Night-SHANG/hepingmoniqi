@@ -40,22 +40,45 @@ var _last_blast_ms=0.0
 var _cached_research=0.0
 var _viewer:VoxelViewer
 var _visuals={}
+var _startup_begin_usec=0
+var _startup_last_usec=0
+var _startup_profile={}
+func startup_metrics()->Dictionary: return _startup_profile.duplicate(true)
+func _startup_mark(stage:String):
+ var now=Time.get_ticks_usec()
+ _startup_profile.stages_ms[stage]=(now-_startup_last_usec)/1000.0
+ _startup_profile.total_ms=(now-_startup_begin_usec)/1000.0
+ _startup_profile.process_to_ready_ms=now/1000.0
+ _startup_last_usec=now
 func start():
  if _loading or is_ready: return
  _loading=true
+ _startup_begin_usec=Time.get_ticks_usec();_startup_last_usec=_startup_begin_usec
+ _startup_profile={"schema":"native-startup-profile/v1","stages_ms":{},"total_ms":0.0,"process_to_ready_ms":0.0}
  Engine.physics_ticks_per_second=120
  data=Loader.new().read_native("res://data")
+ _startup_mark("read_verify_decode")
  model=Model.new(data)
+ _startup_mark("regional_model")
  var generator=Generator.new()
  var manifest=JSON.parse_string(FileAccess.get_file_as_string("res://data/manifest.json"))
- var prepared=generator.initialize_from_bytes(data.cells,manifest)
+ var prepared:Dictionary
+ if "--native-startup-baseline" in OS.get_cmdline_user_args():
+  prepared=generator.initialize_from_bytes(data.cells,manifest)
+ else:
+  var block_metadata=JSON.parse_string(FileAccess.get_file_as_string("res://data/city-voxel-blocks.json"))
+  prepared=generator.initialize_from_prebuilt(FileAccess.get_file_as_bytes("res://data/city-voxel-blocks.bin"),block_metadata,manifest) if block_metadata is Dictionary else {"ok":false}
+ _startup_profile.voxel_source="prebuilt" if not "--native-startup-baseline" in OS.get_cmdline_user_args() else "baseline"
  if not prepared.ok:
   _failures.append("generator_initialization_failed");_loading=false;return
+ _startup_mark("voxel_prepare")
  statics=Static.new(get_world_3d().space)
  rubble=Rubble.new(get_world_3d().space,{"max_bodies":64,"max_shapes_per_group":32768,"max_total_shapes":32768,"max_contact_pairs":4096,"contacts_per_body":64})
  var initial={}
  for i in data.regions.size()/24: initial[i]=model.active_boxes(i)
+ _startup_mark("collision_prepare")
  statics.install(initial)
+ _startup_mark("collision_install")
  terrain=VoxelTerrain.new();terrain.position=Vector3(-.5,-.5,-.5)
  terrain.bounds=AABB(Vector3(-128,-32,-128),Vector3(256,96,256))
  terrain.max_view_distance=256;terrain.generate_collisions=false
@@ -66,13 +89,16 @@ func start():
  terrain.mesher=mesher;terrain.generator=generator;add_child(terrain)
  _viewer=VoxelViewer.new();_viewer.position=Vector3(0,16,0);_viewer.view_distance=256
  _viewer.requires_visuals=true;_viewer.requires_collisions=false;add_child(_viewer)
+ _startup_mark("terrain_attach")
  var begun=Time.get_ticks_usec()
  while not terrain.is_area_meshed(generator.cell_bounds):
   await get_tree().process_frame
   if not _loading: return
   if Time.get_ticks_usec()-begun>30000000:
    _failures.append("initial_mesh_timeout");release();return
+ _startup_mark("mesh_wait")
  is_ready=true;_loading=false
+ print("NATIVE_STARTUP_PROFILE ",JSON.stringify(_startup_profile))
  print("NATIVE_SESSION_READY cells=454913 buildings=36 hashes_verified=",data.metrics.hashes_verified," voxel_extension=",ClassDB.class_exists("VoxelTerrain")," backend=",get_world_3d().direct_space_state.get_class())
  city_ready.emit()
 func place_charge(position:Vector3)->bool:

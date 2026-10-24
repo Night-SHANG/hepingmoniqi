@@ -33,6 +33,12 @@ jobs:
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B
       - name: Import resources
         run: '"$GODOT" --headless --path . --editor --max-fps 60 --quit-after 120'
+      - name: Same-city baseline and prebuilt actual entry and reset timings
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd -- --native-startup-baseline
+          xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd
       - name: Actual software-rendered interaction and screenshots
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
@@ -55,6 +61,13 @@ jobs:
           New-Item -ItemType Directory -Force build/windows | Out-Null
           & $env:GODOT --headless --path . --export-release 'Windows Desktop' build/windows/nuclear-native-slice.exe
           if ($LASTEXITCODE -ne 0) { throw 'Export failed' }
+      - name: Actual Windows process entry and reset timings
+        shell: powershell
+        run: |
+          python tools/profile-startup-process.py -- "$env:GODOT" --headless --path . --script tests/qa-startup/run.gd -- --native-startup-baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline startup probe failed' }
+          python tools/profile-startup-process.py -- "$env:GODOT" --headless --path . --script tests/qa-startup/run.gd
+          if ($LASTEXITCODE -ne 0) { throw 'Prebuilt startup probe failed' }
       - name: Execute actual Windows package and extension
         shell: pwsh
         run: |

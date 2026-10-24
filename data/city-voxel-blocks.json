@@ -1,0 +1,29 @@
+{
+  "block_count": 438,
+  "block_record_bytes": 16396,
+  "block_size": 16,
+  "bounds": {
+    "maxX": 122,
+    "maxY": 35,
+    "maxZ": 102,
+    "minX": -122,
+    "minY": -8,
+    "minZ": -102
+  },
+  "cell_count": 454913,
+  "cell_order": "y-x-z",
+  "color_channel": "CHANNEL_COLOR",
+  "color_depth_bits": 32,
+  "color_encoding": "rgba8-u32-le",
+  "payload": {
+    "bytes": 7181448,
+    "name": "city-voxel-blocks.bin",
+    "sha256": "0251f8af21adfa04b2feb0c85135a16851fa939d3f9f387b61b3401cdc4acdba"
+  },
+  "schema": "godot-city-voxel-blocks/v1",
+  "source": {
+    "bytes": 15921955,
+    "name": "city-cells.bin",
+    "sha256": "da1492c3b63a7b60cc354c106852c2842f61d85d538340dc7a3eaf8b500ef5ff"
+  }
+}

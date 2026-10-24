@@ -237,6 +237,7 @@ async function startCity(cycle){
  await wait(`city-${cycle}-real-playing`,previous=>{const h=window.__heping,d=h.sceneDiagnostics();return h.screen==='playing'&&h.physicsReady&&d.lastRenderedMap==='city'&&d.renderCount>previous;},mark.baseline.renderCount);
  const firstFrame=await firstRenderAfter(mark,'city'),startup=await page.evaluate(()=>window.__heping.startupEvidence());
  await lifecycle(1);const state=await read(),identity=cityIdentity(state);assert.equal(state.pending,0);assert.equal(state.compact.storage.mutableStates,0);
+ assert.equal(state.scene.voxelRender.lastBindReused,true,'Pristine city preview must hand off existing geometry to the fresh authority');assert.equal(state.scene.voxelRender.lastRebuild.chunks,0,'Same-scene pristine handoff must not rebuild static chunks');
  const aim=await aimCell(-4649);assert.equal(aim.cell.role,'terrain');
  const timing=await finishTiming(mark,{endCondition:'actual city bound, rendered, real terrain ray picked; fire enabled',firstFrame,startup,identity,aimedCell:aim.cell.id});
  assert.equal(await page.locator('#fire').isEnabled(),true);

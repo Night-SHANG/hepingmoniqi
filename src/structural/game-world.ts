@@ -3,7 +3,8 @@ import {MAP_IDS,TOOLS,WEAPON_IDS,mapAvailable,mapTitle,capacityForResearch,toolA
 import {validateLoadout,validateToolSelection,validateHistoricalLoadout,requiresLoadoutReselection} from '../gameplay.js';
 import {createWorld} from '../domain.js';
 import {createLegacyGameFixture,gameCellVoxel,type GameFixture,type GameCell} from './game-fixtures.js';
-import {createCompactGameFixture,type CompactFixture} from '../compact/fixture.js';
+import type {CompactFixture} from '../compact/fixture.js';
+import {getManagedCompactGameFixture} from '../compact/managed-fixture.js';
 import {decodeGameSimulation,encodeGameSimulation,validateCompactStructuralSnapshot} from '../compact/snapshot.js';
 import {createStructuralSimulation,validateStructuralSnapshot} from './simulation.js';
 import type {StructuralPhysicsHost} from './physics-host.js';
@@ -72,7 +73,7 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
  let eventIds=new Set<string>(),lastRoot:string|undefined;
  function ensureFixture(){
   if(fixture)return;
-  fixture=createCompactGameFixture(mapId);totalTargets=fixture.objectiveCount;
+  fixture=getManagedCompactGameFixture(mapId);totalTargets=fixture.objectiveCount;
   changedVoxels.clear();diagnosticVoxels=undefined;lossById.clear();destroyed=objectiveDestroyed=0;revision++;
  }
  function pristineVoxel(id:number):Voxel|null {const base=fixture!.original(id);return base?freezeVoxel(gameCellVoxel(base as GameCell)):null;}
@@ -170,7 +171,7 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   // for a new round; never fill new soil through saved moving rubble.
   const geometryUpgrade=(input.mapId==='city'&&input.totalCount===184681)||(input.mapId==='neighborhood'&&input.totalCount===50016);
   const legacyFixture=geometryUpgrade?createLegacyGameFixture(input.mapId!):undefined;
-  const targetFixture=geometryUpgrade?undefined:createCompactGameFixture(input.mapId!);
+  const targetFixture=geometryUpgrade?undefined:getManagedCompactGameFixture(input.mapId!);
   const targetCount=legacyFixture?legacyFixture.cells.reduce((n,c)=>n+(c.objective?1:0),0):targetFixture!.objectiveCount;
   const totalCount=legacyFixture?.cells.length??targetFixture!.count,targetId=legacyFixture?.id??targetFixture!.id;
   if(s.fixtureId!==targetId||input.totalCount!==totalCount||input.destroyedCount>totalCount||s.rewardedLoss>targetCount||s.creditedResearch!==Math.min(200,Math.ceil(s.rewardedLoss*200/targetCount)))return false;

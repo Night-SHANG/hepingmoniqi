@@ -45,3 +45,11 @@ or rubble). Graph presence is not rebuilt from a live-neighbor snapshot.
 oracle, including removed counts. New native tests replay those cuts against the
 actual integrated compact fixture. They are correctness evidence only, not new
 browser timing, frame rate, Rapier, GPU, or full-game performance evidence.
+
+`index.ts` additionally keeps at most two validated immutable templates keyed by
+exact managed-fixture identity. Cached tokens remain source-bound and single-use;
+each graph receives independent tables and store-specific departure replay.
+Explicit artifact inputs and unbranded fixtures still undergo full validation.
+Loader replacement or cleanup invalidates the cache namespace; rejected and
+evicted pending entries cannot repopulate it. This is local lifecycle reuse, not
+a relaxation of the original artifact validation.

@@ -86,30 +86,31 @@ test('compact reward exclusion survives sparse suspend, restore and secondary wo
  }finally{w.suspend();}
 });
 
-test('pose-only physics steps keep gameplay revision and metadata allocation stable while reads retain current poses',async()=>{
- const w=world();let restoreOriginal:(()=>void)|undefined;
+test('pose-only physics steps keep gameplay revision and sparse authority stable while reads retain current poses',async()=>{
+ const w=world();
  try{
   await w.loadMap('tower',true);const binding=port(w);
   w.damage({id:'falling',epoch:w.epoch,target:{x:0,y:10,z:0},weapon:'shock',power:1});
   const moving=binding.movingViews()[0];assert.ok(moving);const initial=w.getVoxel(moving.id)!;
-  const original=binding.fixture.original.bind(binding.fixture);let metadataReads=0;
-  binding.fixture.original=id=>{metadataReads++;return original(id);};restoreOriginal=()=>{binding.fixture.original=original;};
+  // Managed immutable sources deliberately cannot be monkeypatched. Verify the
+  // public allocation boundary and gameplay ledger without altering provenance.
+  assert.ok(Object.isFrozen(binding.fixture));
   let pureSteps=0;
   for(let i=0;i<12;i++){
-   const cursor=binding.revision,revision=w.revision;metadataReads=0;w.step(1/120);
+   const cursor=binding.revision,revision=w.revision,records=binding.diagnostics().mutableStates;w.step(1/120);
    const edits=binding.changesSince(cursor).edits;
    if(edits.length&&edits.every(edit=>!edit.appearanceChanged)){
     pureSteps++;assert.equal(w.revision,revision,'Pose-only motion must not rebuild gameplay voxel caches');
-    assert.equal(metadataReads,0,'Pose-only motion must not compose immutable source metadata for gameplay');
+    assert.equal(binding.diagnostics().mutableStates,records,'Pose-only motion must not allocate additional authority records');
    }
   }
-  assert.ok(pureSteps>=3);restoreOriginal();restoreOriginal=undefined;
+  assert.ok(pureSteps>=3);
   const current=w.getVoxel(moving.id)!;assert.notDeepEqual(current.position,initial.position);
   assert.deepEqual(current.position,binding.cell(moving.id)!.position);assert.deepEqual(current.rotation,binding.cell(moving.id)!.rotation);
   const diagnostic=w.getVoxels().find(v=>v.id===moving.id)!;assert.deepEqual(diagnostic,current);
   const saved=w.getSnapshot();w.suspend();assert.deepEqual(w.getVoxel(moving.id),current);assert.deepEqual(w.getVoxels().find(v=>v.id===moving.id),current);
   await w.activate();assert.deepEqual(w.getVoxel(moving.id),current);assert.ok(await w.restore(saved));assert.deepEqual(w.getVoxel(moving.id),current);
- }finally{restoreOriginal?.();w.suspend();}
+ }finally{w.suspend();}
 });
 
 test('damage returns a removed moving voxel at its current pre-hit pose without a full-world transaction snapshot',async()=>{

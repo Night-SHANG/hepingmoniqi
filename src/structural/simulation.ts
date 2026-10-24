@@ -3,6 +3,7 @@ import type { CollisionRecord, ForceRecord, PhysicsParticipant, StructuralPhysic
 import { chunkKey, packStaticCells, type PackedBox } from './static-packing.js';
 import { createSupportGraph } from './support.js';
 import { CompactAuthorityStore } from '../compact/store.js';
+import { createCompactQuerySource } from '../compact/surface-source.js';
 import { CompactStaticColliders } from '../compact/static-colliders.js';
 import { installCompactQueryRefresh } from '../compact/query-refresh.js';
 import { validateCompactStructuralSnapshot } from '../compact/snapshot.js';
@@ -387,7 +388,7 @@ export async function createStructuralSimulation(fixture:SceneFixture|CompactFix
  };
  const compact:StructuralCompactQueries|undefined=store?Object.freeze({
   fixture:compactFixture!,
-  source:Object.freeze({fixture:compactFixture!,get generation(){return epoch;},staticIdAt:(x:number,y:number,z:number)=>store.staticIdAt(x,y,z),colorOf:(id:number)=>store.colorOf(id),hpOf:(id:number)=>store.hpOf(id),maxHpOf:(id:number)=>store.maxHpOf(id),materialOf:(id:number)=>store.materialOf(id)}),
+  source:createCompactQuerySource(store,()=>epoch),
   get revision(){sync();return store.revision;},
   changesSince(sinceRevision?:number){sync();return store.changesSince(sinceRevision);},
   cell(id:number){const c=readCell(id);if(c)syncCell(c);return c?immutableView(readCell(id)!):null;},

@@ -130,9 +130,8 @@ try{
   const start=performance.now();
   const world=createStructuralGameWorld({free:true,compactSupportFactory:async store=>{
    beforeSupport=performance.now();fixture=store.fixture;
-   // forEachChunk is the constructor's complete chunk loop, including pack/add.
-   const each=fixture.forEachChunk;
-   fixture.forEachChunk=function(...args:any[]){return time('colliders.constructorChunkLoop',()=>each.apply(this,args));};
+   // Managed fixtures are deliberately frozen. Collider pack/add and native
+   // createCollider prototype timers remain separate; do not patch the source.
    const support=await timeAsync('support.productionTotal',()=>createCompactSupport(store));
    afterSupport=performance.now();return support;
   }});

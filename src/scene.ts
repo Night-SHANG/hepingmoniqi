@@ -151,11 +151,21 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     if(!binding){compactRenderer?.dispose();compactRenderer=null;compactBinding=null;compactCursor=compactGeneration=undefined;renderRequested=true;shadowRefresh.invalidate();return;}
     const different=compactBinding!==binding||compactGeneration!==binding.source.generation;
     if(!different&&compactCursor===binding.revision)return;
-    if(different){voxelRenderer.set([]);live=[];compactRenderer??=createCompactSurfaceRenderer(scene,box,voxelMat,{chunkSize:32});compactRenderer.bind(createCompactSurfaceSource(binding.source));compactBinding=binding;compactGeneration=binding.source.generation;compactCursor=binding.revision;renderRequested=true;shadowRefresh.invalidate();}
-    const prior=compactRenderer!.getDiagnostics(),batch=binding.changesSince(compactCursor);
-    if(batch.reset)compactRenderer!.bind(createCompactSurfaceSource(binding.source));else compactRenderer!.applyEdits(batch.edits);
-    compactRenderer!.flush();compactRenderer!.setMoving(binding.movingViews());compactCursor=batch.revision;
-    const invalidation=compactSurfaceInvalidation(prior,compactRenderer!.getDiagnostics(),batch.reset);
+    if(different){voxelRenderer.set([]);live=[];compactRenderer??=createCompactSurfaceRenderer(scene,box,voxelMat,{chunkSize:32});}
+    const prior=compactRenderer!.getDiagnostics();let rebound=different;
+    if(different){
+      compactRenderer!.bind(createCompactSurfaceSource(binding.source));
+      // Mesh reuse is not authority reuse: cursor, epoch and hit queries must all
+      // follow the replacement binding, including a pristine preview handoff.
+      compactBinding=binding;compactGeneration=binding.source.generation;compactCursor=binding.revision;
+    }else{
+      const batch=binding.changesSince(compactCursor);rebound=batch.reset;
+      if(batch.reset)compactRenderer!.bind(createCompactSurfaceSource(binding.source));
+      else{compactRenderer!.applyEdits(batch.edits);compactRenderer!.flush();}
+      compactCursor=batch.revision;
+    }
+    compactRenderer!.setMoving(binding.movingViews());
+    const current=compactRenderer!.getDiagnostics(),invalidation=compactSurfaceInvalidation(prior,current,rebound&&!current.lastBindReused);
     if(invalidation.render)renderRequested=true;if(invalidation.shadows)shadowRefresh.invalidate();
   }
   // Only physics supplies projectile transforms. This renderer never detonates or

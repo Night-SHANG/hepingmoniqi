@@ -47,3 +47,19 @@ destruction was roughly 30–34 MB; separate backing-storage, WASM, and GPU cost
 must not be conflated with that number. Subsequent changes reduce repeated
 validation work and unnecessary idle render submissions without changing the
 world or weakening validators. Their browser performance verdict is pending.
+
+## Bounded immutable reuse
+
+`managed-fixture.ts` keeps at most two genuinely frozen, closure-backed fixture
+facades. Fresh/custom fixture construction remains available and uncached.
+Support reuse has its own two-entry bound and uses exact branded identity,
+fully validated source-bound tokens and fresh per-store mutable tables. Explicit
+artifact input always validates; loader changes invalidate the namespace.
+No live graph, authority store or physics world is shared.
+
+A renderer may retain only its currently pristine geometry when handing it to
+the exact same managed fixture with a privately verified empty authority store.
+It always rebinds ray queries and the epoch. Damage, writable-but-unpublished
+state, moving pieces, different sources and dirty resets force normal rebuilds.
+A measured native city factory sample was 995 ms cold and 226 ms warm; browser
+first-render and gameplay gates remain separate evidence.

@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Verify disk and official dependencies
         run: |
           df -h .
@@ -25,23 +27,25 @@ jobs:
           sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri mesa-utils
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B
       - name: Import resources
-        run: '"$GODOT" --headless --path . --editor --import'
+        run: '"$GODOT" --headless --path . --editor --max-fps 60 --quit-after 120'
       - name: Actual software-rendered interaction and screenshots
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        run: xvfb-run -a -s '-screen 0 1280x800x24' "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-visual/run.gd
+        run: timeout 180s xvfb-run -a -s '-screen 0 1280x800x24' "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-visual/run.gd
   windows-start:
     if: ${{ github.event.repository.private == false }}
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Verify official dependencies
         run: python tools/ci-bootstrap.py
       - name: Import and export Windows release
         shell: pwsh
         run: |
-          & $env:GODOT --headless --path . --editor --import
+          & $env:GODOT --headless --path . --editor --max-fps 60 --quit-after 120
           if ($LASTEXITCODE -ne 0) { throw 'Import failed' }
           New-Item -ItemType Directory -Force build/windows | Out-Null
           & $env:GODOT --headless --path . --export-release 'Windows Desktop' build/windows/nuclear-native-slice.exe

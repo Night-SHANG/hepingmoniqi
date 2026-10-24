@@ -19,16 +19,41 @@ def fixture():
     for name in ("city", "blast", "rubble"):
         record = {"name": name, "width": 960, "height": 600,
                   "jpeg_bytes": len(jpeg), "sha256": hashlib.sha256(jpeg).hexdigest(),
-                  "frame_post_draw": True, "engine_frame": 10}
+                  "frame_post_draw": True, "engine_frame": 10,
+                  "stage": {"city": "city", "blast": "core", "rubble": "smoke_rubble"}[name],
+                  "paused": name != "city", "blast_count": 0 if name == "city" else 1,
+                  "effects": [] if name == "city" else [
+                      {"age": 0.25 if name == "blast" else 1.8, "position": [49.0, 3.0, 41.5]}]}
         records.append(record)
         lines.extend(["NATIVE_VISUAL_CAPTURE " + json.dumps(record),
                       f"NATIVE_VISUAL_JPEG {name} 0/1 {chunks}",
                       "NATIVE_VISUAL_CAPTURE_END " + name])
-    report = {"schema": "native-visual-input-qa/v1", "mode": "graphical", "pass": True,
+    report = {"schema": "native-visual-input-qa/v2", "mode": "graphical", "pass": True,
               "gpu_frame_verified": True, "failures": [], "captures": records,
               "direct_gameplay_calls": False}
     lines.append("NATIVE_VISUAL_RESULT " + json.dumps(report))
     return "\n".join(lines), jpeg
+
+
+def mutate_capture(text, name, mutate):
+    """Mutate capture metadata and report together, without a mismatch shortcut."""
+    lines = []
+    for line in text.splitlines():
+        if line.startswith("NATIVE_VISUAL_CAPTURE "):
+            prefix, payload = line.split(" ", 1)
+            row = json.loads(payload)
+            if row["name"] == name:
+                mutate(row)
+            line = prefix + " " + json.dumps(row)
+        elif line.startswith("NATIVE_VISUAL_RESULT "):
+            prefix, payload = line.split(" ", 1)
+            report = json.loads(payload)
+            for row in report["captures"]:
+                if row["name"] == name:
+                    mutate(row)
+            line = prefix + " " + json.dumps(report)
+        lines.append(line)
+    return "\n".join(lines)
 
 
 class DecoderTests(unittest.TestCase):
@@ -87,6 +112,38 @@ class DecoderTests(unittest.TestCase):
         text, _ = fixture()
         with self.assertRaisesRegex(ValueError, "result"):
             DECODER.parse_log(text + "\n" + text.splitlines()[-1])
+
+    def test_missing_stage_evidence_rejected(self):
+        text, _ = fixture()
+        for field in ("stage", "effects", "paused", "blast_count"):
+            with self.subTest(field=field):
+                broken = mutate_capture(text, "blast", lambda row: row.pop(field))
+                with self.assertRaisesRegex(ValueError, "stage"):
+                    DECODER.parse_log(broken)
+
+    def test_capture_age_must_match_named_stage(self):
+        text, _ = fixture()
+        for name, age in (("blast", 0.0), ("blast", 0.8), ("rubble", 0.3),
+                          ("rubble", 5.5), ("blast", float("nan")),
+                          ("rubble", float("inf"))):
+            with self.subTest(name=name, age=age):
+                broken = mutate_capture(text, name, lambda row: row["effects"][0].update(age=age))
+                with self.assertRaisesRegex(ValueError, "stage"):
+                    DECODER.parse_log(broken)
+
+    def test_capture_must_be_frozen_at_actual_effect_stage(self):
+        text, _ = fixture()
+        for change in ({"paused": False}, {"effects": []}, {"blast_count": 2}, {"stage": "smoke_rubble"}):
+            with self.subTest(change=change):
+                broken = mutate_capture(text, "blast", lambda row: row.update(change))
+                with self.assertRaisesRegex(ValueError, "stage"):
+                    DECODER.parse_log(broken)
+
+    def test_core_and_smoke_must_show_same_effect_origin(self):
+        text, _ = fixture()
+        broken = mutate_capture(text, "rubble", lambda row: row["effects"][0].update(position=[0, 0, 0]))
+        with self.assertRaisesRegex(ValueError, "origin"):
+            DECODER.parse_log(broken)
 
 
 if __name__ == "__main__":

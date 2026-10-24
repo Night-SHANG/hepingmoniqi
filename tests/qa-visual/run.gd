@@ -8,6 +8,7 @@ const READY_TIMEOUT_MS := 45000
 const FRAME_TIMEOUT_MS := 10000
 const MAX_JPEG_BYTES := 81920
 const JPEG_CHUNK_CHARS := 4096
+const HUD_CLEARANCE_PIXELS := 128.0
 
 var view: Node3D
 var session: Node3D
@@ -67,19 +68,24 @@ func _run() -> void:
  if not await _capture("city"):
   _finish(); return
 
- # This real city surface is visible from the default camera. Projection only
- # chooses the pointer coordinates; the production input path owns ray picking.
+ # Aim into the right side of the real city, away from the HUD. Projection only
+ # chooses pointer coordinates; the production ray may hit a nearer facade.
  var camera := view.get_node("Camera3D") as Camera3D
- var pointer := camera.unproject_position(Vector3(-48, 3, 42.5))
+ var pointer := camera.unproject_position(Vector3(49, 3, 41.5))
  var panel := view.get_node("VerificationControls/ControlPanel") as Control
  if not _check("target_on_screen_outside_hud", root.get_visible_rect().has_point(pointer) and
-  not panel.get_global_rect().has_point(pointer), {"pointer": str(pointer), "hud": str(panel.get_global_rect())}):
+  not panel.get_global_rect().grow(HUD_CLEARANCE_PIXELS).has_point(pointer), {"pointer": str(pointer), "hud": str(panel.get_global_rect()), "clearance_pixels": HUD_CLEARANCE_PIXELS}):
   _finish(); return
  await _click(pointer)
  await _frames(3)
  if not _check("mouse_world_pick_hits_real_surface", bool(view.get("_has_selection")) and
   (view.get_node("SelectionMarker") as MeshInstance3D).visible,
   {"selected": str(view.get("_selected")), "label": view.get("_selection_label").text}):
+  _finish(); return
+ var selected: Vector3 = view.get("_selected")
+ if not _check("actual_pick_outside_hud_with_margin", not camera.is_position_behind(selected) and
+  not panel.get_global_rect().grow(HUD_CLEARANCE_PIXELS).has_point(camera.unproject_position(selected)),
+  {"selected": str(selected), "pointer": str(camera.unproject_position(selected))}):
   _finish(); return
  if not await _click_button("[1]"):
   _finish(); return
@@ -117,19 +123,31 @@ func _run() -> void:
   _finish(); return
  _check("manual_blast_changes_real_authority", session.status().research > baseline.research and
   not session.effects().is_empty(), session.status())
- await _frames(2)
+ # Freeze the actual production effect clock through the real P input. Render
+ # readback and log encoding must not silently turn the core shot into old smoke.
+ if not await _freeze_effect_stage("core", 0.25, 0.15, 0.45):
+  _finish(); return
+ var blast_origin: Vector3 = session.effects()[0].position
+ if not _check("actual_blast_outside_hud_with_margin", root.get_visible_rect().has_point(camera.unproject_position(blast_origin)) and
+  not panel.get_global_rect().grow(HUD_CLEARANCE_PIXELS).has_point(camera.unproject_position(blast_origin)),
+  {"position": str(blast_origin), "pointer": str(camera.unproject_position(blast_origin))}):
+  _finish(); return
  _check("blast_visible_instances_exist", view.get("_fire_multimesh").instance_count > 0 and
   view.get("_dust_multimesh").instance_count > 0)
  _snapshot("manual_blast")
  if not await _capture("blast"):
   _finish(); return
 
- # Let native Jolt advance. Do not replace transforms, damage, or authority state.
+ # Resume actual native Jolt, then freeze genuine later smoke and debris.
+ # Neither the authority clock nor effect age/position is ever written by QA.
  var after_blast_time: float = session.status().sim_time
- var rubble_deadline := Time.get_ticks_msec() + 25000
- while session.status().sim_time < after_blast_time + 1.25 and Time.get_ticks_msec() < rubble_deadline:
-  await process_frame
+ await _key(KEY_P)
+ _check("resume_after_core_capture", not paused and not bool(view.get("_paused")))
+ if not await _freeze_effect_stage("smoke_rubble", 1.8, 1.5, 2.5):
+  _finish(); return
  _check("simulation_advances_after_blast", session.status().sim_time >= after_blast_time + 1.25)
+ _check("smoke_stage_has_dust_without_core", view.get("_fire_multimesh").instance_count == 0 and
+  view.get("_dust_multimesh").instance_count > 0)
  var rubble: Array = session.rubble_views()
  _check("actual_rubble_readback_nonempty", not rubble.is_empty(), {"groups": rubble.size()})
  _check("rubble_render_nodes_match_authority", view.get("_rubble_nodes").size() == rubble.size())
@@ -145,6 +163,8 @@ func _run() -> void:
  if not await _capture("rubble"):
   _finish(); return
  _check("no_runtime_session_failures", session.status().failures.is_empty(), session.status().failures)
+ await _key(KEY_P)
+ _check("resume_after_smoke_capture", not paused and not bool(view.get("_paused")))
 
  # Reset while paused is an interruption case: the reset button must release
  # old server resources, unpause, replace the session, and restore initial state.
@@ -269,10 +289,42 @@ func _wait_wall(milliseconds: int) -> void:
  var deadline := Time.get_ticks_msec() + milliseconds
  while Time.get_ticks_msec() < deadline: await process_frame
 
+func _effect_evidence() -> Array[Dictionary]:
+ var observed: Array[Dictionary] = []
+ for effect in session.effects():
+  var origin: Vector3 = effect.position
+  observed.append({"age": float(effect.age), "position": [origin.x, origin.y, origin.z]})
+ return observed
+
+func _freeze_effect_stage(label: String, target_age: float, min_age: float, max_age: float) -> bool:
+ var deadline := Time.get_ticks_msec() + 25000
+ while Time.get_ticks_msec() < deadline:
+  var live: Array = session.effects()
+  if live.size() != 1:
+   return _check("single_effect_at_" + label, false, _effect_evidence())
+  if float(live[0].age) >= target_age: break
+  await process_frame
+ await _key(KEY_P)
+ var observed := _effect_evidence()
+ var stage_ok := observed.size() == 1 and paused and bool(view.get("_paused"))
+ if stage_ok:
+  stage_ok = observed[0].age >= min_age and observed[0].age <= max_age
+ if not _check("actual_effect_age_" + label, stage_ok, observed): return false
+ var frozen_time: float = session.status().sim_time
+ await _frames(2)
+ return _check("actual_effect_frozen_" + label, session.status().sim_time == frozen_time and
+  _effect_evidence() == observed, {"sim_time": frozen_time, "effects": _effect_evidence()})
+
+func _capture_evidence(label: String) -> Dictionary:
+ return {"stage": "city" if label == "city" else ("core" if label == "blast" else "smoke_rubble"),
+  "effects": _effect_evidence(), "paused": paused, "blast_count": session.status().blast_count}
+
 func _on_frame_post_draw() -> void:
  frame_drawn = true
 
 func _capture(label: String) -> bool:
+ # This record also exists in headless preflight, but is never image evidence.
+ print("NATIVE_VISUAL_STAGE ", JSON.stringify({"name": label, "state": _capture_evidence(label)}))
  if preflight:
   print("NATIVE_VISUAL_CAPTURE_SKIPPED ", label, " headless_preflight_not_graphical_evidence")
   return true
@@ -304,6 +356,7 @@ func _capture(label: String) -> bool:
  var record := {"name": label, "width": image.get_width(), "height": image.get_height(),
   "jpeg_bytes": jpeg.size(), "sha256": digest.finish().hex_encode(), "frame_post_draw": true,
   "engine_frame": Engine.get_frames_drawn(), "sim_time": session.status().sim_time, "image_stats": stats}
+ record.merge(_capture_evidence(label))
  captures.append(record)
  print("NATIVE_VISUAL_CAPTURE ", JSON.stringify(record))
  var encoded := Marshalls.raw_to_base64(jpeg)
@@ -340,7 +393,8 @@ func _snapshot(label: String) -> void:
  var row: Dictionary = session.status().duplicate(true)
  row.phase = label
  row.charges_or_projectiles = session.projectiles().size()
- row.effect_count = session.effects().size()
+ row.effects = _effect_evidence()
+ row.effect_count = row.effects.size()
  row.rubble_views = session.rubble_views().size()
  row.paused = paused
  row.wall_elapsed_ms = Time.get_ticks_msec() - started_ms
@@ -357,7 +411,7 @@ func _finish() -> void:
  if finished: return
  finished = true
  var graphical_pass := not preflight and failures.is_empty() and captures.size() == 3
- var report := {"schema": "native-visual-input-qa/v1", "pass": failures.is_empty(),
+ var report := {"schema": "native-visual-input-qa/v2", "pass": failures.is_empty(),
   "mode": "headless_preflight" if preflight else "graphical", "gpu_frame_verified": graphical_pass,
   "engine": Engine.get_version_info().string, "display_server": DisplayServer.get_name(),
   "wall_elapsed_ms": Time.get_ticks_msec() - started_ms, "failures": failures, "checks": checks,

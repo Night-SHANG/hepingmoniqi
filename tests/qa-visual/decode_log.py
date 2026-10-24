@@ -9,12 +9,36 @@ import base64
 import binascii
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 
 NAMES = {"city", "blast", "rubble"}
 MAX_JPEG_BYTES = 81920
 CHUNK = re.compile(r"NATIVE_VISUAL_JPEG (city|blast|rubble) (\d+)/(\d+) ([A-Za-z0-9+/=]+)$")
+
+
+def validate_stage(record):
+    """Require observed simulation age, never a label standing in for a stage."""
+    name = record["name"]
+    if name == "city":
+        valid = (record.get("stage") == "city" and record.get("paused") is False and
+                 record.get("blast_count") == 0 and record.get("effects") == [])
+    else:
+        stage, low, high = ("core", 0.15, 0.45) if name == "blast" else ("smoke_rubble", 1.5, 2.5)
+        effects = record.get("effects")
+        valid = (record.get("stage") == stage and record.get("paused") is True and
+                 record.get("blast_count") == 1 and isinstance(effects, list) and len(effects) == 1)
+        if valid:
+            effect = effects[0]
+            age = effect.get("age") if isinstance(effect, dict) else None
+            origin = effect.get("position") if isinstance(effect, dict) else None
+            valid = (isinstance(age, (int, float)) and not isinstance(age, bool) and
+                     math.isfinite(age) and low <= age <= high and isinstance(origin, list) and
+                     len(origin) == 3 and all(isinstance(n, (int, float)) and not isinstance(n, bool)
+                                             and math.isfinite(n) for n in origin))
+    if not valid:
+        raise ValueError(f"Missing or invalid actual effect stage evidence for {name}")
 
 
 def parse_log(text):
@@ -59,7 +83,7 @@ def parse_log(text):
     if len(reports) != 1:
         raise ValueError("Expected exactly one final result")
     report = reports[0]
-    if (report.get("schema") != "native-visual-input-qa/v1" or
+    if (report.get("schema") != "native-visual-input-qa/v2" or
             report.get("mode") != "graphical" or
             report.get("pass") is not True or
             report.get("gpu_frame_verified") is not True or
@@ -73,6 +97,10 @@ def parse_log(text):
     listed = report.get("captures", [])
     if len(listed) != 3 or {row.get("name"): row for row in listed} != captures:
         raise ValueError("Capture metadata disagrees with final result")
+    for record in captures.values():
+        validate_stage(record)
+    if captures["blast"]["effects"][0]["position"] != captures["rubble"]["effects"][0]["position"]:
+        raise ValueError("Core and smoke captures have different actual effect origins")
     images = {}
     for name in sorted(NAMES):
         bucket = chunks.get(name, {})

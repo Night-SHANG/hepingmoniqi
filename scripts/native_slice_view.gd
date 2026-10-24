@@ -10,6 +10,9 @@ const MAX_EFFECT_INSTANCES := 96
 const FLIGHT_TIME := 1.5
 const GRAVITY := 9.8
 const FX_LIFETIME := 5.5
+# The session's nova blast has a 48-unit radius; the small generic effect is
+# authored around an 8-unit event. This affects render geometry only.
+const NOVA_VISUAL_SCALE := 48.0 / 8.0
 
 var _session: Node3D
 var _camera: Camera3D
@@ -82,7 +85,7 @@ func _build_environment() -> void:
  environment.sky = sky
  environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
  environment.ambient_light_color = Color("bcc7cd")
- environment.ambient_light_energy = 0.55
+ environment.ambient_light_energy = 0.35
  environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
  environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
  var world_environment := WorldEnvironment.new()
@@ -92,8 +95,10 @@ func _build_environment() -> void:
  var sun := DirectionalLight3D.new()
  sun.name = "Sun"
  sun.rotation_degrees = Vector3(-48, -32, 0)
- sun.light_color = Color("ffe5b1")
- sun.light_energy = 1.25
+ # Compatibility already converts ALBEDO from sRGB before lighting. Correct
+ # the excessive warm illumination, not the immutable source RGB24 palette.
+ sun.light_color = Color.WHITE
+ sun.light_energy = 0.85
  sun.shadow_enabled = true
  sun.directional_shadow_max_distance = 550.0
  add_child(sun)
@@ -533,6 +538,17 @@ func _sync_projectiles(views: Array) -> void:
   _round_multimesh.set_instance_color(index, Color.WHITE)
 
 func _sync_effects(views: Array) -> void:
+ var frame := _effect_frame(views)
+ _fire_multimesh.instance_count = frame.fires.size()
+ _dust_multimesh.instance_count = frame.dust.size()
+ for index in frame.fires.size():
+  _fire_multimesh.set_instance_transform(index, frame.fires[index])
+  _fire_multimesh.set_instance_color(index, frame.fire_colors[index])
+ for index in frame.dust.size():
+  _dust_multimesh.set_instance_transform(index, frame.dust[index])
+  _dust_multimesh.set_instance_color(index, frame.dust_colors[index])
+
+func _effect_frame(views: Array) -> Dictionary:
  # Pure read-only cosmetics: no damages, collision RIDs, timers, or lifetime removal.
  var fires: Array[Transform3D] = []
  var fire_colors: Array[Color] = []
@@ -543,26 +559,25 @@ func _sync_effects(views: Array) -> void:
   if age < 0.0 or age > FX_LIFETIME:
    continue
   var origin: Vector3 = row.get("position", Vector3.ZERO)
+  var nova := str(row.get("kind", "")) == "nova"
+  var visual_scale := NOVA_VISUAL_SCALE if nova else 1.0
   for lobe in 6:
    var angle := float(lobe) * TAU / 6.0
    var direction := Vector3(cos(angle), 0.0, sin(angle))
    if age < 0.8 and fires.size() < MAX_EFFECT_INSTANCES:
-    var size := (1.0 + age * 6.0) * (1.0 - age / 0.9)
-    var position := origin + direction * age * 3.0 + Vector3.UP * (1.0 + age * 4.0)
+    var size := (1.0 + age * 6.0) * (1.0 - age / 0.9) * visual_scale
+    var position := origin + (direction * age * 3.0 + Vector3.UP * (1.0 + age * 4.0)) * visual_scale
     fires.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * size), position))
     fire_colors.append(Color(1.0, 0.42 + 0.4 * (1.0 - age), 0.08, 0.85 * (1.0 - age / 0.8)))
    if dust.size() < MAX_EFFECT_INSTANCES:
-    var size := 1.6 + age * 1.2
-    var position := origin + direction * (1.0 + age * 2.6) + Vector3.UP * (0.7 + age * 1.6)
+    # Large-event smoke rises and fades, but its footprint stops growing so a
+    # late transparent lobe cannot balloon across the entire city.
+    var size := minf(1.6 + age * 1.2, 4.0) if nova else 1.6 + age * 1.2
+    var spread := minf(1.0 + age * 2.6, 5.5) if nova else 1.0 + age * 2.6
+    size *= visual_scale
+    var position := origin + (direction * spread + Vector3.UP * (0.7 + age * 1.6)) * visual_scale
     dust.append(Transform3D(Basis.IDENTITY.scaled(Vector3(size, size * 0.8, size)), position))
     dust_colors.append(Color(0.47, 0.43, 0.36, 0.3 * (1.0 - age / FX_LIFETIME)))
   if fires.size() >= MAX_EFFECT_INSTANCES and dust.size() >= MAX_EFFECT_INSTANCES:
    break
- _fire_multimesh.instance_count = fires.size()
- _dust_multimesh.instance_count = dust.size()
- for index in fires.size():
-  _fire_multimesh.set_instance_transform(index, fires[index])
-  _fire_multimesh.set_instance_color(index, fire_colors[index])
- for index in dust.size():
-  _dust_multimesh.set_instance_transform(index, dust[index])
-  _dust_multimesh.set_instance_color(index, dust_colors[index])
+ return {"fires": fires, "fire_colors": fire_colors, "dust": dust, "dust_colors": dust_colors}

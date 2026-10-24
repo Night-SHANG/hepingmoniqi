@@ -20,7 +20,7 @@ func run() -> void:
  await process_frame
  check(view.get_node_or_null("Camera3D") != null,"orbit camera exists")
  check(view.get_node_or_null("WorldEnvironment") != null,"native sky exists")
- check(view.get_node_or_null("Sun") != null,"warm sun exists")
+ check(view.get_node_or_null("Sun") != null,"daylight sun exists")
  check(view.get_node("Camera3D").position.is_equal_approx(Vector3(200,160,220)),"exact default camera")
  var before := view.get_child_count()
  var boxes := PackedFloat32Array([10,8,5,1,2,3,14,8,5,0.5,1,1])
@@ -47,8 +47,34 @@ func run() -> void:
  view._sync_projectiles([{"id":"placed","position":Vector3(1,2,3),"kind":"charge"},{"id":"round","position":Vector3(4,5,6),"kind":"projectile"}])
  check(view._charge_multimesh.instance_count==1 and view._round_multimesh.instance_count==1,"charge and physical round views separated")
  check(view._position_transform(Vector3(4,5,6)).origin.is_equal_approx(Vector3(4,5,6)),"round submitted transform preserves authority position (GPU readback unavailable)")
+ # Inspect the same CPU geometry submitted by the renderer: headless MultiMesh
+ # transform readback is unavailable and must not masquerade as GPU evidence.
+ if view.has_method("_effect_frame"):
+  var event := {"position":Vector3(30,4,10),"age":0.1,"kind":"nova"}
+  var original := event.duplicate(true)
+  var frame: Dictionary = view._effect_frame([event])
+  check(frame.fires.size()==6 and frame.dust.size()==6,"one nova keeps the existing six-lobe pools")
+  var core: Transform3D = frame.fires[0]
+  check(core.basis.get_scale().x>=8.0 and core.basis.get_scale().x<=24.0,"radius-48 nova core has city-scale geometry, not a one-unit spark")
+  var ordinary: Dictionary = view._effect_frame([{"position":event.position,"age":0.1,"kind":"blast"}])
+  check(core.basis.get_scale().x>=4.0*ordinary.fires[0].basis.get_scale().x,"nova event kind controls visual scale without enlarging ordinary effects")
+  var smoke_frame: Dictionary = view._effect_frame([{"position":event.position,"age":1.5,"kind":"nova"}])
+  check(smoke_frame.fires.is_empty() and smoke_frame.dust.size()==6,"smoke outlives the brief core without extending event lifetime")
+  var smoke: Transform3D = smoke_frame.dust[0]
+  check(smoke.basis.get_scale().x>=12.0,"nova smoke remains readable after the flash")
+  var old_smoke_frame: Dictionary = view._effect_frame([{"position":event.position,"age":5.4,"kind":"nova"}])
+  var old_smoke: Transform3D = old_smoke_frame.dust[0]
+  var offset: Vector3 = old_smoke.origin-event.position
+  check(Vector2(offset.x,offset.z).length()+old_smoke.basis.get_scale().x<=60.0,"aging nova plume stays bounded near the radius-48 event")
+  check(view._effect_frame([event])==frame and event==original,"cosmetic sampling is deterministic and does not age or mutate authoritative events")
+  var expired: Dictionary = view._effect_frame([{"position":event.position,"age":5.6,"kind":"nova"}])
+  check(expired.fires.is_empty() and expired.dust.is_empty(),"expired event produces no geometry")
+ else:
+  check(false,"nova geometry must be observable before GPU submission for headless scale checks")
  var many := []
- for i in 200: many.append({"position":Vector3(i,0,0),"age":0.1,"kind":"blast"})
+ for i in 200: many.append({"position":Vector3(i,0,0),"age":0.1,"kind":"nova"})
+ var bounded: Dictionary = view._effect_frame(many)
+ check(bounded.fires.size()==96 and bounded.dust.size()==96,"nova CPU frame obeys the same fixed 96-instance budget")
  view._sync_effects(many)
  check(view._fire_multimesh.instance_count<=view.MAX_EFFECT_INSTANCES,"fire effects have fixed instance budget")
  check(view._dust_multimesh.instance_count<=view.MAX_EFFECT_INSTANCES,"dust effects have fixed instance budget")

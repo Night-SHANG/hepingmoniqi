@@ -48,10 +48,10 @@ test('event identity includes epoch and all allocated resources dispose exactly 
  const previousRoot=scene.children[0];renderer.update(at().map(f=>({...f,epoch:2,position:{x:9,y:0,z:0}})));assert.notEqual(scene.children[0],previousRoot);assert.equal(scene.children[0].position.x,9);
  renderer.dispose();renderer.dispose();assert.equal(scene.children.length,0);assert.equal(geometryDisposals,geometries.size);assert.equal(materialDisposals,materials.size);
 });
-test('city blast radius is compressed into a bounded cosmetic footprint, not multiplied by nova spread',()=>{
+test('city smoke stays inside its physical blast footprint without becoming a fullscreen sphere',()=>{
  const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'city',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.6);renderer.update(timeline.frames());
  const smoke=scene.getObjectByName('explosion-smoke') as THREE.InstancedMesh;
- for(let i=0;i<smoke.count;i++){const p=instancePosition(smoke,i);assert.ok(Math.abs(p.x)<12&&Math.abs(p.z)<12&&p.y<25,'cosmetics must not create a city-sized opaque sphere');}
+ for(let i=0;i<smoke.count;i++){const p=instancePosition(smoke,i);assert.ok(Math.abs(p.x)<48&&Math.abs(p.z)<48&&p.y<96,'cosmetics must not create a city-sized opaque sphere');}
  assert.equal(timeline.frames()[0].scale,48,'timeline preserves physical effect radius');renderer.dispose();
 });
 test('all eight tools produce distinct rendered silhouettes, not color-only variants',()=>{
@@ -62,11 +62,33 @@ test('all eight tools produce distinct rendered silhouettes, not color-only vari
  assert.equal(signatures.size,8);
 });
 test('shock front follows physical reach and is gone while nova smoke still rolls',()=>{
- const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'nova',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.3);renderer.update(timeline.frames());
- const wave=scene.getObjectByName('explosion-shockwave') as THREE.InstancedMesh;assert.equal(wave.visible,true);const position=instancePosition(wave);assert.ok(Math.hypot(position.x,position.z)>30);
+ const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'nova',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.7);renderer.update(timeline.frames());
+ const wave=scene.getObjectByName('explosion-shockwave') as THREE.InstancedMesh;assert.equal(wave.visible,true);assert.ok(Array.from({length:wave.count},(_,i)=>instancePosition(wave,i)).some(p=>Math.hypot(p.x,p.z)>30));
  timeline.step(.2);renderer.update(timeline.frames());assert.equal(wave.visible,false);assert.equal(scene.getObjectByName('explosion-smoke')!.visible,true);renderer.dispose();
 });
 test('runtime reduced-motion toggle suppresses flash and does not restart particle ages',()=>{
  const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),frames=at('nova',.02);renderer.update(frames);assert.equal(scene.getObjectByName('explosion-flash')!.visible,true);
  renderer.setReducedMotion(true);renderer.update(frames);assert.equal(scene.getObjectByName('explosion-flash')!.visible,false);assert.equal(frames[0].age,.02);renderer.dispose();
+});
+function projectedLayerSize(mesh:THREE.InstancedMesh):{width:number;height:number}{
+ mesh.computeBoundingBox();const bounds=mesh.boundingBox!;const camera=new THREE.PerspectiveCamera(42,1440/900,.8,1600);camera.position.set(250,205,285);camera.lookAt(0,18,0);camera.updateMatrixWorld();
+ const projected:THREE.Vector3[]=[];for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])projected.push(new THREE.Vector3(x,y,z).project(camera));
+ return {width:(Math.max(...projected.map(p=>p.x))-Math.min(...projected.map(p=>p.x)))*720,height:(Math.max(...projected.map(p=>p.y))-Math.min(...projected.map(p=>p.y)))*450};
+}
+test('actual city camera sees a cross-building nova fireball at half a second and a legible smoke column at three seconds',()=>{
+ const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'city',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.5);renderer.render(timeline.frames());
+ const fire=scene.getObjectByName('explosion-fire') as THREE.InstancedMesh,smoke=scene.getObjectByName('explosion-smoke') as THREE.InstancedMesh;
+ assert.ok(projectedLayerSize(fire).width>=80,'the fireball must span multiple 12-unit city buildings, not one tiny lobe');
+ assert.ok((smoke.material as THREE.MeshLambertMaterial).opacity<.6,'early opaque smoke must not swallow the fireball');
+ timeline.step(2.5);renderer.render(timeline.frames());const size=projectedLayerSize(smoke);assert.ok(size.width>=100&&size.height>=100,'city-scale smoke must remain readable after the fire goes out');assert.ok(size.width<430&&size.height<430,'smoke cannot become a fullscreen opaque wash');renderer.dispose();
+});
+test('secondary impact saturation cannot evict the primary nova or its visible smoke aftermath',()=>{
+ const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'primary',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.5);
+ for(let i=0;i<80;i++)timeline.add({id:`impact-${i}`,epoch:1,kind:'impact',material:'stone',scale:.4,position:{x:i,y:0,z:0}});
+ renderer.render(timeline.frames());assert.ok(scene.getObjectByName('explosion:1:primary'),'a live primary must win over cosmetic contact dust');assert.equal(scene.children.length,48);
+ timeline.step(1);renderer.render(timeline.frames());assert.ok(scene.getObjectByName('explosion:1:primary'));assert.equal(timeline.activeCount,81,'render prioritization must not mutate event authority');renderer.dispose();
+});
+test('city dust front remains low rolling sectors rather than rotating into vertical walls',()=>{
+ const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'city',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.5);renderer.render(timeline.frames());
+ const wave=scene.getObjectByName('explosion-shockwave') as THREE.InstancedMesh;wave.computeBoundingBox();assert.ok(wave.boundingBox!.getSize(new THREE.Vector3()).y<8,'flattened dust must only rotate around its vertical axis');renderer.dispose();
 });

@@ -156,7 +156,10 @@ export function getEnvironmentSpec(mapId:MapId,options:{authoritative?:boolean}=
   rootedHills(570,-230,48);clouds(500,-275,105);
  }
  const large=mapId==='city',medium=mapId==='neighborhood';
- return {mapId,bounds:{...WORLD_BOUNDS[mapId]},blocks:options.authoritative?outsideAuthority(blocks,WORLD_BOUNDS[mapId]):blocks,water:options.authoritative?outsideAuthority(water,WORLD_BOUNDS[mapId]):water,sky:mapId==='warehouse'?0xb8c7cb:mapId==='cantilever'?0xadcfdc:0xadcbd9,fog:large?[420,1000]:medium?[210,520]:[70,165],shadowExtent:large?160:medium?72:33,camera:{...cameras[mapId],position:[...cameras[mapId].position],target:[...cameras[mapId].target]}};
+ // Formal scaled maps expose only authoritative playable props. Keep the old
+ // decorative source for historical previews, not misleading unbreakable bridges.
+ const scenicBlocks=options.authoritative&&(large||medium)?blocks.filter(b=>!['tree','lamp','container','crane','bridge','bridge-road','road','road-marking','crosswalk','curb','district-paving'].includes(b.role)):blocks;
+ return {mapId,bounds:{...WORLD_BOUNDS[mapId]},blocks:options.authoritative?outsideAuthority(scenicBlocks,WORLD_BOUNDS[mapId]):blocks,water:options.authoritative?outsideAuthority(water,WORLD_BOUNDS[mapId]):water,sky:mapId==='warehouse'?0xb8c7cb:mapId==='cantilever'?0xadcfdc:0xadcbd9,fog:large?[420,1000]:medium?[210,520]:[70,165],shadowExtent:large?160:medium?72:33,camera:{...cameras[mapId],position:[...cameras[mapId].position],target:[...cameras[mapId].target]}};
 }
 
 /** Clip scenic cuboids around the authoritative rectangle, never over its holes. */

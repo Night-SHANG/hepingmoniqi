@@ -31,6 +31,8 @@ interface LocalCell { id:number; position:Point; rotation:Rotation }
 interface ChunkSave { transforms:LocalCell[]; id:string; cells:number[]; rootShotId:string; status:'active'|'queued'|'rubble'; position:Point; rotation:Rotation; linvel:Point; angvel:Point; quiet:number }
 interface Save { schema:'structural-simulation/v1'; fixtureId:string; fixtureSignature:string; maxActiveBodies:number; epoch:number; tick:number; accumulator:number; serial:number; cells:CellSave[]; bodies:ChunkSave[]; queue:string[]; shots:string[]; processed:string[]; episodes:[string,Episode][]; episodeCounts:[string,number][]; research:number; events:StructuralEvent[] }
 
+interface SparseSave extends Omit<Save,'schema'> {schema:'structural-simulation-changes/v1'}
+
 interface SnapshotValidationContext {fixtureId:string;fixtureSignature:string;maxActiveBodies:number;original:Cell[];originals:Map<number,Cell>;totalHp:number}
 function assertFixture(fixture:SceneFixture):void {
  if(!fixture||typeof fixture.id!=='string'||!fixture.id||!Array.isArray(fixture.cells))throw new Error('Invalid fixture');
@@ -97,12 +99,13 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:St
  const shots=new Set<string>(),processed=new Set<string>(),episodes=new Map<string,Episode>(),episodeCounts=new Map<string,number>();
  let researchDirty=true,cachedResearch=0;
  const amount=()=>{if(researchDirty){cachedResearch=totalHp===0?0:Math.min(200,Math.ceil(200*[...cells.values()].reduce((n,c)=>n+(c.spec.role==='terrain'?0:c.loss),0)/totalHp));researchDirty=false;}return cachedResearch;};
+ const changedSnapshotIds=new Set<number>();
  const dirtyViews=new Set<number>(),viewIndices=new Map(original.map((c,index)=>[c.id,index]));
  let currentViews:ImmutableCellView[]=[],publishedViews:readonly ImmutableCellView[]|undefined,viewVersion=0,minimumViewVersion=0;
  const viewHistory:{revision:number;cells:readonly ImmutableCellView[]}[]=[];
  let historySize=0,eventIndex=0;
  const immutableEvents=new WeakMap<StructuralEvent,ImmutableStructuralEvent>();
- function changed(c:State,lossChanged=false){dirtyViews.add(c.spec.id);if(lossChanged&&c.spec.role!=='terrain')researchDirty=true;}
+ function changed(c:State,lossChanged=false){dirtyViews.add(c.spec.id);changedSnapshotIds.add(c.spec.id);if(lossChanged&&c.spec.role!=='terrain')researchDirty=true;}
  function replaceReadCaches(){currentViews=[];publishedViews=undefined;dirtyViews.clear();for(const id of cells.keys())dirtyViews.add(id);viewHistory.length=0;historySize=0;minimumViewVersion=++viewVersion;researchDirty=true;eventIndex=trace.length;}
  function refreshViews(){
   sync();if(!dirtyViews.size)return;
@@ -272,9 +275,11 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:St
   const forces:ForceRecord[]=contacts.map(c=>({first:c.a,second:c.b,impulse:c.impulse,normal:point(c.normal)}));
   for(const participant of participants)participant.afterStep?.(world,copy(collisions),copy(forces));
  }
- function initial(){newWorld();for(const c of original){const state:State={spec:copy(c),hp:c.hp,loss:0,state:c.hp>0?'static':'gone',position:point(c.position),rotation:rotation(IDENTITY)};cells.set(c.id,state);if(c.hp>0)addStatic(state);}graph=createSupportGraph(original.filter(c=>c.hp>0));flushStatic();detach('initial');}
+ function initial(){changedSnapshotIds.clear();newWorld();for(const c of original){const state:State={spec:c,hp:c.hp,loss:0,state:c.hp>0?'static':'gone',position:point(c.position),rotation:rotation(IDENTITY)};cells.set(c.id,state);if(c.hp>0)addStatic(state);else changedSnapshotIds.add(c.id);}graph=createSupportGraph(original.filter(c=>c.hp>0));flushStatic();detach('initial');}
  function localTransforms(c:Chunk):LocalCell[]{const inv={x:-c.rotation.x,y:-c.rotation.y,z:-c.rotation.z,w:c.rotation.w};return c.cells.map(id=>{const collider=colliders.get(id)!,state=cells.get(id)!;return{id,position:point(c.body?collider.translationWrtParent()!:rotate({x:state.position.x-c.position.x,y:state.position.y-c.position.y,z:state.position.z-c.position.z},inv)),rotation:rotation(c.body?collider.rotationWrtParent()!:multiply(inv,state.rotation))};});}
- function save():Save{sync();return{schema:'structural-simulation/v1',fixtureId,fixtureSignature,maxActiveBodies,epoch,tick,accumulator,serial,cells:[...cells.values()].map(c=>({id:c.spec.id,hp:c.hp,loss:c.loss,state:c.state,position:point(c.position),rotation:rotation(c.rotation),...(c.chunkId?{chunkId:c.chunkId}:{})})),bodies:[...chunks.values()].map(c=>({transforms:localTransforms(c),id:c.id,cells:[...c.cells],rootShotId:c.rootShotId,status:c.status,position:point(c.position),rotation:rotation(c.rotation),linvel:point(c.linvel),angvel:point(c.angvel),quiet:c.quiet})),queue:[...queue],shots:[...shots],processed:[...processed],episodes:copy([...episodes]),episodeCounts:[...episodeCounts],research:amount(),events:copy(trace)};}
+ function pristine(c:State):boolean{return c.state==='static'&&c.hp===c.spec.hp&&c.loss===0&&c.position.x===c.spec.position.x&&c.position.y===c.spec.position.y&&c.position.z===c.spec.position.z&&c.rotation.x===0&&c.rotation.y===0&&c.rotation.z===0&&c.rotation.w===1;}
+ function* changedSnapshotStates():IterableIterator<State>{for(const id of changedSnapshotIds)yield cells.get(id)!;}
+ function save(sparse=false):Save|SparseSave{sync();return{schema:sparse?'structural-simulation-changes/v1':'structural-simulation/v1',fixtureId,fixtureSignature,maxActiveBodies,epoch,tick,accumulator,serial,cells:Array.from(sparse?changedSnapshotStates():cells.values(),c=>({id:c.spec.id,hp:c.hp,loss:c.loss,state:c.state,position:point(c.position),rotation:rotation(c.rotation),...(c.chunkId?{chunkId:c.chunkId}:{})})),bodies:[...chunks.values()].map(c=>({transforms:localTransforms(c),id:c.id,cells:[...c.cells],rootShotId:c.rootShotId,status:c.status,position:point(c.position),rotation:rotation(c.rotation),linvel:point(c.linvel),angvel:point(c.angvel),quiet:c.quiet})),queue:[...queue],shots:[...shots],processed:[...processed],episodes:copy([...episodes]),episodeCounts:[...episodeCounts],research:amount(),events:copy(trace)};}
  initial();replaceReadCaches();
  const host:StructuralPhysicsHost={
   get world(){return world;},get epoch(){return epoch;},
@@ -300,14 +305,14 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:St
   },
   step(dt:number){if(disposed||!Number.isFinite(dt)||dt<=0)return;accumulator+=Math.min(1,dt);while(accumulator+1e-10>=DT){accumulator=Math.max(0,accumulator-DT);if(pendingCount()||queriesDirty)singleStep();else{accumulator=0;break;}}},
   views(){sync();return [...cells.values()].map(c=>({...copy(c.spec),hp:c.hp,state:c.state,position:point(c.position),rotation:rotation(c.rotation)}));},
-  events(){return copy(trace);},pending:pendingCount,research:amount,snapshot:save,
+  events(){return copy(trace);},pending:pendingCount,research:amount,snapshot:()=>save(),snapshotSparse:()=>save(true),
   restore(input:unknown){
    if(disposed||!validSnapshot(input,validationContext))return false;const s=copy(input);
    // All input is validated before the first mutation. No event from the old world survives.
    for(const participant of participants)participant.beforeWorldReplace?.();
    queueEvents.free();world.free();cells.clear();chunks.clear();colliders.clear();colliderIds.clear();packedBoxes.clear();packedChunks.clear();dirtyStatic.clear();shots.clear();processed.clear();episodes.clear();episodeCounts.clear();newWorld();
-   epoch=Math.max(epoch,s.epoch)+1;tick=s.tick;accumulator=s.accumulator;serial=s.serial;queue=[...s.queue];trace=copy(s.events);
-   for(const c of s.cells){const state:State={...copy(c),spec:copy(originals.get(c.id)!)};cells.set(c.id,state);if(c.state!=='gone')addStatic(state);}
+   epoch=Math.max(epoch,s.epoch)+1;tick=s.tick;accumulator=s.accumulator;serial=s.serial;queue=[...s.queue];trace=copy(s.events);changedSnapshotIds.clear();
+   for(const c of s.cells){const state:State={...copy(c),spec:originals.get(c.id)!};cells.set(c.id,state);if(!pristine(state))changedSnapshotIds.add(c.id);if(c.state!=='gone')addStatic(state);}
    graph=createSupportGraph([...cells.values()].filter(c=>c.state==='static').map(c=>({...copy(c.spec),hp:c.hp})));flushStatic();
    for(const b of s.bodies){const c:Chunk=copy(b);chunks.set(c.id,c);if(c.status==='active')activate(c,true,b.transforms);}
    for(const id of s.shots)shots.add(id);for(const id of s.processed)processed.add(id);for(const [key,value] of s.episodes)episodes.set(key,value);for(const [key,value] of s.episodeCounts)episodeCounts.set(key,value);replaceReadCaches();for(const participant of participants)participant.afterWorldReplace?.(world,epoch);return true;

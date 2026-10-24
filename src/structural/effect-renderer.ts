@@ -48,7 +48,12 @@ export class StructuralEffects {
  render(frames:readonly EffectFrame[]):void { this.update(frames); }
  update(frames:readonly EffectFrame[]):void {
   if (this.disposed) return;
-  const selected=frames.slice(-EVENT_BUDGET),key=(f:EffectFrame)=>`${f.epoch}:${f.id}`;
+  // Collision dust must never evict the main blast or its still-visible plume.
+  // Saturation changes presentation only; the timeline keeps every event.
+  const primary=frames.filter(frame=>frame.kind!=='impact').slice(-EVENT_BUDGET);
+  const impactSlots=EVENT_BUDGET-primary.length;
+  const selected=[...(impactSlots?frames.filter(frame=>frame.kind==='impact').slice(-impactSlots):[]),...primary];
+  const key=(f:EffectFrame)=>`${f.epoch}:${f.id}`;
   const wanted=new Set(selected.map(key));
   for(const [id,event] of this.instances)if(!wanted.has(id)){this.release(event);this.instances.delete(id);}
   for(const frame of selected){
@@ -67,27 +72,28 @@ export class StructuralEffects {
   const smokeCount=impact?16:p.smokeLobes;
   const smoke=new THREE.InstancedMesh(this.lobeGeometry,new THREE.MeshLambertMaterial({color:0xffffff,alphaHash:true,depthWrite:true}),smokeCount);smoke.name='explosion-smoke';
   const fragments=new THREE.InstancedMesh(this.fragmentGeometry,new THREE.MeshLambertMaterial({color:0xffffff,alphaHash:true,depthWrite:true}),impact?10:p.fragments);fragments.name='explosion-fragments';
-  const wave=new THREE.InstancedMesh(this.lobeGeometry,new THREE.MeshLambertMaterial({color:0xffffff,alphaHash:true,depthWrite:true}),frame.tool==='echo'?30:22);wave.name='explosion-shockwave';
+  const wave=new THREE.InstancedMesh(this.lobeGeometry,new THREE.MeshLambertMaterial({color:0xffffff,alphaHash:true,depthWrite:true}),frame.tool==='nova'?48:frame.tool==='echo'?30:22);wave.name='explosion-shockwave';
   for(const mesh of [fire,smoke,fragments,wave]){mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;}
   root.add(flash,fire,smoke,fragments,wave);
   return {root,flash,fire,smoke,fragments,wave,seeds:seedsFor(`${frame.epoch}:${frame.id}`,Math.max(smokeCount,p.fragments,p.lobes,30))};
  }
- private place(mesh:THREE.InstancedMesh,index:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,spin=0):void {
-  this.transform.position.set(x,y,z);this.transform.rotation.set(spin*.7,spin,spin*.3);this.transform.scale.set(sx,sy,sz);this.transform.updateMatrix();mesh.setMatrixAt(index,this.transform.matrix);
+ private place(mesh:THREE.InstancedMesh,index:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,spin=0,horizontal=false):void {
+  this.transform.position.set(x,y,z);this.transform.rotation.set(horizontal?0:spin*.7,spin,horizontal?0:spin*.3);this.transform.scale.set(sx,sy,sz);this.transform.updateMatrix();mesh.setMatrixAt(index,this.transform.matrix);
  }
  private finish(mesh:THREE.InstancedMesh):void { mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true; }
  private updateEvent(event:EffectInstance,frame:EffectFrame):void {
   const p=EFFECT_PROFILES[frame.tool],impact=frame.kind==='impact',age=frame.age;
   const motion=this.reducedMotion?.48:1;
-  // Primary scale is a physical blast radius, not a multiplier. Compress the hot
-  // core to keep scenery readable; the short dust front retains physical reach.
-  const base=impact?(frame.scale??1)*(.55+.45*(frame.intensity??.5)):frame.scale===undefined?p.spread:Math.min(6,.65*Math.sqrt(frame.scale));
+  // City-camera evidence requires a real cross-building fireball. Nova's hot
+  // core is half its physical blast radius, not the tiny sqrt-radius puff used
+  // by local tools. The layered smoke column is narrower than its dust front.
+  const base=impact?(frame.scale??1)*(.55+.45*(frame.intensity??.5)):frame.scale===undefined?p.spread:frame.tool==='nova'?frame.scale*.5:Math.min(6,.65*Math.sqrt(frame.scale));
   const scale=base*motion;
   this.dustColor.setHex(frame.material?DUST[frame.material]:0x807260);
   this.hotColor.setHex(p.color);
-  // The real flash remains a separate tiny, sub-100 ms mesh. Never a screen wash.
+  // The flash is world-space and short-lived, never a fullscreen white overlay.
   event.flash.visible=!impact&&!this.reducedMotion&&frame.flash>0;
-  event.flash.scale.setScalar(base*(.16+.22*frame.flash));event.flash.material.opacity=frame.flash*.6;
+  event.flash.scale.setScalar(base*(frame.tool==='nova'?.36+.32*frame.flash:.16+.22*frame.flash));event.flash.material.opacity=frame.flash*.6;
   event.fire.visible=!impact&&frame.fire>0;event.fire.material.opacity=Math.min(.96,frame.fire*2.1);
   for(let i=0;i<event.fire.count;i++){
    const s=event.seeds[i],progress=Math.min(1,age/p.fire),radius=scale*(.12+.85*progress)*s.radius;
@@ -103,25 +109,30 @@ export class StructuralEffects {
    event.fire.setColorAt(i,this.color);
   }
   this.finish(event.fire);
-  this.updateSmoke(event,frame,p,scale,impact);
+  const smokeScale=!impact&&frame.tool==='nova'&&frame.scale!==undefined?frame.scale*.26*motion:scale;
+  this.updateSmoke(event,frame,p,smokeScale,impact);
   this.updateFragments(event,frame,p,scale,impact);
   // A brief discontinuous front of dust puffs, never a luminous torus/cylinder.
-  event.wave.visible=!impact&&!this.reducedMotion&&frame.ring>0;event.wave.material.opacity=frame.ring*.42;
+  event.wave.visible=!impact&&!this.reducedMotion&&frame.ring>0;event.wave.material.opacity=frame.tool==='nova'?Math.sqrt(frame.ring)*.72:frame.ring*.42;
   const waveProgress=p.ring?Math.min(1,age/p.ring):1;
   for(let i=0;i<event.wave.count;i++){
-   const s=event.seeds[i],angle=i/event.wave.count*TAU+s.offset*.12;
+   const s=event.seeds[i],angle=frame.tool==='nova'?Math.floor(i/4)/12*TAU+(s.offset-.5)*.12:i/event.wave.count*TAU+s.offset*.12;
    const ripple=p.shape==='ripple'?(i%3)*.08:0;
    const reach=frame.scale===undefined?scale*3.2:Math.min(128,frame.scale);
-   const radius=reach*(.08+waveProgress*(.84+ripple))*(.91+s.offset*.09);
+   const sector=frame.tool==='nova'?(1-(i%4)*.07)*(.85+s.offset*.15):.91+s.offset*.09;
+   const radius=reach*(.08+waveProgress*(.84+ripple))*sector;
    const size=scale*(.09+s.size*.11)*(1-waveProgress*.4);
-   this.place(event.wave,i,Math.cos(angle)*radius,.035+scale*s.height*.065,Math.sin(angle)*radius,size*1.6,size*.4,size*.8,s.angle);
+   this.place(event.wave,i,Math.cos(angle)*radius,.035+scale*s.height*.065,Math.sin(angle)*radius,size*1.6,size*.4,size*.8,s.angle,true);
    this.color.copy(this.dustColor).multiplyScalar(1.12+s.height*.3);event.wave.setColorAt(i,this.color);
   }
   this.finish(event.wave);
  }
  private updateSmoke(event:EffectInstance,frame:EffectFrame,p:EffectProfile,scale:number,impact:boolean):void {
   const age=frame.age,life=effectSmokeDuration(frame),progress=Math.min(1,age/life),growth=1-Math.exp(-age*2.4);
-  event.smoke.visible=frame.smoke>.001;event.smoke.material.opacity=Math.min(.94,frame.smoke*1.7);
+  // Reveal the upper gray plume after the hot core has established itself.
+  // Early opaque smoke previously hid the actual fireball at the city camera.
+  const rise=!impact&&frame.tool==='nova'?Math.max(0,Math.min(1,(age-.2))):1;
+  event.smoke.material.opacity=(!impact&&frame.tool==='nova'?Math.min(.86,frame.smoke*1.45):Math.min(.94,frame.smoke*1.7))*rise;event.smoke.visible=event.smoke.material.opacity>.001;
   for(let i=0;i<event.smoke.count;i++){
    const s=event.seeds[i],dust=i%4===0||impact,roll=age*(.18+s.height*.12),angle=s.angle+roll;
    let radius=scale*(.2+growth*(dust?1.5:.85)+age*.15)*s.radius;

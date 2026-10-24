@@ -151,3 +151,8 @@ test('authoritative environments keep camera and exterior scenery without invuln
   assert.equal(environment.spec.blocks.length,spec.blocks.length);environment.dispose();cube.dispose();
  }
 });
+
+test('formal scaled backdrops do not advertise invulnerable near-scene props',async()=>{
+ const {getEnvironmentSpec}=await import('./scene-environments');
+ for(const map of ['neighborhood','city'] as const){const spec=getEnvironmentSpec(map,{authoritative:true});assert.equal(spec.blocks.some(b=>['tree','lamp','container','crane','bridge','bridge-road','road','road-marking','crosswalk','curb','district-paving'].includes(b.role)),false);assert.ok(spec.blocks.some(b=>b.role==='hill'));}
+});

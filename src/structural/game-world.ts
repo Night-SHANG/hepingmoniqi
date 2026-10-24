@@ -2,7 +2,7 @@ import type {DamageCommand,DamageResult,Loadout,MapId,ObjectiveState,RoundResult
 import {MAP_IDS,TOOLS,WEAPON_IDS,mapAvailable,mapTitle,capacityForResearch,toolAvailable,weaponCost} from '../content-catalog.js';
 import {validateLoadout,validateToolSelection,validateHistoricalLoadout,requiresLoadoutReselection} from '../gameplay.js';
 import {createWorld} from '../domain.js';
-import {createGameFixture,gameCellVoxel,previewGameVoxels,type GameFixture,type GameCell} from './game-fixtures.js';
+import {createGameFixture,createLegacyGameFixture,gameCellVoxel,previewGameVoxels,type GameFixture,type GameCell} from './game-fixtures.js';
 import {createStructuralSimulation,validateStructuralSnapshot} from './simulation.js';
 import type {StructuralPhysicsHost} from './physics-host.js';
 import type {CellView,Point,Rotation,StructuralEvent,StructuralEventCursor,StructuralEventChanges} from './types.js';
@@ -24,7 +24,9 @@ export interface StructuralGameWorld {
 const clone=<T>(value:T):T=>structuredClone(value);
 const weights=(loadout:Loadout)=>WEAPON_IDS.reduce((n,id)=>n+loadout[id]*weaponCost(id),0);
 const freshRound=(research:number):InventoryRound=>{const budget=capacityForResearch(research),loadout=Object.fromEntries(WEAPON_IDS.map(id=>[id,id==='charge'?budget:0])) as Loadout;return{budget,used:0,startResearch:research,startDestroyed:0,settled:false,loadout,remaining:{...loadout}};};
-const freezeVoxel=(v:Voxel):Voxel=>Object.freeze({...v,position:Object.freeze(v.position),rotation:v.rotation?Object.freeze(v.rotation):undefined,size:v.size?Object.freeze(v.size):undefined});
+const SHARED_UNIT_SIZE=Object.freeze({x:1,y:1,z:1});
+const SHARED_IDENTITY=Object.freeze({x:0,y:0,z:0,w:1});
+const freezeVoxel=(v:Voxel):Voxel=>Object.freeze({...v,position:Object.freeze(v.position),rotation:v.rotation?(v.rotation.x===0&&v.rotation.y===0&&v.rotation.z===0&&v.rotation.w===1?SHARED_IDENTITY:Object.freeze(v.rotation)):undefined,size:v.size?(v.size.x===1&&v.size.y===1&&v.size.z===1?SHARED_UNIT_SIZE:Object.freeze(v.size)):undefined});
 const states=['static','dynamic','rubble','gone'] as const;
 let active:StructuralGameWorld|null=null;
 let serialTransition:Promise<unknown>=Promise.resolve();
@@ -42,7 +44,7 @@ function compact(save:SimulationSave,bases:Map<number,GameCell>):CompactSimulati
   if(c.chunkId!==undefined||c.position.x!==base.position.x||c.position.y!==base.position.y||c.position.z!==base.position.z||c.rotation.x||c.rotation.y||c.rotation.z||c.rotation.w!==1)row.push(c.position.x,c.position.y,c.position.z,c.rotation.x,c.rotation.y,c.rotation.z,c.rotation.w,c.chunkId??null);
   changes.push(row);
  }
- return {...metadata,changes};
+ return {...metadata,schema:'structural-simulation/v1',changes};
 }
 function expand(input:CompactSimulation,baseline:SimulationSave):SimulationSave|null {
  if(!input||typeof input!=='object'||!Array.isArray(input.changes))return null;
@@ -108,11 +110,12 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
  }
  function snapshot():WorldSnapshot {
   ensureFixture();sync();
-  const simulation=sim?compact(sim.snapshot() as SimulationSave,bases):clone(cachedSimulation);
+  const simulation=sim?compact(sim.snapshotSparse() as SimulationSave,bases):clone(cachedSimulation);
   const structural:SavedGame={schema:'structural-game/v1',fixtureId:fixture!.id,free,migrationPending,...(legacyObjective?{legacyObjective:clone(legacyObjective)}:{}),rewardedLoss,creditedResearch,suppressedRoots:[...suppressedRoots],simulation};
   return {schemaVersion:9,structural,mapId,round:clone(round),completedMaps:[...completedMaps],epoch,voxels:[],totalCount:fixture!.cells.length,destroyedCount:destroyed,research,firstRewardClaimed:completedMaps.includes(mapId)};
  }
- function suspend(){if(!sim)return;sync();cachedSimulation=compact(sim.snapshot() as SimulationSave,bases);epoch=sim.epoch;unregisterSync?.();unregisterSync=undefined;sim.dispose();sim=null;host=null;if(active===api)active=null;}
+ function releaseSimulation(preserve:boolean){if(!sim)return;if(preserve){sync();cachedSimulation=compact(sim.snapshotSparse() as SimulationSave,bases);}epoch=sim.epoch;unregisterSync?.();unregisterSync=undefined;sim.dispose();sim=null;host=null;if(active===api)active=null;}
+ function suspend(){releaseSimulation(true);}
  function install(engine:Simulation){
   sim=engine;epoch=sim.epoch;epochSerial=Math.max(epochSerial,epoch+1);viewCursor=undefined;eventCursor=undefined;
   sync(undefined,false);
@@ -134,7 +137,7 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   }catch(error){engine.dispose();throw error;}
  }
 
- function clearScene(){suspend();fixture=undefined;bases.clear();voxelById.clear();voxelArray=Object.freeze([]);lossById.clear();cachedSimulation=null;destroyed=objectiveDestroyed=0;rewardedLoss=creditedResearch=0;suppressedRoots.clear();eventHistory=[];eventIds.clear();lastRoot=undefined;viewCursor=eventCursor=undefined;migrationPending=false;legacyObjective=undefined;epoch=epochSerial++;revision++;}
+ function clearScene(){releaseSimulation(false);fixture=undefined;bases.clear();voxelById.clear();voxelArray=Object.freeze([]);lossById.clear();cachedSimulation=null;destroyed=objectiveDestroyed=0;rewardedLoss=creditedResearch=0;suppressedRoots.clear();eventHistory=[];eventIds.clear();lastRoot=undefined;viewCursor=eventCursor=undefined;migrationPending=false;legacyObjective=undefined;epoch=epochSerial++;revision++;}
  async function fresh(map:MapId,loadout?:Loadout){clearScene();mapId=map;round=freshRound(research);if(loadout){round.loadout={...loadout};round.remaining={...loadout};}await activateNow();}
  const objective=():ObjectiveState=>{ensureFixture();sync();const total=legacyObjective?.total??totalTargets,removed=legacyObjective?.destroyed??objectiveDestroyed;return{mapId,title:mapTitle(mapId),total,destroyed:removed,fraction:total?removed/total:0,goal:1,complete:removed===total,completedMaps:[...completedMaps]};};
  function result(accepted=false):DamageResult{return{accepted,removed:[],detached:[],newlyDestroyed:0,researchEarned:0,destruction:fixture?.cells.length?destroyed/fixture.cells.length:0};}
@@ -155,7 +158,11 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   }
   const s=input.structural as SavedGame;
   if(!MAP_IDS.includes(input.mapId!)||!Number.isSafeInteger(input.epoch)||input.epoch<1||input.epoch>=Number.MAX_SAFE_INTEGER-2||!Number.isSafeInteger(input.research)||input.research<0||!Array.isArray(input.voxels)||input.voxels.length||!Array.isArray(input.completedMaps)||new Set(input.completedMaps).size!==input.completedMaps.length||input.completedMaps.some(id=>!MAP_IDS.includes(id))||input.firstRewardClaimed!==input.completedMaps.includes(input.mapId!)||input.research<input.completedMaps.length*80||!s||s.schema!=='structural-game/v1'||typeof s.free!=='boolean'||s.free&&!free||typeof s.migrationPending!=='boolean'||!Number.isFinite(s.rewardedLoss)||s.rewardedLoss<0||!Number.isSafeInteger(s.creditedResearch)||s.creditedResearch<0||s.creditedResearch>200||s.creditedResearch>input.research||!Array.isArray(s.suppressedRoots)||new Set(s.suppressedRoots).size!==s.suppressedRoots.length||s.suppressedRoots.some(id=>typeof id!=='string'||!id)||!Number.isSafeInteger(input.destroyedCount)||input.destroyedCount<0)return false;
-  const targetFixture=createGameFixture(input.mapId!),targetBases=new Map(targetFixture.cells.map(c=>[c.id,c])),targetCount=targetFixture.cells.filter(c=>c.objective).length;
+  // Only the exact previous experiment geometry counts enter this
+  // migration. Validate its original cells before preserving progress and asking
+  // for a new round; never fill new soil through saved moving rubble.
+  const geometryUpgrade=(input.mapId==='city'&&input.totalCount===184681)||(input.mapId==='neighborhood'&&input.totalCount===50016);
+  const targetFixture=(geometryUpgrade?createLegacyGameFixture:createGameFixture)(input.mapId!),targetBases=new Map(targetFixture.cells.map(c=>[c.id,c])),targetCount=targetFixture.cells.filter(c=>c.objective).length;
   if(s.fixtureId!==targetFixture.id||input.totalCount!==targetFixture.cells.length||input.destroyedCount>input.totalCount||s.rewardedLoss>targetCount||s.creditedResearch!==Math.min(200,Math.ceil(s.rewardedLoss*200/targetCount)))return false;
   if(s.migrationPending){if(!s.legacyObjective||!Number.isSafeInteger(s.legacyObjective.total)||s.legacyObjective.total<=0||!Number.isSafeInteger(s.legacyObjective.destroyed)||s.legacyObjective.destroyed<0||s.legacyObjective.destroyed>s.legacyObjective.total)return false;}
   else if(s.legacyObjective!==undefined)return false;
@@ -171,6 +178,10 @@ export function createStructuralGameWorld(options:{free?:boolean;maxActiveBodies
   const actualObjectiveDestroyed=expanded.cells.filter(c=>c.state!=='static'&&targetBases.get(c.id)?.objective).length;
   const loss=expanded.cells.reduce((n,c)=>n+(targetBases.get(c.id)!.objective?(c.state==='static'?1-c.hp/targetBases.get(c.id)!.maxHp:1):0),0);
   if(actualDestroyed!==input.destroyedCount||s.rewardedLoss>loss+1e-7||input.round!.startDestroyed>(s.legacyObjective?.destroyed??actualObjectiveDestroyed)||!validateStructuralSnapshot(targetFixture,expanded,{maxActiveBodies}))return false;
+  if(geometryUpgrade){
+   clearScene();mapId=input.mapId!;research=input.research;round=clone(input.round as InventoryRound);completedMaps=[...input.completedMaps!];
+   migrationPending=true;legacyObjective={total:targetCount,destroyed:actualObjectiveDestroyed};epoch=Math.max(epoch,input.epoch,epochSerial++);ensureFixture();return true;
+  }
   // Pure validation above preserves the active native world and all in-flight
   // projectiles on any malformed restore, including a different map.
   ensureFixture();

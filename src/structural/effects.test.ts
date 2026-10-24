@@ -35,7 +35,7 @@ test('only brief blast core is active work; dust impact and residual smoke are n
  assert.equal(t.hasActiveCore(),false);
  assert.equal(t.frames()[0].flash,0);assert.equal(t.frames()[0].fire,0);
  t.add({id:'blast',epoch:1,tool:'nova',position:{x:1,y:2,z:3}});assert.equal(t.hasActiveCore(),true);
- t.step(1.2);assert.equal(t.hasActiveCore(),false);assert.ok(t.frames().some(f=>f.smoke>0));
+ t.step(1.8);assert.equal(t.hasActiveCore(),false);assert.ok(t.frames().some(f=>f.smoke>0));
  assert.equal(t.activeCount,2);t.clear();assert.equal(t.activeCount,0);
  t.add({id:'blast',epoch:1,tool:'nova',position:{x:0,y:0,z:0}});assert.equal(t.activeCount,0,'clearing presentation must not replay a seen event');
  t.reset(2);t.add({id:'blast',epoch:2,tool:'nova',position:{x:0,y:0,z:0}});assert.equal(t.activeCount,1);
@@ -48,4 +48,14 @@ test('late independent events retain their own age and cloned positions',()=>{
  first[0].position.x=-55;first[0].age=99;assert.equal(t.frames()[0].age,.5);assert.equal(t.frames()[0].position.x,2);
  t.step(7);assert.equal(t.activeCount,0);
  t.add({id:'second',epoch:1,tool:'nova',position});assert.equal(t.activeCount,0,'expired events stay deduplicated for the epoch');
+});
+test('nova retains readable four-stage presentation without extending the settlement gate to its smoke tail',()=>{
+ const t=new EffectTimeline();t.add({id:'city',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});
+ t.step(.1);assert.ok(t.frames()[0].flash>0,'the short onset must still be visible at 100 ms');
+ t.step(.4);assert.ok(t.frames()[0].fire>.4);assert.ok(t.frames()[0].ring>0,'dust front must survive the first half second');
+ t.step(.5);assert.ok(t.frames()[0].fire>0,'one second is the fire-to-smoke transition, not a vanished burst');assert.equal(t.frames()[0].flash,0);
+ t.step(.2);assert.equal(t.hasActiveCore(),true,'the visible main fire must finish before settlement');
+ t.step(.6);assert.equal(t.hasActiveCore(),false,'gray smoke alone cannot hold settlement');
+ t.step(1.2);assert.equal(t.frames()[0].fire,0);assert.ok(t.frames()[0].smoke>.3);assert.equal(t.hasActiveCore(),false);
+ t.step(4);assert.equal(t.activeCount,0);
 });

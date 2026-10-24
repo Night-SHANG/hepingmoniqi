@@ -19,7 +19,7 @@ test('secondary impact and detachment stay dust-only and smoke never holds settl
  assert.ok(channel.getDiagnostics().events.every(e=>e.kind==='impact'));
  const fire:THREE.Object3D[]=[];scene.traverse(o=>{if(o.name==='explosion-fire')fire.push(o);});assert.ok(fire.every(o=>!o.visible));
  channel.add({...base,id:'blast',kind:'detonation',tool:'nova'});assert.equal(channel.hasActiveCore(),true);
- channel.step(.9);assert.equal(channel.hasActiveCore(),false);assert.ok(channel.getDiagnostics().active>0);
+ channel.step(.9);assert.equal(channel.hasActiveCore(),true,'visible nova fire must still block active settlement');channel.step(.81);assert.equal(channel.hasActiveCore(),false);assert.ok(channel.getDiagnostics().active>0,'only the smoke tail remains');
  channel.clear();assert.equal(scene.children.length,0);channel.add({...base,id:'blast',kind:'detonation'});assert.equal(channel.getDiagnostics().active,0,'clear must not replay same authority event');channel.dispose();
 });
 

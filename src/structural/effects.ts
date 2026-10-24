@@ -9,7 +9,7 @@ export const EFFECT_PROFILES = {
  split: {color:0xffa94d,flash:.05,fire:.3,smoke:1.8,ring:.12,spread:.8,lobes:9,smokeLobes:27,fragments:18,fragmentLife:1.4,shape:'split'},
  phase: {color:0xd8d4b1,flash:.03,fire:.16,smoke:1.35,ring:.09,spread:.55,lobes:5,smokeLobes:18,fragments:10,fragmentLife:.9,shape:'needle'},
  heavy: {color:0xff9638,flash:.085,fire:.61,smoke:3.6,ring:.28,spread:1.7,lobes:14,smokeLobes:46,fragments:32,fragmentLife:2,shape:'column'},
- nova: {color:0xffb44b,flash:.095,fire:.86,smoke:5,ring:.34,spread:2.5,lobes:18,smokeLobes:66,fragments:40,fragmentLife:2.3,shape:'mushroom'},
+ nova: {color:0xffb44b,flash:.18,fire:1.7,smoke:6.2,ring:.8,spread:2.5,lobes:18,smokeLobes:66,fragments:40,fragmentLife:2.3,shape:'mushroom'},
 } as const;
 export type EffectTool = keyof typeof EFFECT_PROFILES;
 export type EffectProfile = typeof EFFECT_PROFILES[EffectTool];

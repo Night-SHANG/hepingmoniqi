@@ -14,9 +14,9 @@ const page=await context.newPage();page.setDefaultTimeout(30000);
 const output='artifacts/structural-game-browser',evidence={scope:'Formal UI smoke on three maps; synthetic legacy unlock fixture, not organic progression',maps:[],memory:[],errors:[]};await fs.mkdir(output,{recursive:true});
 const cdp=await context.newCDPSession(page);
 page.on('pageerror',e=>evidence.errors.push(String(e)));
-const read=()=>page.evaluate(()=>{const h=window.__heping,vs=h.voxels();let hp=0,soilHP=0,soilMinY=Infinity,soilCount=0,hash=2166136261;const states={};
- for(const v of vs){hp+=v.hp;if(v.role==='terrain'){soilHP+=v.hp;soilCount++;soilMinY=Math.min(soilMinY,v.position.y);}states[v.structuralState]=(states[v.structuralState]??0)+1;for(const n of [v.id,v.hp,v.position.x,v.position.y,v.position.z,v.rotation?.x??0,v.rotation?.y??0,v.rotation?.z??0,v.rotation?.w??1]){hash=Math.imul(hash^Math.round(n*100000),16777619)>>>0;}}
- const snapshot=h.snapshot();return{screen:h.screen,mode:h.mode,ready:h.physicsReady,snapshot:{mapId:snapshot.mapId,epoch:snapshot.epoch,research:snapshot.research},geometry:{count:vs.length,hp,soilHP,soilMinY,soilCount,hash,states},main:h.mainSnapshot(),round:h.round(),projectiles:h.projectiles(),events:h.lastDetonations(),pending:h.pendingWork(),surface:h.aimSurface(),flow:h.flow,activeEffects:h.activeEffects,lastFinishEvidence:h.lastFinishEvidence};});
+const read=()=>page.evaluate(()=>{const h=window.__heping,vs=h.voxels(),snapshot=h.snapshot(),bounds={courtyard:[27,22],neighborhood:[52,42],city:[122,102]}[snapshot.mapId]??[27,22],width=2*bounds[0]+1,masks=new Uint8Array(width*(2*bounds[1]+1));let hp=0,soilHP=0,soilMinY=Infinity,soilCount=0,hash=2166136261;const states={};
+ for(const v of vs){hp+=v.hp;if(v.role==='terrain'){soilHP+=v.hp;soilCount++;soilMinY=Math.min(soilMinY,v.position.y);const {x,y,z}=v.position;if(Number.isInteger(x)&&Number.isInteger(y)&&Number.isInteger(z)&&Math.abs(x)<=bounds[0]&&Math.abs(z)<=bounds[1]&&y>=-8&&y<=-1)masks[(z+bounds[1])*width+x+bounds[0]]|=1<<(-y-1);}states[v.structuralState]=(states[v.structuralState]??0)+1;for(const n of [v.id,v.hp,v.position.x,v.position.y,v.position.z,v.rotation?.x??0,v.rotation?.y??0,v.rotation?.z??0,v.rotation?.w??1]){hash=Math.imul(hash^Math.round(n*100000),16777619)>>>0;}}
+ const coverage={expectedColumns:masks.length,missingTop:Array.from(masks).filter(m=>!(m&1)).length,incompleteColumns:Array.from(masks).filter(m=>m!==255).length};return{screen:h.screen,mode:h.mode,ready:h.physicsReady,snapshot:{mapId:snapshot.mapId,epoch:snapshot.epoch,research:snapshot.research},geometry:{count:vs.length,hp,soilHP,soilMinY,soilCount,coverage,hash,states},main:h.mainSnapshot(),round:h.round(),projectiles:h.projectiles(),events:h.lastDetonations(),pending:h.pendingWork(),surface:h.aimSurface(),flow:h.flow,activeEffects:h.activeEffects,lastFinishEvidence:h.lastFinishEvidence};});
 
 const wait=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout});
 async function capture(name){await page.screenshot({path:`${output}/${name}.png`});let bytes=await page.screenshot({type:'jpeg',quality:60});if(bytes.length>220000)bytes=await page.screenshot({type:'jpeg',quality:35});if(bytes.length<220000)console.log(`SCREENSHOT_BASE64 structural-game-${name} ${bytes.toString('base64')}`);}
@@ -50,7 +50,7 @@ try{
  for(const map of ['courtyard','neighborhood','city']){
   await page.locator('#mode-free').click();await wait(()=>window.__heping.screen==='setup');const b=page.locator(`[data-scene="${map}"]`);await b.scrollIntoViewIfNeeded();await b.click();await tools(map==='city'?['pulse','nova']:['pulse']);await lifecycle(0);
   await page.locator('#start-experiment').click();await wait(()=>window.__heping.screen==='playing'&&window.__heping.physicsReady);
-  await lifecycle(1);if(map==='city')await memory('entered-city');const intact=await read();assert.equal(intact.snapshot.mapId,map);assert.equal(intact.mode,'free');assert.ok(intact.geometry.soilCount>0);assert.equal(intact.pending,0);await capture(`${map}-intact`);
+  await lifecycle(1);if(map==='city')await memory('entered-city');const intact=await read();assert.equal(intact.snapshot.mapId,map);assert.equal(intact.mode,'free');assert.ok(intact.geometry.soilCount>0);assert.equal(intact.geometry.coverage.missingTop,0,'No visible ground columns may be absent at map start');assert.equal(intact.geometry.coverage.incompleteColumns,0,'Every formal column must retain all eight soil layers');assert.equal(intact.pending,0);await capture(`${map}-intact`);
   await page.locator('[data-weapon="pulse"]').click();const aimed=await aimSoil(map);await page.locator('#slow').click();const before=await read();await page.locator('#fire').click();const launched=await read();assert.ok(launched.projectiles.length>0,'Fire creates an actual body');assert.deepEqual(launched.geometry,before.geometry,'No damage at launch');
   await page.locator('#pause').click();await capture(`${map}-real-projectile`);await page.locator('#pause').click();await page.locator('#slow').click();
   await wait(()=>window.__heping.lastDetonations().length>0);await wait(()=>window.__heping.pendingWork()===0);
@@ -59,12 +59,20 @@ try{
   await page.locator('#reset').click();await wait(epoch=>window.__heping.physicsReady&&window.__heping.snapshot().epoch>epoch,damaged.snapshot.epoch);const reset=await read();assert.equal(reset.pending,0);assert.equal(reset.projectiles.length,0);assert.deepEqual(reset.geometry,intact.geometry);assert.deepEqual(reset.main,intact.main);
   if(map==='city'){
    const novaButton=page.locator('[data-weapon="nova"]');await novaButton.scrollIntoViewIfNeeded();await novaButton.click();await aimSoil(map);await page.locator('#slow').click();await page.locator('#fire').click();assert.ok((await read()).projectiles.some(p=>p.weapon==='nova'));
-   await wait(()=>window.__heping.scene().effects.events.some(e=>e.tool==='nova'&&e.kind==='detonation'),undefined,120000);await page.locator('#pause').click();
-   const core=await page.evaluate(()=>window.__heping.scene().effects.events.find(e=>e.tool==='nova'&&e.kind==='detonation'));assert.ok(core&&core.age<.86,'Capture must show the real nova fire/core phase, not only a late smoke tail');await capture('city-nova-real-event');await memory('city-after-nova');
-   evidence.cityNova={core,scope:'Actual city event; explicitly reset before natural settlement, no settlement claim'};
-   await page.locator('#pause').click();
-   try{await wait(id=>window.__heping.scene().effects.events.some(e=>e.id===id&&e.age>=1),core.id,60000);await page.locator('#pause').click();evidence.cityNova.smoke=await page.evaluate(id=>window.__heping.scene().effects.events.find(e=>e.id===id),core.id);await capture('city-nova-age-one');}catch(error){evidence.cityNova.secondFrameMiss=String(error);}
-   const novaEpoch=(await read()).snapshot.epoch;await page.locator('#reset').click();await wait(epoch=>window.__heping.physicsReady&&window.__heping.snapshot().epoch>epoch,novaEpoch);assert.equal((await read()).pending,0);assert.deepEqual((await read()).main,intact.main);
+   await wait(()=>window.__heping.scene().effects.events.some(e=>e.tool==='nova'&&e.kind==='detonation'),undefined,120000);
+   const novaId=await page.evaluate(()=>window.__heping.scene().effects.events.find(e=>e.tool==='nova'&&e.kind==='detonation').id);
+   evidence.cityNova={id:novaId,stages:[],scope:'Actual city event, real UI slow/pause only; explicitly reset before natural settlement'};
+   for(const [requestedAge,tolerance] of [[.1,.06],[.5,.1],[1,.15],[3,.2]]){
+    const priorAge=evidence.cityNova.stages.at(-1)?.actualAge??-1;await wait(({id,age,priorAge})=>window.__heping.scene().effects.events.some(e=>e.id===id&&e.age>=age&&e.age>priorAge),{id:novaId,age:requestedAge,priorAge},60000);
+    await page.locator('#pause').click();const frame=await page.evaluate(id=>window.__heping.scene().effects.events.find(e=>e.id===id),novaId);
+    const captured=!!frame&&frame.age>=requestedAge&&frame.age<=requestedAge+tolerance;
+    const phaseVisible=!!frame&&(requestedAge===3?frame.age>=3&&frame.age<6.2:frame.age>=0&&frame.age<1.7);evidence.cityNova.stages.push({requestedAge,tolerance,actualAge:frame?.age??null,captured,exactTimingMiss:!captured,phaseVisible,phase:requestedAge===3?'gray-smoke':frame?.age<.18?'flash-and-fire':'fire',flashCaptured:!!frame&&frame.age<.18});
+    await capture(`city-nova-${requestedAge.toFixed(1)}s-${captured?'captured':'missed'}`);
+    if(requestedAge===.1)await memory('city-after-nova');
+    await page.locator('#pause').click();
+   }
+   evidence.cityNova.exactTimingComplete=evidence.cityNova.stages.every(s=>s.captured);evidence.cityNova.timelineComplete=evidence.cityNova.stages.length===4&&evidence.cityNova.stages.every((s,i,all)=>s.phaseVisible&&(i===0||s.actualAge>all[i-1].actualAge));
+   const novaEpoch=(await read()).snapshot.epoch;await page.locator('#reset').click();await wait(epoch=>window.__heping.physicsReady&&window.__heping.snapshot().epoch>epoch,novaEpoch);assert.equal((await read()).pending,0);assert.deepEqual((await read()).main,intact.main);assert.ok(evidence.cityNova.timelineComplete,'Nova must show four distinct increasing-age frames, three live fire stages and a 3–6.2s gray-smoke stage; exact timing misses remain separately labelled');
   }
   evidence.maps.push({map,target:aimed.id,detonations:damaged.events,remaining:damaged.geometry.count,resetEpoch:reset.snapshot.epoch});
   await page.locator('#game-home').click();if(await page.locator('#navigation-dialog').evaluate(e=>e.open))await page.locator('#confirm-leave').click();await wait(()=>window.__heping.screen==='home');await lifecycle(0);if(map==='city'){await memory('left-city-before-gc');await memory('left-city-forced-gc',true);}

@@ -32,6 +32,8 @@ export interface StructuralSimulation {
  pending():number;
  research():number;
  snapshot():unknown;
+ /** Owned sparse cells plus complete save metadata; expand before strict restore. */
+ snapshotSparse():unknown;
  restore(snapshot:unknown):boolean;
  reset():void;
  dispose():void;

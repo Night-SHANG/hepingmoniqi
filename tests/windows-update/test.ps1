@@ -20,7 +20,7 @@ foreach ($name in @($batchName, $scriptName, $manifestName)) {
     Assert-True (Test-Path -LiteralPath (Join-Path $source $name) -PathType Leaf) ('Missing production updater: ' + $name)
 }
 $utf8 = New-Object Text.UTF8Encoding($false)
-$root = Join-Path ([IO.Path]::GetTempPath()) ('native update 中文 [空格] & test ' + [Guid]::NewGuid().ToString('N'))
+$root = Join-Path ([IO.Path]::GetTempPath()) ('nu 中文 [空 格]& ' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $caller = Join-Path $root 'unrelated caller'
 $fixture = Join-Path $root 'fixture'
 New-Item -ItemType Directory -Path $caller, $fixture -Force | Out-Null
@@ -46,7 +46,14 @@ public static class UpdateFixture {
     }
 }
 '@
-Add-Type -TypeDefinition $program -Language CSharp -OutputAssembly (Join-Path $fixtureOriginal $exeName) -OutputType ConsoleApplication
+# Add-Type resolves OutputAssembly as a PowerShell wildcard path on WinPS 5.1.
+# Compile in a short plain path, then copy with the literal .NET file API. The
+# delivered BAT still runs from the Chinese/space/bracket/ampersand path.
+$compileRoot = Join-Path ([IO.Path]::GetTempPath()) ('nu-compile-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+[IO.Directory]::CreateDirectory($compileRoot) | Out-Null
+$compiledExe = Join-Path $compileRoot $exeName
+Add-Type -TypeDefinition $program -Language CSharp -OutputAssembly $compiledExe -OutputType ConsoleApplication
+[IO.File]::Copy($compiledExe, (Join-Path $fixtureOriginal $exeName), $false)
 # Keep production filenames and notice inventory; replace only expected content
 # hashes/sizes in the test manifest. No test-only mode exists in production.
 foreach ($record in $manifest.original.files) {
@@ -229,7 +236,7 @@ Write-Host 'PASS: missing/corrupt sources and update payload never launch.'
 
 $notice = @($manifest.original.files | Where-Object { $_.path.StartsWith('THIRD-PARTY-NOTICES/') })[0].path
 foreach ($member in @($exeName, $dllName, $notice)) {
-    $bundle = New-Bundle ('bad restored ' + [Guid]::NewGuid().ToString('N')) 'restored'
+    $bundle = New-Bundle ('bad restored ' + [Guid]::NewGuid().ToString('N').Substring(0, 8)) 'restored'
     $old = Join-Path (Join-Path $bundle 'native-restored-20261024-123456') $originalRootName
     [IO.File]::AppendAllText((Join-Path $old $member), 'tampered')
     $null = Invoke-Update $bundle $false

@@ -1,0 +1,48 @@
+name: Scale priority city destruction verification
+on:
+  push:
+    branches: [perf/compact-city-ab]
+    paths:
+      - 'src/scale-slice/**'
+      - 'scripts/scale-slice*'
+      - 'scale-slice.html'
+      - 'vite.scale-slice.config.ts'
+      - '.github/workflows/scale-slice-performance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - name: Existing and regional authority regression tests
+        run: |
+          npm test
+          node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/scale-slice/*.test.ts
+          npx tsc --noEmit
+          npx vite build --config vite.scale-slice.config.ts
+      - name: Serve isolated slice
+        run: |
+          python3 -m http.server 5192 --bind 127.0.0.1 --directory dist-scale-slice >/tmp/scale-slice-server.log 2>&1 &
+          python3 - <<'PYREADY'
+          import time,urllib.request
+          for _ in range(50):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:5192/scale-slice.html',timeout=1)
+                  break
+              except OSError: time.sleep(.1)
+          else: raise RuntimeError('Isolated scale entry unavailable')
+          PYREADY
+      - name: Three actual city blasts and response evidence
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          QA_SCALE_SLICE_AUTHORIZED: 'true'
+          GAME_URL: http://127.0.0.1:5192/scale-slice.html
+          QA_OUTPUT: artifacts/scale-browser
+        run: node scripts/scale-slice-browser-check.mjs

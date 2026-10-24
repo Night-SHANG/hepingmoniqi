@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {LifecycleGeneration} from './generation';
+test('restore/reset generation rejects queued old commands even if authority epoch is restored',()=>{const g=new LifecycleGeneration();assert.equal(g.current,0);g.advance();const queued=g.current;assert.equal(g.accepts(queued),true);g.advance();assert.equal(g.accepts(queued),false);assert.equal(g.accepts(g.current),true);assert.equal(g.accepts(undefined),false);assert.equal(g.accepts(NaN),false);});

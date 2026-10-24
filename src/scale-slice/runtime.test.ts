@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createDenseFixture} from '../compact/fixture';import {createScaleRuntime} from './runtime';
+import type {Cell,SceneFixture} from '../structural/types';
+const c=(id:number,x:number,y:number,role:Cell['role']):Cell=>({id,objectId:role,role,position:{x,y,z:0},material:role==='terrain'?'soil':'wood',hp:10,maxHp:10,color:0x884433});
+test('runtime keeps authoritative damage, live surfaces and one physics world in sync',async()=>{const source=createDenseFixture({id:'runtime-small',cells:[c(1,0,-1,'terrain'),c(2,1,-1,'terrain'),c(3,0,0,'building')]} as SceneFixture),r=await createScaleRuntime(source);try{const p={x:0,y:0,z:0};assert.equal(r.surface.staticIdAt(0,0,0),3);const hit=r.blast({id:'one',epoch:r.model.epoch,sequence:1,position:p,radius:1,damage:100,impulse:1});assert.equal(hit.transaction.accepted,true);assert.equal(r.surface.staticIdAt(0,0,0),null);const stats=r.model.stats();assert.equal(r.blast({id:'one',epoch:r.model.epoch,sequence:1,position:p,radius:1,damage:100,impulse:1}).transaction.accepted,false);assert.deepEqual(r.model.stats(),stats);}finally{r.dispose();}});

@@ -16,6 +16,7 @@ const gates=row=>({
  naturalRecovery:row.settled===true&&row.finalDebtMs<100,
 });
 function selfTest(){
+ assert.equal(distance({x:0,y:0,z:0},{x:3,y:4,z:0}),5);
  const good={inputMs:[9,12],trustedProbe:true,longTaskAPI:true,longTasks:[],damageCommitMs:249,staticVisibleMs:499,visibleMs:499,renderCount:1,settled:true,finalDebtMs:0};
  assert.ok(Object.values(gates(good)).every(Boolean));
  for(const [field,value,gate] of [['inputMs',[100],'input'],['longTasks',[{duration:100}],'mainLongTasks'],['damageCommitMs',250,'damageCommit'],['staticVisibleMs',500,'staticVisible'],['visibleMs',500,'completeVisible'],['inputMs',[],'trustedInputObserved'],['longTaskAPI',false,'mainLongTasks'],['renderCount',0,'actualRender'],['settled',false,'naturalRecovery']])assert.equal(gates({...good,[field]:value})[gate],false);
@@ -131,7 +132,7 @@ async function main(){
  }catch(error){evidence.status='failed-or-incomplete';evidence.performanceVerdict='not-passed';evidence.failure=String(error?.stack??error);process.exitCode=1;}
  finally{clearTimeout(watchdog);evidence.finishedAt=new Date().toISOString();await persist();console.log('SCALE_BROWSER_RESULT '+JSON.stringify({status:evidence.status,performanceVerdict:evidence.performanceVerdict,initialize:evidence.initialize,initial:evidence.initial,memory:evidence.memory,savedBytes:evidence.savedBytes,restored:evidence.restored,screenshots:evidence.screenshots,shots:evidence.shots.map(r=>({shot:r.shot,gates:r.gates,damageCommitMs:r.damageCommitMs,staticVisibleMs:r.staticVisibleMs,visibleMs:r.visibleMs,naturalRecoveryWallMs:r.naturalRecoveryWallMs,input:stats(r.inputMs??[]),longTasks:stats((r.longTasks??[]).map(t=>t.duration)),after:r.after})),failure:evidence.failure??null,limitations:evidence.limitations}));await browser?.close();}
 }
-const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);}
 function makeCandidates(fixture){
  const result=[],objects=new Set();
  for(let ordinal=0;ordinal<fixture.structureCount;ordinal++){

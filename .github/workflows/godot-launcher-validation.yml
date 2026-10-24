@@ -21,5 +21,6 @@ jobs:
       - name: Actual CMD and Windows PowerShell launcher regression
         shell: powershell
         run: |
-          & .\tests\windows-launcher\test.ps1
+          powershell.exe -NoProfile -File .\tests\windows-launcher\test.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Launcher regression failed' }
+

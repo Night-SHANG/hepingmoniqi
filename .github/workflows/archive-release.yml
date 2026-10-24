@@ -1,4 +1,4 @@
-name: Archive exact v0.7 user baseline
+name: Draft archive exact v0.7 user baseline
 on:
   push:
     branches: [archive-v07-original-package]
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-      - name: Verify original bytes and publish historical non-latest archive
+      - name: Verify original bytes and create historical non-latest draft
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 archive/publish.py

@@ -75,7 +75,7 @@ export class StructuralEffects {
   const wave=new THREE.InstancedMesh(this.lobeGeometry,new THREE.MeshLambertMaterial({color:0xffffff,alphaHash:true,depthWrite:true}),frame.tool==='nova'?48:frame.tool==='echo'?30:22);wave.name='explosion-shockwave';
   for(const mesh of [fire,smoke,fragments,wave]){mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;}
   root.add(flash,fire,smoke,fragments,wave);
-  return {root,flash,fire,smoke,fragments,wave,seeds:seedsFor(`${frame.epoch}:${frame.id}`,Math.max(smokeCount,p.fragments,p.lobes,30))};
+  return {root,flash,fire,smoke,fragments,wave,seeds:seedsFor(`${frame.epoch}:${frame.id}`,Math.max(fire.count,smoke.count,fragments.count,wave.count))};
  }
  private place(mesh:THREE.InstancedMesh,index:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,spin=0,horizontal=false):void {
   this.transform.position.set(x,y,z);this.transform.rotation.set(horizontal?0:spin*.7,spin,horizontal?0:spin*.3);this.transform.scale.set(sx,sy,sz);this.transform.updateMatrix();mesh.setMatrixAt(index,this.transform.matrix);

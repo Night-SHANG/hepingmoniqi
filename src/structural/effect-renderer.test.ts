@@ -92,3 +92,14 @@ test('city dust front remains low rolling sectors rather than rotating into vert
  const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();timeline.add({id:'city',epoch:1,tool:'nova',scale:48,position:{x:0,y:0,z:0}});timeline.step(.5);renderer.render(timeline.frames());
  const wave=scene.getObjectByName('explosion-shockwave') as THREE.InstancedMesh;wave.computeBoundingBox();assert.ok(wave.boundingBox!.getSize(new THREE.Vector3()).y<8,'flattened dust must only rotate around its vertical axis');renderer.dispose();
 });
+for(const tool of ['charge','pulse','shock','echo','split','phase','heavy','nova'] as const){
+ test(`${tool} impact inherited from a real shot fills every layer without throwing or nonfinite transforms`,()=>{
+  const scene=new THREE.Scene(),renderer=new StructuralEffects(scene),timeline=new EffectTimeline();
+  timeline.add({id:`impact:${tool}`,epoch:1,tool,kind:'impact',scale:.4,position:{x:-7.51,y:11.24,z:-4.51}});
+  for(const dt of [0,.2,.45]){
+   timeline.step(dt);assert.doesNotThrow(()=>renderer.render(timeline.frames()),'an invisible shock layer must still have valid seeds when updated');
+   scene.traverse(object=>{if(object instanceof THREE.InstancedMesh)assert.ok(Array.from(object.instanceMatrix.array).every(Number.isFinite),`${tool} ${object.name} has an invalid transform`);});
+  }
+  assert.equal(scene.getObjectByName('explosion-fire')!.visible,false);assert.equal(scene.getObjectByName('explosion-shockwave')!.visible,false);assert.equal(scene.getObjectByName('explosion-smoke')!.visible,true);renderer.dispose();
+ });
+}

@@ -113,3 +113,23 @@ test('warm idle and sparse-delta queries perform no repeated per-cell deep clone
   }finally{globalThis.structuredClone=clone;}
  }finally{s.dispose();}
 });
+
+test('first views reuse simulation-owned specs without per-cell deep clones and retain caller/restore isolation',async()=>{
+ const f=fixture();(f.cells[1] as any).metadata={tags:['owned-original']};
+ const s=await createStructuralSimulation(f);
+ try{
+  // The simulation still owns its initial deep copy. Freezing private specs
+  // must not freeze or retain aliases into the caller's mutable input.
+  assert.equal(Object.isFrozen(f.cells[1]),false);f.cells[1].hp=7;f.cells[1].position.y=99;(f.cells[1] as any).metadata.tags.push('caller-change');
+  const nativeClone=globalThis.structuredClone;let clones=0;
+  globalThis.structuredClone=((...args:Parameters<typeof nativeClone>)=>{clones++;return nativeClone(...args);}) as typeof nativeClone;
+  let first:ReturnType<StructuralSimulation['viewChanges']>;
+  try{first=s.viewChanges();assert.equal(clones,0,'initial immutable views must not deep-clone every already-owned spec again');}finally{globalThis.structuredClone=nativeClone;}
+  assert.equal(first!.cells.length,4);assert.equal(first!.cells[1].hp,100);assert.equal(first!.cells[1].position.y,1);assert.deepEqual((first!.cells[1] as any).metadata.tags,['owned-original']);
+  assert.throws(()=>{(first!.cells[1] as any).metadata.tags.push('view-change');},TypeError);
+  blast(s,'first-real-delta');const detached=s.viewChanges(first!.revision);assert.deepEqual(detached.cells.map(c=>[c.id,c.state]),[[2,'gone'],[3,'dynamic']]);
+  s.step(1/60);const moved=s.viewChanges(detached.revision);assert.deepEqual(moved.cells.map(c=>c.id),[3]);assert.ok(moved.cells[0].position.y<2);assert.equal(first!.cells[2].position.y,2);
+  const saved=s.snapshot(),pose=s.views();s.reset();const reset=s.viewChanges(moved.revision);assert.equal(reset.reset,true);assert.equal(reset.cells[1].hp,100);assert.equal(reset.cells[1].state,'static');
+  assert.ok(s.restore(saved));const restored=s.viewChanges(reset.revision);assert.equal(restored.reset,true);assert.deepEqual(s.views(),pose);assert.equal(restored.cells[1].state,'gone');assert.equal(restored.cells[2].state,'dynamic');
+ }finally{s.dispose();}
+});

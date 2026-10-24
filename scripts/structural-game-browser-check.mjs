@@ -14,12 +14,13 @@ await context.addInitScript(save=>{if(!sessionStorage.getItem('structural-game-q
 const page=await context.newPage();page.setDefaultTimeout(30000);
 const output='artifacts/structural-game-browser',evidence={scope:'Formal UI smoke on three maps; synthetic legacy unlock fixture, not organic progression',qaScope,maps:[],memory:[],screenshots:[],errors:[]};await fs.mkdir(output,{recursive:true});
 const cdp=await context.newCDPSession(page);
-page.on('pageerror',e=>evidence.errors.push(String(e)));
+let reportFatal;const fatalPageError=new Promise(resolve=>reportFatal=resolve);
+page.on('pageerror',e=>{evidence.errors.push(String(e));reportFatal(String(e));console.error('PAGE_ERROR '+String(e));});
 const read=()=>page.evaluate(()=>{const h=window.__heping,vs=h.voxels(),snapshot=h.snapshot(),bounds={courtyard:[27,22],neighborhood:[52,42],city:[122,102]}[snapshot.mapId]??[27,22],width=2*bounds[0]+1,masks=new Uint8Array(width*(2*bounds[1]+1));let hp=0,soilHP=0,soilMinY=Infinity,soilCount=0,hash=2166136261;const states={};
  for(const v of vs){hp+=v.hp;if(v.role==='terrain'){soilHP+=v.hp;soilCount++;soilMinY=Math.min(soilMinY,v.position.y);const {x,y,z}=v.position;if(Number.isInteger(x)&&Number.isInteger(y)&&Number.isInteger(z)&&Math.abs(x)<=bounds[0]&&Math.abs(z)<=bounds[1]&&y>=-8&&y<=-1)masks[(z+bounds[1])*width+x+bounds[0]]|=1<<(-y-1);}states[v.structuralState]=(states[v.structuralState]??0)+1;for(const n of [v.id,v.hp,v.position.x,v.position.y,v.position.z,v.rotation?.x??0,v.rotation?.y??0,v.rotation?.z??0,v.rotation?.w??1]){hash=Math.imul(hash^Math.round(n*100000),16777619)>>>0;}}
  const coverage={expectedColumns:masks.length,missingTop:Array.from(masks).filter(m=>!(m&1)).length,incompleteColumns:Array.from(masks).filter(m=>m!==255).length};return{screen:h.screen,mode:h.mode,ready:h.physicsReady,snapshot:{mapId:snapshot.mapId,epoch:snapshot.epoch,research:snapshot.research},geometry:{count:vs.length,hp,soilHP,soilMinY,soilCount,coverage,hash,states},main:h.mainSnapshot(),round:h.round(),projectiles:h.projectiles(),events:h.lastDetonations(),pending:h.pendingWork(),surface:h.aimSurface(),flow:h.flow,activeEffects:h.activeEffects,lastFinishEvidence:h.lastFinishEvidence};});
 
-const wait=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout});
+const wait=(fn,arg,timeout=180000)=>Promise.race([page.waitForFunction(fn,arg,{timeout}),fatalPageError.then(error=>{throw new Error('Browser runtime error: '+error);})]);
 function progress(stage,details={}){console.log('QA_PROGRESS '+JSON.stringify({stage,at:new Date().toISOString(),...details}));}
 async function capture(name){
  const started=Date.now();progress('screenshot-start',{name});
@@ -51,7 +52,7 @@ try{
  await page.locator('#mode-main').click();await wait(()=>window.__heping.screen==='setup');await lifecycle(0);
  await page.locator('[data-scene="courtyard"]').click();
  for(const id of ['charge','pulse','shock','echo','split','phase','heavy','nova']){const desired=id==='charge'?2:0;let count=Number(await page.locator(`#loadout-${id}`).innerText());let budget=12;while(count!==desired&&budget-->0){const delta=count>desired?'-1':'1',button=page.locator(`[data-adjust="${id}"][data-delta="${delta}"]`);await button.scrollIntoViewIfNeeded();await button.click();count=Number(await page.locator(`#loadout-${id}`).innerText());}assert.equal(count,desired);}
- await page.locator('#start-experiment').click();await wait(()=>window.__heping.screen==='playing'&&window.__heping.physicsReady);
+ await page.locator('#start-experiment').click({timeout:180000});await wait(()=>window.__heping.screen==='playing'&&window.__heping.physicsReady);
  await lifecycle(1);const mainStart=await read(),building=await page.evaluate(()=>window.__heping.voxels().find(v=>v.id===360));assert.ok(building?.group==='house');const buildingPixel=await page.evaluate(p=>window.__heping.project(p),building.position);assert.ok(buildingPixel.visible);assert.ok(await page.evaluate(p=>document.elementFromPoint(p.x,p.y)?.tagName==='CANVAS',buildingPixel));await page.mouse.click(buildingPixel.x,buildingPixel.y);assert.equal((await read()).surface?.voxelId,360);
  await page.locator('#slow').click();await page.locator('#fire').click();const mainFlying=await read();assert.equal(mainFlying.round.remaining.charge,mainStart.round.remaining.charge-1);assert.equal(mainFlying.round.used,mainStart.round.used+1);assert.ok(mainFlying.projectiles.length>0);assert.deepEqual(mainFlying.geometry,mainStart.geometry);
  await page.locator('#finish-round').click();const ending=await read();assert.equal(ending.flow,'ending');assert.notEqual(ending.screen,'results');assert.ok(ending.pending>0);await capture('main-active-end-waits');
@@ -64,7 +65,7 @@ try{
  }
  for(const map of (cityEffectsOnly?['city']:['courtyard','neighborhood','city'])){
   progress('map-setup-start',{map});await page.locator('#mode-free').click();await wait(()=>window.__heping.screen==='setup');const b=page.locator(`[data-scene="${map}"]`);await b.scrollIntoViewIfNeeded();await b.click();await tools(map==='city'?['pulse','nova']:['pulse']);await lifecycle(0);
-  await page.locator('#start-experiment').click();await wait(()=>window.__heping.screen==='playing'&&window.__heping.physicsReady);
+  await page.locator('#start-experiment').click({timeout:180000});await wait(()=>window.__heping.screen==='playing'&&window.__heping.physicsReady);
   await lifecycle(1);progress('map-playing-ready',{map});if(map==='city')await memory('entered-city');const intact=await read();assert.equal(intact.snapshot.mapId,map);assert.equal(intact.mode,'free');assert.ok(intact.geometry.soilCount>0);assert.equal(intact.geometry.coverage.missingTop,0,'No visible ground columns may be absent at map start');assert.equal(intact.geometry.coverage.incompleteColumns,0,'Every formal column must retain all eight soil layers');assert.equal(intact.pending,0);await capture(`${map}-intact`);
   progress('pulse-start',{map});await page.locator('[data-weapon="pulse"]').click();const aimed=await aimSoil(map);await page.locator('#slow').click();const before=await read();await page.locator('#fire').click();const launched=await read();assert.ok(launched.projectiles.length>0,'Fire creates an actual body');assert.deepEqual(launched.geometry,before.geometry,'No damage at launch');
   await page.locator('#pause').click();await capture(`${map}-real-projectile`);await page.locator('#pause').click();await page.locator('#slow').click();

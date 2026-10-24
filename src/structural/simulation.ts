@@ -111,7 +111,9 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:St
   sync();if(!dirtyViews.size)return;
   const updates:ImmutableCellView[]=[];
   for(const id of dirtyViews){const c=cells.get(id)!;const index=viewIndices.get(id)!,previous=currentViews[index];
-   const view=Object.freeze({...previous??freezeDeep(copy(c.spec)),hp:c.hp,state:c.state,position:Object.freeze(point(c.position)),rotation:Object.freeze(rotation(c.rotation))});
+   // spec is already owned by the initial fixture deep-copy and never mutated.
+   // Freeze that private metadata once rather than cloning every cell again.
+   const view=Object.freeze({...previous??freezeDeep(c.spec),hp:c.hp,state:c.state,position:Object.freeze(point(c.position)),rotation:Object.freeze(rotation(c.rotation))});
    currentViews[index]=view;updates.push(view);
   }
   dirtyViews.clear();publishedViews=undefined;viewVersion++;

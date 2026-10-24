@@ -64,16 +64,25 @@ export class CompactAuthorityStore {
  /** Frame path: never traverses historical gone/static damage records. */
  *movingStates():IterableIterator<CompactCellState>{for(const id of this.movingIds)yield this.records.get(id)!.value;}
  changesSince(cursor?:number):CompactStoreChanges{
-  const reset=!Number.isSafeInteger(cursor)||cursor!<Math.max(this.resetVersion,this.version-JOURNAL_LIMIT)||cursor!>this.version;
+  const reset=!Number.isSafeInteger(cursor)||cursor!<this.resetVersion||cursor!>this.version;
   if(reset)return {revision:this.version,reset:true,ids:[],edits:[]};
   if(cursor===this.version)return {revision:this.version,reset:false,ids:[],edits:[]};
-  const updates=new Map<number,Revision>();
-  for(let revision=cursor!+1;revision<=this.version;revision++){
-   const entry=this.journal[(revision-1)%JOURNAL_LIMIT]!;
-   const previous=updates.get(entry.id);
-   updates.set(entry.id,{...entry,topologyChanged:entry.topologyChanged||previous?.topologyChanged===true,appearanceChanged:entry.appearanceChanged||previous?.appearanceChanged===true});
+  let entries:Revision[];
+  if(cursor!<this.version-JOURNAL_LIMIT){
+   // The bounded journal may wrap within one command. Sparse rows retain the
+   // latest revision of each kind, so older same-epoch cursors remain exact.
+   entries=[];
+   for(const row of this.records.values())if(row.revision>cursor!)entries.push({id:row.value.spec.id,revision:row.revision,topologyChanged:row.topologyRevision>cursor!,appearanceChanged:row.appearanceRevision>cursor!});
+  }else{
+   const updates=new Map<number,Revision>();
+   for(let revision=cursor!+1;revision<=this.version;revision++){
+    const entry=this.journal[(revision-1)%JOURNAL_LIMIT]!;
+    const previous=updates.get(entry.id);
+    updates.set(entry.id,{...entry,topologyChanged:entry.topologyChanged||previous?.topologyChanged===true,appearanceChanged:entry.appearanceChanged||previous?.appearanceChanged===true});
+   }
+   entries=[...updates.values()];
   }
-  const entries=[...updates.values()].sort((a,b)=>this.fixture.ordinal(a.id)-this.fixture.ordinal(b.id));
+  entries.sort((a,b)=>this.fixture.ordinal(a.id)-this.fixture.ordinal(b.id));
   return {revision:this.version,reset:false,ids:entries.map(entry=>entry.id),edits:entries.map(entry=>({...entry,position:this.fixture.originalPosition(entry.id)!}))};
  }
  aggregate():Readonly<CompactAggregate>{return {...this.totals};}

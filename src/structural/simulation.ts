@@ -239,8 +239,8 @@ export async function createStructuralSimulation(fixture:SceneFixture|CompactFix
   for(const piece of pieces){const ids=piece.cells.filter(id=>readCell(id)?.state==='static');if(!ids.length)continue;graph.remove(ids);const center=ids.reduce((p,id)=>{const q=readCell(id)!.position;return{x:p.x+q.x/ids.length,y:p.y+q.y/ids.length,z:p.z+q.z/ids.length};},point(ZERO));let v=point(ZERO);if(origin&&impulse>0){const d={x:center.x-origin.x,y:center.y-origin.y,z:center.z-origin.z},n=length(d)||1;v={x:d.x/n*impulse,y:d.y/n*impulse,z:d.z/n*impulse};}spawn(ids,rootShotId,v);}
   flushStatic();advance();
  }
- function destroyCell(id:number){const c=editCell(id)!;removeCollider(id);c.hp=0;c.state='gone';c.loss=c.spec.hp;const chunkId=c.chunkId;delete c.chunkId;changed(c,true);graph.remove([id]);if(chunkId){const chunk=chunks.get(chunkId);if(chunk){chunk.cells=chunk.cells.filter(n=>n!==id);if(!chunk.cells.length){if(chunk.body)world.removeRigidBody(chunk.body);chunks.delete(chunkId);queue=queue.filter(n=>n!==chunkId);}}}}
- function damage(id:number,value:number,eventId:string){const existing=readCell(id);if(!existing||existing.hp<=0||!Number.isFinite(value)||value<=0||processed.has(eventId))return 0;const c=editCell(id)!;processed.add(eventId);const used=Math.min(c.hp,value);c.hp-=used;c.loss=Math.min(c.spec.hp,c.loss+used);changed(c,true);if(c.hp<=1e-8)destroyCell(id);return used;}
+ function destroyCell(id:number,staticDeaths?:number[]){const c=editCell(id)!,wasStatic=c.state==='static';removeCollider(id);c.hp=0;c.state='gone';c.loss=c.spec.hp;const chunkId=c.chunkId;delete c.chunkId;changed(c,true);if(wasStatic){if(staticDeaths)staticDeaths.push(id);else graph.remove([id]);}if(chunkId){const chunk=chunks.get(chunkId);if(chunk){chunk.cells=chunk.cells.filter(n=>n!==id);if(!chunk.cells.length){if(chunk.body)world.removeRigidBody(chunk.body);chunks.delete(chunkId);queue=queue.filter(n=>n!==chunkId);}}}}
+ function damage(id:number,value:number,eventId:string,staticDeaths:number[]){const existing=readCell(id);if(!existing||existing.hp<=0||!Number.isFinite(value)||value<=0||processed.has(eventId))return 0;const c=editCell(id)!;processed.add(eventId);const used=Math.min(c.hp,value);c.hp-=used;c.loss=Math.min(c.spec.hp,c.loss+used);changed(c,true);if(c.hp<=1e-8)destroyCell(id,staticDeaths);return used;}
  function forgetContacts(ids:readonly number[]){const changed=new Set(ids);for(const key of episodes.keys())if(key.split(':').map(Number).some(id=>changed.has(id)))episodes.delete(key);}
  function releaseBody(chunk:Chunk){for(const id of chunk.cells){const collider=colliders.get(id);if(collider)colliderIds.delete(collider.handle);colliders.delete(id);}if(chunk.body)world.removeRigidBody(chunk.body);delete chunk.body;for(const id of chunk.cells)addStatic(readCell(id)!);}
  function wake(chunk:Chunk,rootShotId:string){
@@ -328,7 +328,11 @@ export async function createStructuralSimulation(fixture:SceneFixture|CompactFix
     }
    }
   }
-  for(const command of commands){const used=damage(command.target,command.damage,command.id);if(used)emit({id:command.id,kind:'impact',position:command.position,sourceId:command.sourceId,targetId:command.target,damage:used,rootShotId:command.rootShotId});}
+  // Support is consumed only after this native command batch, never between
+  // individual damage events. Dynamic/rubble members already left on detach.
+  const staticDeaths:number[]=[];
+  for(const command of commands){const used=damage(command.target,command.damage,command.id,staticDeaths);if(used)emit({id:command.id,kind:'impact',position:command.position,sourceId:command.sourceId,targetId:command.target,damage:used,rootShotId:command.rootShotId});}
+  if(staticDeaths.length)graph.remove(staticDeaths);
   if(commands.length){fracture(commands[0].rootShotId);detach(commands[0].rootShotId);checkRubbleSupport(commands[0].rootShotId);}
   for(const chunk of [...chunks.values()])if(chunk.body){
    // Explicit finite-map exit only: every oriented cell AABB is below min terrain Y minus 32.
@@ -405,7 +409,9 @@ export async function createStructuralSimulation(fixture:SceneFixture|CompactFix
    if(disposed||!command||command.epoch!==epoch||typeof command.id!=='string'||!command.id||shots.has(command.id)||!finitePoint(command.position)||!Number.isFinite(command.radius)||command.radius<=0||command.radius>1e6||!Number.isFinite(command.damage)||command.damage<0||command.damage>1e9||!Number.isFinite(command.impulse)||command.impulse<0||command.impulse>1e4)return false;
    shots.add(command.id);sync();emit({id:`${epoch}:shot:${command.id}`,kind:'detonation',position:command.position,rootShotId:command.id});
    const affected=localBlastIds(command.position,command.radius);
-   for(const id of affected){const c=readCell(id)!;const distance=Math.hypot(c.position.x-command.position.x,c.position.y-command.position.y,c.position.z-command.position.z);damage(c.spec.id,command.damage*(1-.65*distance/command.radius),`${epoch}:blast:${command.id}:${c.spec.id}`);}
+   const staticDeaths:number[]=[];
+   for(const id of affected){const c=readCell(id)!;const distance=Math.hypot(c.position.x-command.position.x,c.position.y-command.position.y,c.position.z-command.position.z);damage(c.spec.id,command.damage*(1-.65*distance/command.radius),`${epoch}:blast:${command.id}:${c.spec.id}`,staticDeaths);}
+   if(staticDeaths.length)graph.remove(staticDeaths);
    fracture(command.id);
    const pushed=new Set<string>();for(const id of affected){const c=readCell(id)!;if(c.state==='gone'||!c.chunkId||command.impulse<=0)continue;const chunk=chunks.get(c.chunkId)!;if(pushed.has(chunk.id))continue;pushed.add(chunk.id);if(chunk.status==='rubble')wake(chunk,command.id);const d={x:c.position.x-command.position.x,y:c.position.y-command.position.y,z:c.position.z-command.position.z},n=length(d)||1,v={x:d.x/n*command.impulse,y:(n===1&&length(d)===0?1:d.y/n)*command.impulse,z:d.z/n*command.impulse};if(chunk.body){const mass=chunk.body.mass();chunk.body.applyImpulseAtPoint({x:v.x*mass,y:v.y*mass,z:v.z*mass},c.position,true);}else{chunk.linvel.x+=v.x;chunk.linvel.y+=v.y;chunk.linvel.z+=v.z;}}
    detach(command.id,command.position,command.impulse);checkRubbleSupport(command.id);

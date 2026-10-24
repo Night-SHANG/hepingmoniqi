@@ -47,3 +47,9 @@ jobs:
           GAME_URL: http://127.0.0.1:5191/
           CI: 'true'
         run: node scripts/compact-game-browser-check.mjs
+      - name: Actual city building nova chain and natural settlement
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          GAME_URL: http://127.0.0.1:5191/
+          CI: 'true'
+        run: node scripts/city-nova-browser-check.mjs

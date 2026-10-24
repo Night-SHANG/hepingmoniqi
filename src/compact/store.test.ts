@@ -31,13 +31,13 @@ test('large pristine terrain keeps zero mutable state and one edit retains only 
  assert.deepEqual(store.staticNeighbors({x:120,y:-1,z:100}).length,5);
 });
 
-test('idle and recent revision reads do not sort historical edits and expired cursors explicitly reset',async()=>{
+test('idle and recent revision reads stay bounded while older valid cursors recover sparse edits',async()=>{
  const {createDenseFixture,CompactAuthorityStore}=await load();const source=Array.from({length:1000},(_,i)=>({...cells()[0],id:i,position:{x:i,y:0,z:0}}));
  const fixture=createDenseFixture({id:'many-edits',cells:source}),store=new CompactAuthorityStore(fixture);let ordinalReads=0;const ordinal=fixture.ordinal.bind(fixture);fixture.ordinal=id=>{ordinalReads++;return ordinal(id);};
  for(let i=0;i<1000;i++){const c=store.writable(i)!;c.hp=.5;c.loss=.1;store.markChanged(i);}
  let cursor=store.revision;ordinalReads=0;assert.deepEqual(store.changesSince(cursor).ids,[]);assert.equal(ordinalReads,0,'idle cursors must not traverse edited history');
  const c=store.writable(2)!;c.hp=.4;c.loss=.2;store.markChanged(2);ordinalReads=0;assert.deepEqual(store.changesSince(cursor).ids,[2]);assert.ok(ordinalReads<5,'recent cursor should visit the recent journal only');
- cursor=store.revision;for(let i=0;i<16385;i++)store.markChanged(2);assert.equal(store.changesSince(cursor).reset,true);assert.deepEqual(store.changesSince(cursor).ids,[]);
+ cursor=store.revision;for(let i=0;i<16385;i++)store.markChanged(2);assert.equal(store.changesSince(cursor).reset,false);assert.deepEqual(store.changesSince(cursor).ids,[2]);
 });
 
 test('moving iterator borrows only moving records and drops destroyed or reset members',async()=>{

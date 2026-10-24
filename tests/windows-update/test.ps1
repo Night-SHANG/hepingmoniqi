@@ -160,6 +160,32 @@ function Invoke-Update([string]$Bundle, [bool]$ExpectSuccess = $true) {
     } finally { $process.Dispose() }
 }
 
+
+# New-Item -ItemType Junction wildcard-expands -Target in Windows PowerShell
+# 5.1. Let real CMD create the junction with literal quoted paths instead.
+function New-TestJunction([string]$LinkPath, [string]$TargetPath) {
+    $start = New-Object Diagnostics.ProcessStartInfo
+    $start.FileName = $env:ComSpec
+    $start.Arguments = '/d /s /c "mklink /J "' + $LinkPath + '" "' + $TargetPath + '""'
+    $start.WorkingDirectory = $caller
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $process = New-Object Diagnostics.Process
+    $process.StartInfo = $start
+    try {
+        Assert-True ($process.Start()) 'Could not start CMD for junction fixture.'
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        Assert-True ($process.WaitForExit(10000)) 'Junction fixture creation timed out.'
+        Assert-True ($stdout.Wait(10000)) 'Junction stdout did not close.'
+        Assert-True ($stderr.Wait(10000)) 'Junction stderr did not close.'
+        Assert-True ($process.ExitCode -eq 0) ('CMD mklink failed: ' + $stdout.Result + $stderr.Result)
+        Assert-True ([bool]((Get-Item -LiteralPath $LinkPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'CMD did not create a real reparse point.'
+    } finally { $process.Dispose() }
+}
+
 # Mutating guards, source selection, or the PCK copy must break these cases.
 $archiveRoot = New-Bundle 'archive route 中文 空格'
 $archiveBefore = (Get-FileHash -LiteralPath (Join-Path $archiveRoot 'native-verified-package.zip')).Hash
@@ -264,7 +290,7 @@ foreach ($case in @('pck', 'exe', 'dll', 'notice', 'missing-notice', 'manifest',
         }
         'extra-file' { [IO.File]::WriteAllText((Join-Path $destination 'foreign.dll'), 'reject this') }
         'extra-directory' { New-Item -ItemType Directory -Path (Join-Path $destination 'foreign-empty') | Out-Null }
-        'junction' { New-Item -ItemType Junction -Path (Join-Path $destination 'foreign-link') -Target $fixture | Out-Null }
+        'junction' { New-TestJunction (Join-Path $destination 'foreign-link') $fixture }
     }
     $null = Invoke-Update $bundle $false
     Assert-True (@(Get-ChildItem -LiteralPath $bundle -Directory -Filter 'native-update-*').Count -eq 1) 'Invalid update must be preserved, not overwritten.'
@@ -274,7 +300,7 @@ Write-Host 'PASS: changed/missing/extra/reparse cache members are rejected, neve
 $junctionBundle = New-Bundle 'source junction rejection' 'none'
 $linkRoot = Join-Path $junctionBundle 'native-restored-linked'
 New-Item -ItemType Directory -Path $linkRoot | Out-Null
-New-Item -ItemType Junction -Path (Join-Path $linkRoot $originalRootName) -Target $fixtureOriginal | Out-Null
+New-TestJunction (Join-Path $linkRoot $originalRootName) $fixtureOriginal
 $null = Invoke-Update $junctionBundle $false
 Write-Host 'PASS: restored source junction is not followed.'
 Write-Host 'ALL WINDOWS UPDATE TESTS PASSED.'

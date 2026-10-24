@@ -180,7 +180,15 @@ if (Test-Path -LiteralPath $destination) {
     Assert-CompleteUpdate $destination
 }
 
-Start-Process -FilePath (Join-Path $destination $exeName) -WorkingDirectory $destination
+# Windows PowerShell 5.1 Start-Process resolves WorkingDirectory as a wildcard
+# path. Pass verified paths directly to .NET so brackets remain literal.
+$startInfo = New-Object Diagnostics.ProcessStartInfo
+$startInfo.FileName = Join-Path $destination $exeName
+$startInfo.WorkingDirectory = $destination
+$startInfo.UseShellExecute = $false
+$process = [Diagnostics.Process]::Start($startInfo)
+if ($null -eq $process) { throw 'The verified game process could not be started.' }
+$process.Dispose()
 $timer.Stop()
 Write-Host ('NATIVE_UPDATE mode={0} total_ms={1} directory={2}' -f $mode, $timer.ElapsedMilliseconds, $destination)
 Write-Host 'Updated version verified and started. The original game and files were preserved.'

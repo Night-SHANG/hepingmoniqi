@@ -1,32 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createPhaseHitVisual, createStrongBlastVisual, createWeaponGeometry, projectileOrientation, projectileModelKey, WEAPON_MODEL_KEYS, type WeaponModelKey } from './weapon-models';
-import { effectFrameDeltas, clearedVisualEffects, createGrowingInstancePool, createTrajectoryOverlay, advanceEffectAges, hasActiveVisualEffects, PULSE_LIFETIME, copyLiveAimSurface } from './scene-runtime';
+import { ATTACHED_ANNOTATION, attachedAnnotationPosition, createWeaponGeometry, projectileOrientation, projectileModelKey, WEAPON_MODEL_KEYS, type WeaponModelKey } from './weapon-models';
+import { effectFrameDeltas, createGrowingInstancePool, createTrajectoryOverlay, copyLiveAimSurface } from './scene-runtime';
 import { createEnvironmentRenderer, getEnvironmentSpec } from './scene-environments';
+import {createSceneEffectChannel} from './scene-effects';
 import type { AimSurface, DamageResult, MapId, SceneApi, SceneOptions, ProjectileView, Vec3, Voxel, WeaponId } from './contracts';
 
-type Chip = { p:THREE.Vector3; v:THREE.Vector3; rotation:THREE.Vector3; spin:THREE.Vector3; size:number; age:number; life:number; color:number };
-
-/** Stable instance capacity; explicit asset boxes retain their exact physical AABB. */
-export function createVoxelInstanceRenderer(scene:THREE.Scene,geometry:THREE.BufferGeometry,material:THREE.Material){
- const pool=createGrowingInstancePool(scene,geometry,material),transform=new THREE.Object3D(),color=new THREE.Color();
- pool.mesh.receiveShadow=true;
- return {
-  get mesh(){return pool.mesh;},
-  set(voxels:readonly Voxel[]){
-   pool.reserve(voxels.length);const mesh=pool.mesh;mesh.count=voxels.length;
-   voxels.forEach((v,i)=>{
-    transform.position.set(v.position.x,v.position.y,v.position.z);transform.rotation.set(0,0,0);
-    if(v.size)transform.scale.set(v.size.x,v.size.y,v.size.z);else transform.scale.setScalar(.965);
-    transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);
-    color.setHex(v.color);if(v.hp<v.maxHp)color.multiplyScalar(.6+.4*v.hp/v.maxHp);mesh.setColorAt(i,color);
-   });
-   mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
-   mesh.computeBoundingBox();mesh.computeBoundingSphere();
-  },
-  dispose:pool.dispose,
- };
-}
+export { createVoxelInstanceRenderer } from './voxel-renderer';
+import { createVoxelInstanceRenderer } from './voxel-renderer';
 
 /** Preserve the established camera-relative launch while staying inside physics' radial guard. */
 export function getSceneLaunchOrigin(camera:THREE.PerspectiveCamera,point:Vec3):Vec3 {
@@ -43,7 +24,7 @@ export function getSceneLaunchOrigin(camera:THREE.PerspectiveCamera,point:Vec3):
  return {x:origin.x,y:origin.y,z:origin.z};
 }
 
-/** One actual, orbitable Three.js scene. All environmental decoration is non-interactive. */
+/** One orbitable scene: authority supplies every in-map surface and debris transform. */
 export function createScene(container:HTMLElement, options:SceneOptions):SceneApi {
   const scene = new THREE.Scene();
   let mapId:MapId='courtyard',environmentSpec=getEnvironmentSpec(mapId);
@@ -92,11 +73,9 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   const voxelMat = new THREE.MeshStandardMaterial({ roughness:.88, metalness:.025 });
   const tmp = new THREE.Object3D();
   const color = new THREE.Color();
-  let seed=18717;
-  const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
-  let environment=createEnvironmentRenderer(scene,box,mapId);
+  let environment=createEnvironmentRenderer(scene,box,mapId,{authoritative:true});
   const applyMapEnvironment=(next:MapId)=>{
-    environment.dispose();environment=createEnvironmentRenderer(scene,box,next);mapId=next;environmentSpec=environment.spec;
+    environment.dispose();environment=createEnvironmentRenderer(scene,box,next,{authoritative:true});mapId=next;environmentSpec=environment.spec;
     scene.background=new THREE.Color(environmentSpec.sky);scene.fog=new THREE.Fog(environmentSpec.sky,...environmentSpec.fog);
     const preset=environmentSpec.camera;camera.near=preset.near;camera.far=preset.far;camera.updateProjectionMatrix();
     controls.minDistance=preset.minDistance;controls.maxDistance=preset.maxDistance;
@@ -109,11 +88,6 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   let live: readonly Voxel[]=[];
   const voxelRenderer=createVoxelInstanceRenderer(scene,box,voxelMat);
   let house=voxelRenderer.mesh;
-  const MAX_DEBRIS=360;
-  const debris = new THREE.InstancedMesh(box,voxelMat,MAX_DEBRIS);
-  debris.instanceMatrix.setUsage(THREE.DynamicDrawUsage);debris.count=0;debris.castShadow=true;debris.frustumCulled=false;scene.add(debris);
-  let chips:Chip[]=[];
-
   // Only physics supplies projectile transforms. This renderer never detonates or
   // advances their motion; trails are a bounded visual history of those transforms.
   const MAX_COSMETIC_PROJECTILES=64, TRAIL_POINTS=12;
@@ -183,16 +157,10 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
   for(let i=0;i<4;i++) { const tick=new THREE.Mesh(tickGeometry,markerMaterial);tick.position.set(Math.cos(i*Math.PI/2)*.57,Math.sin(i*Math.PI/2)*.57,0);tick.rotation.z=i*Math.PI/2;marker.add(tick); }
   marker.renderOrder=20;marker.children.forEach(c=>c.renderOrder=20);scene.add(marker);marker.visible=false;
   const trajectory=createTrajectoryOverlay(scene);
-  const pulseMaterial = new THREE.MeshBasicMaterial({color:0xffbf68,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
-  const pulse = new THREE.Mesh(new THREE.RingGeometry(.93,1,64),pulseMaterial);pulse.rotation.x=-Math.PI/2;scene.add(pulse);
-  const flash = new THREE.PointLight(0xffa446,0,18,2);scene.add(flash);
-  let pulseAge=10, timeScale=1, target:Vec3|null=null;
-  const phaseHits:ReturnType<typeof createPhaseHitVisual>[]=[];
-  const strongHits:ReturnType<typeof createStrongBlastVisual>[]=[];
-  const clearStrongHits=()=>{for(const hit of strongHits)hit.dispose();strongHits.length=0;};
-  const updateReducedEffects=()=>{for(const hit of strongHits)hit.setReducedMotion(motionReduced());};
-  motionPreference?.addEventListener('change',updateReducedEffects);
-  const clearPhaseHits=()=>{for(const hit of phaseHits)hit.dispose();phaseHits.length=0;};
+  const effects=createSceneEffectChannel(scene);
+  let timeScale=1,target:Vec3|null=null,damageSequence=0;
+  const updateReducedEffects=()=>effects.setReducedMotion(motionReduced());
+  motionPreference?.addEventListener('change',updateReducedEffects);updateReducedEffects();
   const raycaster = new THREE.Raycaster();const pointer=new THREE.Vector2();
   let down:{x:number;y:number;time:number;id:number}|null=null;let dragged=false;
   const pointers=new Set<number>();
@@ -206,17 +174,15 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
     raycaster.setFromCamera(pointer,camera);
     const hit=house?raycaster.intersectObject(house,false)[0]:undefined;
-    // Surface coordinates are never snapped back to an old voxel center. Empty roof
-    // holes continue the same aim ray to the next live surface or stable ground.
-    const ground = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0), new THREE.Vector3());
-    const point = hit?.point ?? (ground && Math.abs(ground.x)<=environmentSpec.bounds.halfX && Math.abs(ground.z)<=environmentSpec.bounds.halfZ ? ground : null);
+    // No invisible y=0 plane can cover a crater. Clicks continue through holes
+    // to the next actual authority surface, including rotated falling rubble.
+    const point=hit?.point??null;
     aimSurface=null;
-    if(house&&hit?.instanceId!==undefined&&hit.face&&live[hit.instanceId]){
+    const voxel=hit?.instanceId===undefined?undefined:voxelRenderer.getVoxel(hit.instanceId);
+    if(hit?.instanceId!==undefined&&hit.face&&voxel){
       const matrix=new THREE.Matrix4();house.getMatrixAt(hit.instanceId,matrix);matrix.premultiply(house.matrixWorld);
       const normal=hit.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(matrix)).normalize();
-      aimSurface={position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:normal.x,y:normal.y,z:normal.z},voxelId:live[hit.instanceId].id};
-    }else if(point){
-      aimSurface={position:{x:point.x,y:point.y,z:point.z},normal:{x:0,y:1,z:0},voxelId:null};
+      aimSurface={position:{x:hit.point.x,y:hit.point.y,z:hit.point.z},normal:{x:normal.x,y:normal.y,z:normal.z},voxelId:voxel.id};
     }
     if(point) options.onAim({x:point.x,y:point.y,z:point.z});
   };
@@ -236,64 +202,38 @@ export function createScene(container:HTMLElement, options:SceneOptions):SceneAp
     const elapsed=document.hidden?0:Math.max(0,Math.min((now-last)/1000,1));
     last=now;controls.update();
     // Physics owns bounded fixed substeps; cosmetic effects keep their small step.
-    const {motion:dt,age:effectAge}=effectFrameDeltas(elapsed,timeScale);
-    chips=advanceEffectAges(chips,effectAge);
-    pulseAge+=effectAge;
-    for(let i=phaseHits.length-1;i>=0;i--)if(!phaseHits[i].advance(effectAge)){phaseHits[i].dispose();phaseHits.splice(i,1);}
-    for(let i=strongHits.length-1;i>=0;i--)if(!strongHits[i].advance(effectAge)){strongHits[i].dispose();strongHits.splice(i,1);}
-    // New detonations must begin at age zero and be rendered before any aging.
+    const {age:effectAge}=effectFrameDeltas(elapsed,timeScale);
+    effects.step(effectAge);
+    // New detonations begin at age zero, after old effects advance, before draw.
     options.onFrame?.(elapsed*timeScale);
-    chips.forEach((c,i)=>{
-      c.v.y-=12*dt;c.p.addScaledVector(c.v,dt);
-      if(c.p.y<c.size*.5){c.p.y=c.size*.5;c.v.y=Math.abs(c.v.y)*.24;c.v.x*=.82;c.v.z*=.82;c.spin.multiplyScalar(.75);}
-      c.rotation.addScaledVector(c.spin,dt);
-      tmp.position.copy(c.p);tmp.rotation.set(c.rotation.x,c.rotation.y,c.rotation.z);
-      const fade=Math.min(1,(c.life-c.age)*1.5);tmp.scale.setScalar(Math.max(.001,c.size*fade));tmp.updateMatrix();
-      debris.setMatrixAt(i,tmp.matrix);debris.setColorAt(i,color.setHex(c.color));
-    });
-    debris.count=chips.length;if(chips.length){debris.instanceMatrix.needsUpdate=true;if(debris.instanceColor)debris.instanceColor.needsUpdate=true;}
-    const active=pulseAge<PULSE_LIFETIME; pulse.visible=active;
-    if(active){pulse.scale.setScalar(motionReduced()?6:1+pulseAge*16);pulseMaterial.opacity=(1-pulseAge/PULSE_LIFETIME)*(motionReduced()?.25:.7);}
-    flash.intensity=motionReduced()?0:Math.max(0,1-pulseAge/.28)*35;
+    effects.render();
     if(target){marker.position.set(target.x,target.y,target.z);marker.quaternion.copy(camera.quaternion);marker.position.addScaledVector(new THREE.Vector3().subVectors(camera.position,marker.position).normalize(),.65);}
     trajectory.faceCamera(camera.quaternion);
     renderer.render(scene,camera);frame=requestAnimationFrame(animate);
   };
   frame=requestAnimationFrame(animate);options.onReady?.();
   return {
-    setMap(next){if(next===mapId)return;clearPhaseHits();clearStrongHits();chips=[];debris.count=0;pulseAge=10;pulse.visible=false;flash.intensity=0;aimSurface=null;target=null;marker.visible=false;trajectory.setPreview(null);applyMapEnvironment(next);},
+    setMap(next){if(next===mapId)return;effects.clear();aimSurface=null;target=null;marker.visible=false;trajectory.setPreview(null);applyMapEnvironment(next);},
     setReducedMotion(value){reducedMotion=!!value;updateReducedEffects();},
-    getDiagnostics(){return {mapId,camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:house.count};},
+    getDiagnostics(){return {mapId,camera:{position:{x:camera.position.x,y:camera.position.y,z:camera.position.z},target:{x:controls.target.x,y:controls.target.y,z:controls.target.z},fov:camera.fov,near:camera.near,far:camera.far},groundBounds:{...environmentSpec.bounds},renderedVoxelCount:house.count,voxelRender:voxelRenderer.getDiagnostics(),effects:effects.getDiagnostics()};},
     projectPoint(point){camera.updateMatrixWorld();const p=new THREE.Vector3(point.x,point.y,point.z).project(camera);return {x:(p.x+1)*.5*container.clientWidth,y:(1-p.y)*.5*container.clientHeight,visible:Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.z>=-1&&p.z<=1&&Math.abs(p.x)<=1&&Math.abs(p.y)<=1};},
     setProjectiles:updateProjectiles,
     setTrajectory:trajectory.setPreview,
-    clearEffects(){clearPhaseHits();clearStrongHits();({chips,pulseAge}=clearedVisualEffects(chips,pulseAge));debris.count=0;pulse.visible=false;flash.intensity=0;},
-    hasActiveEffects(){return !disposed&&(hasActiveVisualEffects(pulseAge,chips)||phaseHits.length>0||strongHits.length>0);},
+    clearEffects(){effects.clear();},
+    hasActiveEffects(){return !disposed&&effects.hasActiveCore();},
+    playStructuralEvent(event){effects.add(event);},
     getRenderedProjectileCount(){return [...projectileMeshes.values()].reduce((count,pool)=>count+pool.mesh.count,0);},
     getAimSurface(){return copyLiveAimSurface(aimSurface,live);},
     getLaunchOrigin(point){return getSceneLaunchOrigin(camera,point);},
-    setVoxels(voxels){
-      if(voxels.length>live.length){clearPhaseHits();clearStrongHits();chips=[];debris.count=0;pulseAge=10;}
-      live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;
-    },
+    setVoxels(voxels){live=voxels;voxelRenderer.set(voxels);house=voxelRenderer.mesh;},
     playDamage(result:DamageResult,point:Vec3,weapon:WeaponId,power=1){
       if(!result.accepted)return;
-      const source=[...result.removed,...result.detached];
-      const sampleStep=Math.max(1,Math.ceil(source.length/(motionReduced()?48:180)));
-      for(let i=0;i<source.length;i+=sampleStep){
-        const v=source[i],p=new THREE.Vector3(v.position.x,v.position.y,v.position.z);
-        const velocity=p.clone().sub(new THREE.Vector3(point.x,point.y,point.z)).normalize().multiplyScalar(3+rand()*7);
-        velocity.y+=4+rand()*6;
-        chips.push({p,v:velocity,rotation:new THREE.Vector3(rand(),rand(),rand()),spin:new THREE.Vector3(rand()*4-2,rand()*4-2,rand()*4-2),size:.35+rand()*.5,age:0,life:4+rand()*2,color:v.color});
-      }
-      chips=chips.slice(-MAX_DEBRIS);
-      if(weapon==='phase'){const hit=createPhaseHitVisual(point);phaseHits.push(hit);scene.add(hit.object);return;}
-      if(weapon==='heavy'||weapon==='nova'){const hit=createStrongBlastVisual(point,weapon,motionReduced(),power);strongHits.push(hit);scene.add(hit.object);while(strongHits.length>8)strongHits.shift()!.dispose();return;}
-      pulse.position.set(point.x,Math.max(.2,point.y-.25),point.z);pulseAge=0;
-      pulseMaterial.color.setHex(weapon==='shock'||weapon==='echo'?0x79deff:0xffbf68);flash.position.set(point.x,point.y+1,point.z);
+      // Legacy call path only: detached cells remain live authoritative geometry,
+      // never sampled, replaced with fake chips, aged out, or globally pulsed.
+      effects.add({id:`legacy-damage:${++damageSequence}`,epoch:effects.getDiagnostics().epoch??1,position:point,kind:'detonation',tool:weapon,scale:Math.sqrt(Math.max(.01,power))});
     },
     setTarget(point){if(!point)aimSurface=null;target=point;marker.visible=!!point;},
     setTimeScale(scale){timeScale=Number.isFinite(scale)?Math.max(0,Math.min(2,scale)):1;},resetCamera,
-    dispose(){clearPhaseHits();clearStrongHits();environment.dispose();voxelRenderer.dispose();motionPreference?.removeEventListener('change',updateReducedEffects);trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();voxelMat.dispose();markerMaterial.dispose();pulseMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
+    dispose(){effects.dispose();environment.dispose();voxelRenderer.dispose();motionPreference?.removeEventListener('change',updateReducedEffects);trajectory.dispose();for(const id of [...fuseBadges.keys()])releaseBadge(id);projectileMaterial.dispose();trailMaterial.dispose();flameMaterial.dispose();outlineMaterial.dispose();leaderMaterial.dispose();disposed=true;document.removeEventListener('visibilitychange',resetClock);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('pointerleave',cancel);const geometries=new Set<THREE.BufferGeometry>();scene.traverse(object=>{if(object instanceof THREE.Mesh){geometries.add(object.geometry);if(object instanceof THREE.InstancedMesh)object.dispose();}});geometries.add(box);for(const geometry of geometries)geometry.dispose();voxelMat.dispose();markerMaterial.dispose();renderer.dispose();renderer.domElement.remove();},
   };
 }

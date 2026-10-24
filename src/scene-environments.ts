@@ -21,7 +21,7 @@ const cameras:Record<MapId,EnvironmentSpec['camera']>={
 };
 
 /** Bounded scenic context only. All destructible buildings come from the world. */
-export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
+export function getEnvironmentSpec(mapId:MapId,options:{authoritative?:boolean}={}):EnvironmentSpec {
  const blocks:EnvironmentBlock[]=[],water:EnvironmentBlock[]=[];
  const add=(role:string,x:number,y:number,z:number,sx:number,sy:number,sz:number,color:number)=>blocks.push({role,x,y,z,sx,sy,sz,color});
  const wet=(x:number,y:number,z:number,sx:number,sz:number,color=0x4a9fb5)=>water.push({role:'water',x,y,z,sx,sy:.18,sz,color});
@@ -156,12 +156,27 @@ export function getEnvironmentSpec(mapId:MapId):EnvironmentSpec {
   rootedHills(570,-230,48);clouds(500,-275,105);
  }
  const large=mapId==='city',medium=mapId==='neighborhood';
- return {mapId,bounds:{...WORLD_BOUNDS[mapId]},blocks,water,sky:mapId==='warehouse'?0xb8c7cb:mapId==='cantilever'?0xadcfdc:0xadcbd9,fog:large?[420,1000]:medium?[210,520]:[70,165],shadowExtent:large?160:medium?72:33,camera:{...cameras[mapId],position:[...cameras[mapId].position],target:[...cameras[mapId].target]}};
+ return {mapId,bounds:{...WORLD_BOUNDS[mapId]},blocks:options.authoritative?outsideAuthority(blocks,WORLD_BOUNDS[mapId]):blocks,water:options.authoritative?outsideAuthority(water,WORLD_BOUNDS[mapId]):water,sky:mapId==='warehouse'?0xb8c7cb:mapId==='cantilever'?0xadcfdc:0xadcbd9,fog:large?[420,1000]:medium?[210,520]:[70,165],shadowExtent:large?160:medium?72:33,camera:{...cameras[mapId],position:[...cameras[mapId].position],target:[...cameras[mapId].target]}};
+}
+
+/** Clip scenic cuboids around the authoritative rectangle, never over its holes. */
+function outsideAuthority(blocks:EnvironmentBlock[],bounds:{halfX:number;halfZ:number}):EnvironmentBlock[]{
+ const result:EnvironmentBlock[]=[];
+ for(const block of blocks){
+  const x0=block.x-block.sx/2,x1=block.x+block.sx/2,z0=block.z-block.sz/2,z1=block.z+block.sz/2;
+  if(x1<=-bounds.halfX||x0>=bounds.halfX||z1<=-bounds.halfZ||z0>=bounds.halfZ){result.push(block);continue;}
+  const add=(a:number,b:number,c:number,d:number)=>{if(b-a>1e-6&&d-c>1e-6)result.push({...block,x:(a+b)/2,z:(c+d)/2,sx:b-a,sz:d-c});};
+  // Disjoint strips preserve the continuous scenic terrain outside the map.
+  add(x0,Math.min(x1,-bounds.halfX),z0,z1);add(Math.max(x0,bounds.halfX),x1,z0,z1);
+  const a=Math.max(x0,-bounds.halfX),b=Math.min(x1,bounds.halfX);
+  add(a,b,z0,Math.min(z1,-bounds.halfZ));add(a,b,Math.max(z0,bounds.halfZ),z1);
+ }
+ return result;
 }
 
 /** All materials and instance buffers belong to this environment, never the shared cube. */
-export function createEnvironmentRenderer(scene:THREE.Scene,sharedBox:THREE.BufferGeometry,mapId:MapId){
- const spec=getEnvironmentSpec(mapId),object=new THREE.Group();object.name=`environment-${mapId}`;
+export function createEnvironmentRenderer(scene:THREE.Scene,sharedBox:THREE.BufferGeometry,mapId:MapId,options:{authoritative?:boolean}={}){
+ const spec=getEnvironmentSpec(mapId,options),object=new THREE.Group();object.name=`environment-${mapId}`;
  const material=new THREE.MeshStandardMaterial({roughness:1,metalness:0});
  const mesh=new THREE.InstancedMesh(sharedBox,material,spec.blocks.length),transform=new THREE.Object3D(),color=new THREE.Color();
  spec.blocks.forEach((b,i)=>{transform.position.set(b.x,b.y,b.z);transform.scale.set(b.sx,b.sy,b.sz);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);mesh.setColorAt(i,color.setHex(b.color));});

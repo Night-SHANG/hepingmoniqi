@@ -8,10 +8,10 @@ export type Loadout = Record<WeaponId,number>;
 export type MapId = 'courtyard' | 'warehouse' | 'bridge' | 'tower' | 'cantilever' | 'neighborhood' | 'city';
 export interface AimSurface { position:Vec3; normal:Vec3; voxelId:number|null; }
 export interface ObjectiveState { mapId:MapId; title:string; total:number; destroyed:number; fraction:number; goal:number; complete:boolean; completedMaps:MapId[]; }
-export interface Voxel { size?:Vec3; weight?:number; id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
+export interface Voxel { rotation?:{x:number;y:number;z:number;w:number}; structuralState?:'static'|'dynamic'|'rubble'; role?:'terrain'|'road'|'foundation'|'building'|'tree'|'bridge'; size?:Vec3; weight?:number; id: number; position: Vec3; color: number; material: MaterialId; hp: number; maxHp: number; anchored?: boolean; objectId?: string; group?: 'house' | 'tree' | 'fence' | 'crate' | 'table' | 'planter' | 'logs'; }
 export interface DamageCommand { reward?:boolean; id: string; epoch: number; target: Vec3; weapon: WeaponId; power: number; }
 export interface DamageResult { accepted: boolean; removed: Voxel[]; detached: Voxel[]; newlyDestroyed: number; researchEarned: number; destruction: number; }
-export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6 | 7 | 8; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
+export interface WorldSnapshot { schemaVersion?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; structural?:unknown; round?:RoundState; mapId?:MapId; completedMaps?:MapId[]; epoch: number; voxels: Voxel[]; totalCount: number; destroyedCount: number; research: number; firstRewardClaimed: boolean; }
 export interface RoundState { budget:number; used:number; startResearch:number; startDestroyed:number; settled:boolean; loadout?:Loadout; remaining?:Loadout; }
 export interface RoundResult { used:number; budget:number; destruction:number; researchEarned:number; }
 export interface WorldModel {
@@ -29,6 +29,7 @@ export interface WorldModel {
  restore(snapshot: WorldSnapshot): boolean;
 }
 export interface SceneApi {
+ playStructuralEvent?(event:{id:string;epoch:number;position:Vec3;kind:string;tool?:WeaponId;scale?:number;material?:'soil'|'road'|MaterialId;intensity?:number}):void;
  getDiagnostics():{mapId:MapId;camera:{position:Vec3;target:Vec3;fov:number;far:number};groundBounds:{halfX:number;halfZ:number};renderedVoxelCount:number};
  projectPoint(point:Vec3):{x:number;y:number;visible:boolean};
  setMap(mapId:MapId):void;

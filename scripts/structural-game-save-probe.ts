@@ -1,0 +1,10 @@
+import {writeFileSync} from 'node:fs';
+import {createStructuralGameWorld} from '../src/structural/game-world.js';
+const w=createStructuralGameWorld({free:true});
+const stamp=(stage:string,data:Record<string,unknown>={})=>console.log(JSON.stringify({stage,rssMiB:Math.round(process.memoryUsage().rss/1048576),heapMiB:Math.round(process.memoryUsage().heapUsed/1048576),...data}));
+const started=performance.now();await w.loadMap('city',true);stamp('city-ready',{cells:w.getVoxels().length,ms:performance.now()-started});
+const blastStart=performance.now();const hit=w.damage({id:'city-save-probe-nova',epoch:w.epoch,weapon:'nova',power:1,target:{x:0,y:1,z:0},reward:false});stamp('nova',{ms:performance.now()-blastStart,accepted:hit.accepted,removed:hit.removed.length,detached:hit.detached.length,pending:w.pending()});
+const stepStart=performance.now();for(let i=0;i<60;i++)w.step(1/120);stamp('half-second',{ms:performance.now()-stepStart,pending:w.pending()});
+const beforeSave=performance.now(),snapshot=w.getSnapshot(),encoded=JSON.stringify(snapshot),s=snapshot.structural as any;
+const report={map:'city',tool:'nova',power:1,target:{x:0,y:1,z:0},simulatedSeconds:.5,removed:hit.removed.length,detached:hit.detached.length,pending:w.pending(),rubble:w.getVoxels().filter(v=>v.structuralState==='rubble').length,changedCells:s.simulation.changes.length,bodyCount:s.simulation.bodies.length,eventCount:s.simulation.events.length,processedCount:s.simulation.processed.length,utf8Bytes:Buffer.byteLength(encoded),utf16Bytes:encoded.length*2,withinConservativeQuota:encoded.length*2<4_500_000,saveMilliseconds:performance.now()-beforeSave,rssMiB:Math.round(process.memoryUsage().rss/1048576)};
+writeFileSync('artifacts/structural-game-city-nova-save-probe.json',JSON.stringify(report,null,2));stamp('saved',report);w.suspend();

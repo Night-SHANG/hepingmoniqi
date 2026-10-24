@@ -136,3 +136,18 @@ test('city scenic banks do not fill the visible river channel',async()=>{
  assert.ok(terrain.length>0);
  for(let z=-120;z<=120;z+=20)assert.ok(!terrain.some(b=>b.y+b.sy/2>-.5&&Math.abs(146-b.x)<b.sx/2&&Math.abs(z-b.z)<b.sz/2),'river must stay open');
 });
+
+test('authoritative environments keep camera and exterior scenery without invulnerable in-map geometry',async()=>{
+ const {getEnvironmentSpec,createEnvironmentRenderer}=await import('./scene-environments');
+ for(const map of maps){
+  const legacy=getEnvironmentSpec(map),spec=getEnvironmentSpec(map,{authoritative:true});
+  assert.deepEqual(spec.camera,legacy.camera);assert.deepEqual(spec.bounds,legacy.bounds);
+  assert.ok(spec.blocks.length>0,'keep outside scenery');
+  for(const b of [...spec.blocks,...spec.water]){
+   const intersects=Math.abs(b.x)-b.sx/2<spec.bounds.halfX-1e-6&&Math.abs(b.z)-b.sz/2<spec.bounds.halfZ-1e-6;
+   assert.equal(intersects,false,`${map}: duplicate ${b.role} at (${b.x},${b.z})`);
+  }
+  const scene=new THREE.Scene(),cube=new THREE.BoxGeometry(),environment=createEnvironmentRenderer(scene,cube,map,{authoritative:true});
+  assert.equal(environment.spec.blocks.length,spec.blocks.length);environment.dispose();cube.dispose();
+ }
+});

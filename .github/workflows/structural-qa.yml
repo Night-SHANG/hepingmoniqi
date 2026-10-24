@@ -1,4 +1,4 @@
-name: Isolated structural lab QA
+name: v0.9 authoritative game and structural QA
 on:
   push:
     branches: [v09-structural-lab]
@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,9 +16,18 @@ jobs:
           node-version: '22'
       - run: npm ci --ignore-scripts
       - run: npm test
+      - run: npm run build
       - id: build
         run: npm run build:structural
       - run: google-chrome --version
+      - name: Formal game UI and authoritative terrain
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          GAME_URL: http://127.0.0.1:5192
+        run: |
+          python3 -m http.server 5192 --bind 127.0.0.1 --directory dist >/tmp/structural-game-server.log 2>&1 &
+          node scripts/game-save-browser-check.mjs
+          node scripts/structural-game-browser-check.mjs
       - name: Structural entry smoke and real screenshots
         env:
           QA_BROWSER_CHANNEL: chrome

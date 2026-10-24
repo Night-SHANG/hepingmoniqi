@@ -213,6 +213,19 @@ function freshRound(research:number,startDestroyed=0):InventoryRound{
  return {budget,used:0,startResearch:research,startDestroyed,settled:false,loadout,remaining:{...loadout}};
 }
 
+/** Pure geometry access for migration and authoritative structural adapters. */
+export function createMapVoxels(mapId:MapId):readonly Voxel[] {
+ switch(mapId){
+  case 'courtyard':return Object.freeze([...cottage(),...yard()]);
+  case 'warehouse':return Object.freeze([...warehouse(),...yard()]);
+  case 'bridge':return Object.freeze([...bridgeVoxels(),...yard()]);
+  case 'tower':return Object.freeze([...towerVoxels(),...yard()]);
+  case 'cantilever':return Object.freeze([...cantileverVoxels(),...yard()]);
+  case 'neighborhood':return neighborhoodVoxels();
+  case 'city':return cityVoxels();
+ }
+}
+
 export function createWorld(): WorldModel {
  const maps:Record<MapId,readonly Voxel[]>={courtyard:Object.freeze([...cottage(),...yard()]),warehouse:Object.freeze([...warehouse(),...yard()]),bridge:Object.freeze([...bridgeVoxels(),...yard()]),tower:Object.freeze([...towerVoxels(),...yard()]),cantilever:Object.freeze([...cantileverVoxels(),...yard()]),neighborhood:neighborhoodVoxels(),city:cityVoxels()};
  let mapId:MapId='courtyard', original=maps.courtyard;

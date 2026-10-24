@@ -2,13 +2,17 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import type { CollisionRecord, ForceRecord, PhysicsParticipant, StructuralPhysicsHost } from './physics-host.js';
 import { chunkKey, packStaticCells, type PackedBox } from './static-packing.js';
 import { createSupportGraph } from './support.js';
-import type { BlastCommand, Cell, CellView, Point, Rotation, SceneFixture, StructuralEvent, StructuralSimulation, SupportGraph } from './types.js';
+import type { BlastCommand, Cell, CellView, ImmutableCellView, ImmutableStructuralEvent, Point, Rotation, SceneFixture, StructuralEvent, StructuralEventCursor, StructuralEventChanges, StructuralSimulation, StructuralSimulationOptions, StructuralViewChanges, SupportGraph } from './types.js';
 
 // Fictional game rules, not a physical blast/engineering model. One metre lattice cells.
 const DT=1/120, QUIET_TICKS=90, MIN_SPEED=3, MIN_IMPULSE=.5;
 const IDENTITY:Rotation={x:0,y:0,z:0,w:1};
 const ZERO:Point={x:0,y:0,z:0};
 const copy=<T>(v:T):T=>structuredClone(v);
+// Public query metadata is cloned once, then frozen separately from authority.
+const freezeDeep=<T>(value:T,seen=new WeakSet<object>()):T=>{if(value&&typeof value==='object'&&!seen.has(value)){seen.add(value);for(const nested of Object.values(value))freezeDeep(nested,seen);Object.freeze(value);}return value;};
+const EMPTY_VIEWS:readonly ImmutableCellView[]=Object.freeze([]);
+const EMPTY_EVENTS:readonly ImmutableStructuralEvent[]=Object.freeze([]);
 const point=(p:Point):Point=>({x:p.x,y:p.y,z:p.z});
 const rotation=(q:Rotation):Rotation=>({x:q.x,y:q.y,z:q.z,w:q.w});
 const multiply=(a:Rotation,b:Rotation):Rotation=>({x:a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,y:a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,z:a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w,w:a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z});
@@ -27,19 +31,63 @@ interface LocalCell { id:number; position:Point; rotation:Rotation }
 interface ChunkSave { transforms:LocalCell[]; id:string; cells:number[]; rootShotId:string; status:'active'|'queued'|'rubble'; position:Point; rotation:Rotation; linvel:Point; angvel:Point; quiet:number }
 interface Save { schema:'structural-simulation/v1'; fixtureId:string; fixtureSignature:string; maxActiveBodies:number; epoch:number; tick:number; accumulator:number; serial:number; cells:CellSave[]; bodies:ChunkSave[]; queue:string[]; shots:string[]; processed:string[]; episodes:[string,Episode][]; episodeCounts:[string,number][]; research:number; events:StructuralEvent[] }
 
-export async function createStructuralSimulation(fixture:SceneFixture,options:{maxActiveBodies?:number}={}):Promise<StructuralSimulation & {physicsHost:StructuralPhysicsHost}>{
- await (initialized??=RAPIER.init());
- const maxActiveBodies=options.maxActiveBodies??32;
- if(!Number.isSafeInteger(maxActiveBodies)||maxActiveBodies<1||maxActiveBodies>512)throw new Error('Invalid active body budget');
+interface SnapshotValidationContext {fixtureId:string;fixtureSignature:string;maxActiveBodies:number;original:Cell[];originals:Map<number,Cell>;totalHp:number}
+function assertFixture(fixture:SceneFixture):void {
  if(!fixture||typeof fixture.id!=='string'||!fixture.id||!Array.isArray(fixture.cells))throw new Error('Invalid fixture');
  const ids=new Set<number>();
  for(const c of fixture.cells){if(!Number.isSafeInteger(c.id)||ids.has(c.id)||!finitePoint(c.position)||!Number.isFinite(c.hp)||c.hp<0||!Number.isFinite(c.maxHp)||c.maxHp<=0||c.hp>c.maxHp||!(c.material in MASS))throw new Error('Invalid fixture cell');ids.add(c.id);}
+}
+function assertBodyBudget(maxActiveBodies:number):void {if(!Number.isSafeInteger(maxActiveBodies)||maxActiveBodies<1||maxActiveBodies>512)throw new Error('Invalid active body budget');}
+function validSnapshot(input:unknown,context:SnapshotValidationContext):input is Save{
+ const {fixtureId,fixtureSignature,maxActiveBodies,original,originals,totalHp}=context;
+  try{
+   const s=input as Save;
+   if(!s||s.schema!=='structural-simulation/v1'||s.fixtureId!==fixtureId||s.fixtureSignature!==fixtureSignature||s.maxActiveBodies!==maxActiveBodies||!Number.isSafeInteger(s.epoch)||s.epoch<1||s.epoch>=Number.MAX_SAFE_INTEGER-1||!Number.isSafeInteger(s.tick)||s.tick<0||s.tick>=Number.MAX_SAFE_INTEGER-1||!Number.isSafeInteger(s.serial)||s.serial<0||s.serial>=Number.MAX_SAFE_INTEGER-1||!Number.isFinite(s.accumulator)||s.accumulator<0||s.accumulator>=DT)return false;
+   if(!Array.isArray(s.cells)||s.cells.length!==original.length||!Array.isArray(s.bodies)||!Array.isArray(s.queue)||!Array.isArray(s.events)||s.events.length>8192)return false;
+   const seen=new Set<number>(),saved=new Map<number,CellSave>();let sum=0;
+   for(const c of s.cells){const orig=originals.get(c.id);if(!orig||seen.has(c.id)||!Number.isFinite(c.hp)||c.hp<0||c.hp>orig.hp||!Number.isFinite(c.loss)||c.loss<0||c.loss>orig.hp||c.loss+1e-7<orig.hp-c.hp||!['static','dynamic','rubble','gone'].includes(c.state)||!finitePoint(c.position)||!finiteRotation(c.rotation))return false;if(c.state==='gone'&&c.hp!==0||c.state!=='gone'&&c.hp<=0||c.state==='dynamic'&&typeof c.chunkId!=='string'||(c.state==='static'||c.state==='gone')&&c.chunkId!==undefined||c.state==='rubble'&&typeof c.chunkId!=='string')return false;if(c.state==='static'&&(c.position.x!==orig.position.x||c.position.y!==orig.position.y||c.position.z!==orig.position.z||c.rotation.x!==0||c.rotation.y!==0||c.rotation.z!==0||Math.abs(c.rotation.w)!==1||Math.abs(c.loss-(orig.hp-c.hp))>1e-7))return false;if((c.state==='dynamic'||c.state==='rubble'||c.state==='gone'&&orig.hp>0)&&Math.abs(c.loss-orig.hp)>1e-7)return false;seen.add(c.id);saved.set(c.id,c);if(orig.role!=='terrain')sum+=c.loss;}
+   if(s.research!== (totalHp===0?0:Math.min(200,Math.ceil(200*sum/totalHp))))return false;
+   const bodies=new Set<string>(),members=new Set<number>();let active=0;
+   for(const b of s.bodies){if(typeof b.id!=='string'||!/^piece-\d+$/.test(b.id)||Number(b.id.slice(6))>s.serial||bodies.has(b.id)||typeof b.rootShotId!=='string'||!b.rootShotId||!['active','queued','rubble'].includes(b.status)||!Array.isArray(b.cells)||!b.cells.length||!finitePoint(b.position)||!finiteRotation(b.rotation)||!finitePoint(b.linvel)||!finitePoint(b.angvel)||length(b.linvel)>1e4||length(b.angvel)>1e4||b.status==='rubble'&&(length(b.linvel)!==0||length(b.angvel)!==0)||!Array.isArray(b.transforms)||b.transforms.length!==b.cells.length||!Number.isSafeInteger(b.quiet)||b.quiet<0||b.quiet>QUIET_TICKS)return false;bodies.add(b.id);if(b.status==='active')active++;for(const id of b.cells){const c=saved.get(id);if(!c||c.state!==(b.status==='rubble'?'rubble':'dynamic')||c.chunkId!==b.id||members.has(id))return false;members.add(id);}
+    const localIds=new Set<number>();for(const t of b.transforms){const c=saved.get(t.id);if(!c||!b.cells.includes(t.id)||localIds.has(t.id)||!finitePoint(t.position)||!finiteRotation(t.rotation))return false;localIds.add(t.id);const p=rotate(t.position,b.rotation),q=multiply(b.rotation,t.rotation);if(Math.hypot(p.x+b.position.x-c.position.x,p.y+b.position.y-c.position.y,p.z+b.position.z-c.position.z)>1e-3||Math.abs(Math.abs(q.x*c.rotation.x+q.y*c.rotation.y+q.z*c.rotation.z+q.w*c.rotation.w)-1)>1e-4)return false;}
+    const first=saved.get(b.cells[0])!,origin=originals.get(first.id)!.position;for(const id of b.cells){const c=saved.get(id)!,o=originals.get(id)!.position,p=rotate({x:o.x-origin.x,y:o.y-origin.y,z:o.z-origin.z},first.rotation);if(Math.hypot(p.x+first.position.x-c.position.x,p.y+first.position.y-c.position.y,p.z+first.position.z-c.position.z)>1e-3)return false;}
+   }
+   if(active>maxActiveBodies||s.cells.some(c=>(c.state==='dynamic'||c.state==='rubble')&&!members.has(c.id)))return false;
+   if(new Set(s.queue).size!==s.queue.length||s.queue.some(id=>!s.bodies.some(b=>b.id===id&&b.status==='queued'))||s.bodies.some(b=>b.status==='queued'&&!s.queue.includes(b.id))||s.queue.length&&active<maxActiveBodies)return false;
+   for(const list of [s.shots,s.processed])if(!Array.isArray(list)||list.some(x=>typeof x!=='string'||!x)||new Set(list).size!==list.length)return false;
+   const pairValid=(key:string)=>{if(typeof key!=='string')return false;const parts=key.split(':').map(Number);return parts.length===2&&parts[0]<parts[1]&&parts.every(n=>originals.has(n));};
+   if(!Array.isArray(s.episodes)||!Array.isArray(s.episodeCounts)||new Set(s.episodes.map(x=>x[0])).size!==s.episodes.length||new Set(s.episodeCounts.map(x=>x[0])).size!==s.episodeCounts.length)return false;
+   const counts=new Map(s.episodeCounts);for(const [key,n] of s.episodeCounts)if(!pairValid(key)||!Number.isSafeInteger(n)||n<1)return false;
+   for(const [key,e] of s.episodes)if(!pairValid(key)||!e||!Number.isSafeInteger(e.n)||e.n<1||e.n!==counts.get(key)||typeof e.credited!=='boolean')return false;
+   const eventIds=new Set<string>();for(const e of s.events){if(typeof e.id!=='string'||!e.id||eventIds.has(e.id)||!Number.isSafeInteger(e.epoch)||e.epoch<1||e.epoch>s.epoch||!Number.isSafeInteger(e.tick)||e.tick<0||e.tick>s.tick||!['detonation','detach','impact','sleep'].includes(e.kind)||!finitePoint(e.position)||typeof e.rootShotId!=='string'||!e.rootShotId||e.targetId!==undefined&&!originals.has(e.targetId)||e.damage!==undefined&&(!Number.isFinite(e.damage)||e.damage<0)||e.sourceId!==undefined&&typeof e.sourceId!=='string')return false;if(e.kind==='impact'&&(!s.processed.includes(e.id)||e.targetId===undefined||!e.damage))return false;eventIds.add(e.id);}
+   return true;
+  }catch{return false;}
+ }
+
+/** Pure preflight using exactly the strict validator used by live restore. Does not
+ * initialize Rapier, construct a world, or mutate fixture/snapshot ownership. */
+export function validateStructuralSnapshot(fixture:SceneFixture,input:unknown,options:Pick<StructuralSimulationOptions,'maxActiveBodies'>={}):boolean {
+ try {
+  const maxActiveBodies=options.maxActiveBodies??32;assertBodyBudget(maxActiveBodies);assertFixture(fixture);
+  const original=fixture.cells;
+  return validSnapshot(input,{fixtureId:fixture.id,fixtureSignature:JSON.stringify(original),maxActiveBodies,original,originals:new Map(original.map(c=>[c.id,c])),totalHp:original.reduce((sum,c)=>sum+(c.role==='terrain'?0:c.hp),0)});
+ }catch{return false;}
+}
+
+export async function createStructuralSimulation(fixture:SceneFixture,options:StructuralSimulationOptions={}):Promise<StructuralSimulation & {physicsHost:StructuralPhysicsHost}>{
+ await (initialized??=RAPIER.init());
+ const maxActiveBodies=options.maxActiveBodies??32;
+ assertBodyBudget(maxActiveBodies);
+ const initialEpoch=options.initialEpoch===undefined?1:options.initialEpoch;
+ if(!Number.isSafeInteger(initialEpoch)||initialEpoch<1||initialEpoch>=Number.MAX_SAFE_INTEGER-1)throw new Error('Invalid initial epoch');
+ assertFixture(fixture);
  const fixtureId=fixture.id;
  const original=copy(fixture.cells),fixtureSignature=JSON.stringify(original);
  const originals=new Map(original.map(c=>[c.id,c]));
  const retireBelowY=(original.length?original.reduce((n,c)=>Math.min(n,c.position.y),Infinity):0)-32;
  const totalHp=original.reduce((sum,c)=>sum+(c.role==='terrain'?0:c.hp),0);
- let epoch=1,tick=0,accumulator=0,serial=0,disposed=false,queriesDirty=true;
+ const validationContext:SnapshotValidationContext={fixtureId,fixtureSignature,maxActiveBodies,original,originals,totalHp};
+ let epoch=initialEpoch,tick=0,accumulator=0,serial=0,disposed=false,queriesDirty=true;
  let world:RAPIER.World,queueEvents:RAPIER.EventQueue,graph:SupportGraph;
  const cells=new Map<number,State>(),chunks=new Map<string,Chunk>(),colliders=new Map<number,RAPIER.Collider>(),colliderIds=new Map<number,number>();
  let queue:string[]=[],trace:StructuralEvent[]=[];
@@ -47,8 +95,44 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
  for(const c of original){const key=chunkKey(c.position);const list=chunkCells.get(key)??[];list.push(c.id);chunkCells.set(key,list);positionIds.set(`${c.position.x},${c.position.y},${c.position.z}`,c.id);}
  const participants=new Set<PhysicsParticipant>();
  const shots=new Set<string>(),processed=new Set<string>(),episodes=new Map<string,Episode>(),episodeCounts=new Map<string,number>();
- const amount=()=>totalHp===0?0:Math.min(200,Math.ceil(200*[...cells.values()].reduce((n,c)=>n+(c.spec.role==='terrain'?0:c.loss),0)/totalHp));
- const emit=(event:Omit<StructuralEvent,'epoch'|'tick'>)=>{trace.push({...copy(event),epoch,tick});if(trace.length>8192)trace.splice(0,trace.length-8192);};
+ let researchDirty=true,cachedResearch=0;
+ const amount=()=>{if(researchDirty){cachedResearch=totalHp===0?0:Math.min(200,Math.ceil(200*[...cells.values()].reduce((n,c)=>n+(c.spec.role==='terrain'?0:c.loss),0)/totalHp));researchDirty=false;}return cachedResearch;};
+ const dirtyViews=new Set<number>(),viewIndices=new Map(original.map((c,index)=>[c.id,index]));
+ let currentViews:ImmutableCellView[]=[],publishedViews:readonly ImmutableCellView[]|undefined,viewVersion=0,minimumViewVersion=0;
+ const viewHistory:{revision:number;cells:readonly ImmutableCellView[]}[]=[];
+ let historySize=0,eventIndex=0;
+ const immutableEvents=new WeakMap<StructuralEvent,ImmutableStructuralEvent>();
+ function changed(c:State,lossChanged=false){dirtyViews.add(c.spec.id);if(lossChanged&&c.spec.role!=='terrain')researchDirty=true;}
+ function replaceReadCaches(){currentViews=[];publishedViews=undefined;dirtyViews.clear();for(const id of cells.keys())dirtyViews.add(id);viewHistory.length=0;historySize=0;minimumViewVersion=++viewVersion;researchDirty=true;eventIndex=trace.length;}
+ function refreshViews(){
+  sync();if(!dirtyViews.size)return;
+  const updates:ImmutableCellView[]=[];
+  for(const id of dirtyViews){const c=cells.get(id)!;const index=viewIndices.get(id)!,previous=currentViews[index];
+   const view=Object.freeze({...previous??freezeDeep(copy(c.spec)),hp:c.hp,state:c.state,position:Object.freeze(point(c.position)),rotation:Object.freeze(rotation(c.rotation))});
+   currentViews[index]=view;updates.push(view);
+  }
+  dirtyViews.clear();publishedViews=undefined;viewVersion++;
+  const batch={revision:viewVersion,cells:Object.freeze(updates)};viewHistory.push(batch);historySize+=updates.length;
+  // Keep independent reader cursors bounded without rescanning the entire city.
+  while(viewHistory.length>1&&(viewHistory.length>64||historySize>16384)){const old=viewHistory.shift()!;historySize-=old.cells.length;minimumViewVersion=old.revision;}
+ }
+ function liveViews():readonly ImmutableCellView[]{refreshViews();return publishedViews??=Object.freeze([...currentViews]);}
+ function viewChanges(sinceRevision?:number):StructuralViewChanges{
+  refreshViews();
+  if(!Number.isSafeInteger(sinceRevision)||sinceRevision!<minimumViewVersion||sinceRevision!>viewVersion)return Object.freeze({revision:viewVersion,reset:true,cells:liveViews()});
+  if(sinceRevision===viewVersion)return Object.freeze({revision:viewVersion,reset:false,cells:EMPTY_VIEWS});
+  const batches=viewHistory.filter(batch=>batch.revision>sinceRevision!);
+  const updates=batches.length===1?batches[0].cells:Object.freeze([...new Map(batches.flatMap(batch=>batch.cells.map(c=>[c.id,c] as const))).values()]);
+  return Object.freeze({revision:viewVersion,reset:false,cells:updates});
+ }
+ function eventsSince(cursor?:StructuralEventCursor):StructuralEventChanges{
+  const first=eventIndex-trace.length;
+  const reset=!cursor||cursor.epoch!==epoch||!Number.isSafeInteger(cursor.index)||cursor.index<first||cursor.index>eventIndex;
+  const from=reset?0:cursor!.index-first;
+  const events=from===trace.length?EMPTY_EVENTS:Object.freeze(trace.slice(from).map(event=>{let cached=immutableEvents.get(event);if(!cached){cached=freezeDeep(copy(event));immutableEvents.set(event,cached);}return cached;}));
+  return Object.freeze({cursor:Object.freeze({epoch,index:eventIndex}),reset,events});
+ }
+ const emit=(event:Omit<StructuralEvent,'epoch'|'tick'>)=>{trace.push({...copy(event),epoch,tick});eventIndex++;if(trace.length>8192)trace.splice(0,trace.length-8192);};
  function newWorld(){queriesDirty=true;world=new RAPIER.World({x:0,y:-18,z:0});world.timestep=DT;world.integrationParameters.maxCcdSubsteps=4;queueEvents=new RAPIER.EventQueue(true);}
  function colliderDesc(c:State,p:Point,q:Rotation){return RAPIER.ColliderDesc.cuboid(.5,.5,.5).setTranslation(p.x,p.y,p.z).setRotation(q).setMass(MASS[c.spec.material]).setFriction(.85).setRestitution(.02).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS|RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS).setContactForceEventThreshold(0);}
 // Rebuild only the 8³ chunks whose occupied authoritative cells changed.
@@ -74,7 +158,7 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
  }
  function addStatic(c:State){if(c.state==='static'){dirtyStatic.add(chunkKey(c.spec.position));return;}const collider=world.createCollider(colliderDesc(c,c.position,c.rotation));colliders.set(c.spec.id,collider);colliderIds.set(collider.handle,c.spec.id);}
  function removeCollider(id:number){const collider=colliders.get(id);if(!collider)return;if(packedBoxes.has(collider.handle)){dirtyStatic.add(chunkKey(cells.get(id)!.spec.position));colliders.delete(id);return;}colliderIds.delete(collider.handle);colliders.delete(id);world.removeCollider(collider,true);}
- function syncCell(c:State){if(c.state!=='dynamic')return;const collider=colliders.get(c.spec.id);if(collider){c.position=point(collider.translation());c.rotation=rotation(collider.rotation());}}
+ function syncCell(c:State){if(c.state!=='dynamic')return;const collider=colliders.get(c.spec.id);if(collider){const p=point(collider.translation()),q=rotation(collider.rotation());if(p.x!==c.position.x||p.y!==c.position.y||p.z!==c.position.z||q.x!==c.rotation.x||q.y!==c.rotation.y||q.z!==c.rotation.z||q.w!==c.rotation.w)changed(c);c.position=p;c.rotation=q;}}
  function sync(){for(const chunk of chunks.values())if(chunk.body){for(const id of chunk.cells)syncCell(cells.get(id)!);chunk.position=point(chunk.body.translation());chunk.rotation=rotation(chunk.body.rotation());chunk.linvel=point(chunk.body.linvel());chunk.angvel=point(chunk.body.angvel());}}
  function activate(c:Chunk,restoring=false,transforms?:LocalCell[]){
   c.status='active';
@@ -91,7 +175,7 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
   if(!ids.length)return;
   const id=`piece-${++serial}`,positions=ids.map(id=>cells.get(id)!.position),position=positions.reduce((p,v)=>({x:p.x+v.x/ids.length,y:p.y+v.y/ids.length,z:p.z+v.z/ids.length}),point(ZERO));
   const chunk:Chunk={id,cells:[...ids],rootShotId,status:'queued',position,rotation:rotation(IDENTITY),linvel:point(velocity),angvel:point(angvel),quiet:0};chunks.set(id,chunk);queue.push(id);
-  for(const cellId of ids){const c=cells.get(cellId)!;const wasStatic=c.state==='static';if(wasStatic)removeCollider(cellId);c.state='dynamic';c.chunkId=id;c.loss=c.spec.hp;if(wasStatic)addStatic(c);}
+  for(const cellId of ids){const c=cells.get(cellId)!;const wasStatic=c.state==='static';if(wasStatic)removeCollider(cellId);c.state='dynamic';c.chunkId=id;c.loss=c.spec.hp;changed(c,true);if(wasStatic)addStatic(c);}
   emit({id:`${epoch}:detach:${id}`,kind:'detach',position,sourceId:id,rootShotId});
  }
  function detach(rootShotId:string,origin?:Point,impulse=0){
@@ -99,14 +183,14 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
   for(const piece of pieces){const ids=piece.cells.filter(id=>cells.get(id)?.state==='static');if(!ids.length)continue;graph.remove(ids);const center=ids.reduce((p,id)=>{const q=cells.get(id)!.position;return{x:p.x+q.x/ids.length,y:p.y+q.y/ids.length,z:p.z+q.z/ids.length};},point(ZERO));let v=point(ZERO);if(origin&&impulse>0){const d={x:center.x-origin.x,y:center.y-origin.y,z:center.z-origin.z},n=length(d)||1;v={x:d.x/n*impulse,y:d.y/n*impulse,z:d.z/n*impulse};}spawn(ids,rootShotId,v);}
   flushStatic();advance();
  }
- function destroyCell(id:number){const c=cells.get(id)!;removeCollider(id);c.hp=0;c.state='gone';c.loss=c.spec.hp;graph.remove([id]);const chunkId=c.chunkId;delete c.chunkId;if(chunkId){const chunk=chunks.get(chunkId);if(chunk){chunk.cells=chunk.cells.filter(n=>n!==id);if(!chunk.cells.length){if(chunk.body)world.removeRigidBody(chunk.body);chunks.delete(chunkId);queue=queue.filter(n=>n!==chunkId);}}}}
- function damage(id:number,value:number,eventId:string){const c=cells.get(id);if(!c||c.hp<=0||!Number.isFinite(value)||value<=0||processed.has(eventId))return 0;processed.add(eventId);const used=Math.min(c.hp,value);c.hp-=used;c.loss=Math.min(c.spec.hp,c.loss+used);if(c.hp<=1e-8)destroyCell(id);return used;}
+ function destroyCell(id:number){const c=cells.get(id)!;removeCollider(id);c.hp=0;c.state='gone';c.loss=c.spec.hp;changed(c,true);graph.remove([id]);const chunkId=c.chunkId;delete c.chunkId;if(chunkId){const chunk=chunks.get(chunkId);if(chunk){chunk.cells=chunk.cells.filter(n=>n!==id);if(!chunk.cells.length){if(chunk.body)world.removeRigidBody(chunk.body);chunks.delete(chunkId);queue=queue.filter(n=>n!==chunkId);}}}}
+ function damage(id:number,value:number,eventId:string){const c=cells.get(id);if(!c||c.hp<=0||!Number.isFinite(value)||value<=0||processed.has(eventId))return 0;processed.add(eventId);const used=Math.min(c.hp,value);c.hp-=used;c.loss=Math.min(c.spec.hp,c.loss+used);changed(c,true);if(c.hp<=1e-8)destroyCell(id);return used;}
  function forgetContacts(ids:readonly number[]){const changed=new Set(ids);for(const key of episodes.keys())if(key.split(':').map(Number).some(id=>changed.has(id)))episodes.delete(key);}
  function releaseBody(chunk:Chunk){for(const id of chunk.cells){const collider=colliders.get(id);if(collider)colliderIds.delete(collider.handle);colliders.delete(id);}if(chunk.body)world.removeRigidBody(chunk.body);delete chunk.body;for(const id of chunk.cells)addStatic(cells.get(id)!);}
  function wake(chunk:Chunk,rootShotId:string){
   if(chunk.status!=='rubble')return;
   chunk.status='queued';chunk.rootShotId=rootShotId;chunk.linvel=point(ZERO);chunk.angvel=point(ZERO);chunk.quiet=0;queue.push(chunk.id);forgetContacts(chunk.cells);
-  for(const id of chunk.cells)cells.get(id)!.state='dynamic';
+  for(const id of chunk.cells){const c=cells.get(id)!;c.state='dynamic';changed(c);}
   emit({id:`${epoch}:wake:${++serial}:${chunk.id}`,kind:'detach',position:chunk.position,sourceId:chunk.id,rootShotId});
  }
  function checkRubbleSupport(rootShotId:string){
@@ -129,7 +213,7 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
  }
  function settle(chunk:Chunk){
   sync();releaseBody(chunk);chunk.status='rubble';chunk.linvel=point(ZERO);chunk.angvel=point(ZERO);
-  for(const id of chunk.cells)cells.get(id)!.state='rubble';
+  for(const id of chunk.cells){const c=cells.get(id)!;c.state='rubble';changed(c);}
   emit({id:`${epoch}:sleep:${chunk.id}:${tick}`,kind:'sleep',position:chunk.position,sourceId:chunk.id,rootShotId:chunk.rootShotId});
  }
  function singleStep(){
@@ -191,31 +275,7 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
  function initial(){newWorld();for(const c of original){const state:State={spec:copy(c),hp:c.hp,loss:0,state:c.hp>0?'static':'gone',position:point(c.position),rotation:rotation(IDENTITY)};cells.set(c.id,state);if(c.hp>0)addStatic(state);}graph=createSupportGraph(original.filter(c=>c.hp>0));flushStatic();detach('initial');}
  function localTransforms(c:Chunk):LocalCell[]{const inv={x:-c.rotation.x,y:-c.rotation.y,z:-c.rotation.z,w:c.rotation.w};return c.cells.map(id=>{const collider=colliders.get(id)!,state=cells.get(id)!;return{id,position:point(c.body?collider.translationWrtParent()!:rotate({x:state.position.x-c.position.x,y:state.position.y-c.position.y,z:state.position.z-c.position.z},inv)),rotation:rotation(c.body?collider.rotationWrtParent()!:multiply(inv,state.rotation))};});}
  function save():Save{sync();return{schema:'structural-simulation/v1',fixtureId,fixtureSignature,maxActiveBodies,epoch,tick,accumulator,serial,cells:[...cells.values()].map(c=>({id:c.spec.id,hp:c.hp,loss:c.loss,state:c.state,position:point(c.position),rotation:rotation(c.rotation),...(c.chunkId?{chunkId:c.chunkId}:{})})),bodies:[...chunks.values()].map(c=>({transforms:localTransforms(c),id:c.id,cells:[...c.cells],rootShotId:c.rootShotId,status:c.status,position:point(c.position),rotation:rotation(c.rotation),linvel:point(c.linvel),angvel:point(c.angvel),quiet:c.quiet})),queue:[...queue],shots:[...shots],processed:[...processed],episodes:copy([...episodes]),episodeCounts:[...episodeCounts],research:amount(),events:copy(trace)};}
- function valid(input:unknown):input is Save{
-  try{
-   const s=input as Save;
-   if(!s||s.schema!=='structural-simulation/v1'||s.fixtureId!==fixtureId||s.fixtureSignature!==fixtureSignature||s.maxActiveBodies!==maxActiveBodies||!Number.isSafeInteger(s.epoch)||s.epoch<1||s.epoch>=Number.MAX_SAFE_INTEGER-1||!Number.isSafeInteger(s.tick)||s.tick<0||s.tick>=Number.MAX_SAFE_INTEGER-1||!Number.isSafeInteger(s.serial)||s.serial<0||s.serial>=Number.MAX_SAFE_INTEGER-1||!Number.isFinite(s.accumulator)||s.accumulator<0||s.accumulator>=DT)return false;
-   if(!Array.isArray(s.cells)||s.cells.length!==original.length||!Array.isArray(s.bodies)||!Array.isArray(s.queue)||!Array.isArray(s.events)||s.events.length>8192)return false;
-   const seen=new Set<number>(),saved=new Map<number,CellSave>();let sum=0;
-   for(const c of s.cells){const orig=originals.get(c.id);if(!orig||seen.has(c.id)||!Number.isFinite(c.hp)||c.hp<0||c.hp>orig.hp||!Number.isFinite(c.loss)||c.loss<0||c.loss>orig.hp||c.loss+1e-7<orig.hp-c.hp||!['static','dynamic','rubble','gone'].includes(c.state)||!finitePoint(c.position)||!finiteRotation(c.rotation))return false;if(c.state==='gone'&&c.hp!==0||c.state!=='gone'&&c.hp<=0||c.state==='dynamic'&&typeof c.chunkId!=='string'||(c.state==='static'||c.state==='gone')&&c.chunkId!==undefined||c.state==='rubble'&&typeof c.chunkId!=='string')return false;if(c.state==='static'&&(c.position.x!==orig.position.x||c.position.y!==orig.position.y||c.position.z!==orig.position.z||c.rotation.x!==0||c.rotation.y!==0||c.rotation.z!==0||Math.abs(c.rotation.w)!==1||Math.abs(c.loss-(orig.hp-c.hp))>1e-7))return false;if((c.state==='dynamic'||c.state==='rubble'||c.state==='gone'&&orig.hp>0)&&Math.abs(c.loss-orig.hp)>1e-7)return false;seen.add(c.id);saved.set(c.id,c);if(orig.role!=='terrain')sum+=c.loss;}
-   if(s.research!== (totalHp===0?0:Math.min(200,Math.ceil(200*sum/totalHp))))return false;
-   const bodies=new Set<string>(),members=new Set<number>();let active=0;
-   for(const b of s.bodies){if(typeof b.id!=='string'||!/^piece-\d+$/.test(b.id)||Number(b.id.slice(6))>s.serial||bodies.has(b.id)||typeof b.rootShotId!=='string'||!b.rootShotId||!['active','queued','rubble'].includes(b.status)||!Array.isArray(b.cells)||!b.cells.length||!finitePoint(b.position)||!finiteRotation(b.rotation)||!finitePoint(b.linvel)||!finitePoint(b.angvel)||length(b.linvel)>1e4||length(b.angvel)>1e4||b.status==='rubble'&&(length(b.linvel)!==0||length(b.angvel)!==0)||!Array.isArray(b.transforms)||b.transforms.length!==b.cells.length||!Number.isSafeInteger(b.quiet)||b.quiet<0||b.quiet>QUIET_TICKS)return false;bodies.add(b.id);if(b.status==='active')active++;for(const id of b.cells){const c=saved.get(id);if(!c||c.state!==(b.status==='rubble'?'rubble':'dynamic')||c.chunkId!==b.id||members.has(id))return false;members.add(id);}
-    const localIds=new Set<number>();for(const t of b.transforms){const c=saved.get(t.id);if(!c||!b.cells.includes(t.id)||localIds.has(t.id)||!finitePoint(t.position)||!finiteRotation(t.rotation))return false;localIds.add(t.id);const p=rotate(t.position,b.rotation),q=multiply(b.rotation,t.rotation);if(Math.hypot(p.x+b.position.x-c.position.x,p.y+b.position.y-c.position.y,p.z+b.position.z-c.position.z)>1e-3||Math.abs(Math.abs(q.x*c.rotation.x+q.y*c.rotation.y+q.z*c.rotation.z+q.w*c.rotation.w)-1)>1e-4)return false;}
-    const first=saved.get(b.cells[0])!,origin=originals.get(first.id)!.position;for(const id of b.cells){const c=saved.get(id)!,o=originals.get(id)!.position,p=rotate({x:o.x-origin.x,y:o.y-origin.y,z:o.z-origin.z},first.rotation);if(Math.hypot(p.x+first.position.x-c.position.x,p.y+first.position.y-c.position.y,p.z+first.position.z-c.position.z)>1e-3)return false;}
-   }
-   if(active>maxActiveBodies||s.cells.some(c=>(c.state==='dynamic'||c.state==='rubble')&&!members.has(c.id)))return false;
-   if(new Set(s.queue).size!==s.queue.length||s.queue.some(id=>!s.bodies.some(b=>b.id===id&&b.status==='queued'))||s.bodies.some(b=>b.status==='queued'&&!s.queue.includes(b.id))||s.queue.length&&active<maxActiveBodies)return false;
-   for(const list of [s.shots,s.processed])if(!Array.isArray(list)||list.some(x=>typeof x!=='string'||!x)||new Set(list).size!==list.length)return false;
-   const pairValid=(key:string)=>{if(typeof key!=='string')return false;const parts=key.split(':').map(Number);return parts.length===2&&parts[0]<parts[1]&&parts.every(n=>originals.has(n));};
-   if(!Array.isArray(s.episodes)||!Array.isArray(s.episodeCounts)||new Set(s.episodes.map(x=>x[0])).size!==s.episodes.length||new Set(s.episodeCounts.map(x=>x[0])).size!==s.episodeCounts.length)return false;
-   const counts=new Map(s.episodeCounts);for(const [key,n] of s.episodeCounts)if(!pairValid(key)||!Number.isSafeInteger(n)||n<1)return false;
-   for(const [key,e] of s.episodes)if(!pairValid(key)||!e||!Number.isSafeInteger(e.n)||e.n<1||e.n!==counts.get(key)||typeof e.credited!=='boolean')return false;
-   const eventIds=new Set<string>();for(const e of s.events){if(typeof e.id!=='string'||!e.id||eventIds.has(e.id)||!Number.isSafeInteger(e.epoch)||e.epoch<1||e.epoch>s.epoch||!Number.isSafeInteger(e.tick)||e.tick<0||e.tick>s.tick||!['detonation','detach','impact','sleep'].includes(e.kind)||!finitePoint(e.position)||typeof e.rootShotId!=='string'||!e.rootShotId||e.targetId!==undefined&&!originals.has(e.targetId)||e.damage!==undefined&&(!Number.isFinite(e.damage)||e.damage<0)||e.sourceId!==undefined&&typeof e.sourceId!=='string')return false;if(e.kind==='impact'&&(!s.processed.includes(e.id)||e.targetId===undefined||!e.damage))return false;eventIds.add(e.id);}
-   return true;
-  }catch{return false;}
- }
- initial();
+ initial();replaceReadCaches();
  const host:StructuralPhysicsHost={
   get world(){return world;},get epoch(){return epoch;},
   register(participant){if(disposed)throw new Error('Cannot register with disposed physics host');participants.add(participant);participant.afterWorldReplace?.(world,epoch);return()=>{participants.delete(participant);};},
@@ -226,6 +286,8 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
  const simulation:StructuralSimulation & {physicsHost:StructuralPhysicsHost}={
   physicsHost:host,
   get epoch(){return epoch;},
+  get viewRevision(){refreshViews();return viewVersion;},
+  liveViews,viewChanges,eventsSince,
   blast(command:BlastCommand){
    if(disposed||!command||command.epoch!==epoch||typeof command.id!=='string'||!command.id||shots.has(command.id)||!finitePoint(command.position)||!Number.isFinite(command.radius)||command.radius<=0||command.radius>1e6||!Number.isFinite(command.damage)||command.damage<0||command.damage>1e9||!Number.isFinite(command.impulse)||command.impulse<0||command.impulse>1e4)return false;
    shots.add(command.id);sync();emit({id:`${epoch}:shot:${command.id}`,kind:'detonation',position:command.position,rootShotId:command.id});
@@ -240,7 +302,7 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
   views(){sync();return [...cells.values()].map(c=>({...copy(c.spec),hp:c.hp,state:c.state,position:point(c.position),rotation:rotation(c.rotation)}));},
   events(){return copy(trace);},pending:pendingCount,research:amount,snapshot:save,
   restore(input:unknown){
-   if(disposed||!valid(input))return false;const s=copy(input);
+   if(disposed||!validSnapshot(input,validationContext))return false;const s=copy(input);
    // All input is validated before the first mutation. No event from the old world survives.
    for(const participant of participants)participant.beforeWorldReplace?.();
    queueEvents.free();world.free();cells.clear();chunks.clear();colliders.clear();colliderIds.clear();packedBoxes.clear();packedChunks.clear();dirtyStatic.clear();shots.clear();processed.clear();episodes.clear();episodeCounts.clear();newWorld();
@@ -248,9 +310,9 @@ export async function createStructuralSimulation(fixture:SceneFixture,options:{m
    for(const c of s.cells){const state:State={...copy(c),spec:copy(originals.get(c.id)!)};cells.set(c.id,state);if(c.state!=='gone')addStatic(state);}
    graph=createSupportGraph([...cells.values()].filter(c=>c.state==='static').map(c=>({...copy(c.spec),hp:c.hp})));flushStatic();
    for(const b of s.bodies){const c:Chunk=copy(b);chunks.set(c.id,c);if(c.status==='active')activate(c,true,b.transforms);}
-   for(const id of s.shots)shots.add(id);for(const id of s.processed)processed.add(id);for(const [key,value] of s.episodes)episodes.set(key,value);for(const [key,value] of s.episodeCounts)episodeCounts.set(key,value);for(const participant of participants)participant.afterWorldReplace?.(world,epoch);return true;
+   for(const id of s.shots)shots.add(id);for(const id of s.processed)processed.add(id);for(const [key,value] of s.episodes)episodes.set(key,value);for(const [key,value] of s.episodeCounts)episodeCounts.set(key,value);replaceReadCaches();for(const participant of participants)participant.afterWorldReplace?.(world,epoch);return true;
   },
-  reset(){if(disposed)return;for(const participant of participants)participant.beforeWorldReplace?.();queueEvents.free();world.free();cells.clear();chunks.clear();colliders.clear();colliderIds.clear();packedBoxes.clear();packedChunks.clear();dirtyStatic.clear();queue=[];trace=[];shots.clear();processed.clear();episodes.clear();episodeCounts.clear();epoch++;tick=0;accumulator=0;serial=0;initial();for(const participant of participants)participant.afterWorldReplace?.(world,epoch);},
+  reset(){if(disposed)return;for(const participant of participants)participant.beforeWorldReplace?.();queueEvents.free();world.free();cells.clear();chunks.clear();colliders.clear();colliderIds.clear();packedBoxes.clear();packedChunks.clear();dirtyStatic.clear();queue=[];trace=[];shots.clear();processed.clear();episodes.clear();episodeCounts.clear();epoch++;tick=0;accumulator=0;serial=0;initial();replaceReadCaches();for(const participant of participants)participant.afterWorldReplace?.(world,epoch);},
   dispose(){if(disposed)return;for(const participant of participants)participant.beforeWorldReplace?.();participants.clear();disposed=true;queueEvents.free();world.free();chunks.clear();queue=[];colliders.clear();colliderIds.clear();packedBoxes.clear();packedChunks.clear();dirtyStatic.clear();}
  };
  return simulation;

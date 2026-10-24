@@ -5,7 +5,7 @@ from fontTools.ttLib import TTFont
 root=Path(__file__).resolve().parent.parent
 source=Path('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc')
 font=TTFont(source,fontNumber=2)
-chars=set(''.join(p.read_text() for p in (root/'src').glob('*.ts')))
+chars=set(''.join(p.read_text() for p in (root/'src').rglob('*.ts')))
 chars.update(chr(i) for i in range(32,127))
 opts=subset.Options();opts.flavor='woff';opts.notdef_glyph=True;opts.notdef_outline=True
 sub=subset.Subsetter(options=opts);sub.populate(unicodes=[ord(c) for c in chars if ord(c)>=32]);sub.subset(font)
@@ -18,5 +18,5 @@ if 'CFF ' in font:
 font.flavor='woff';font.save(root/'public/fonts/courtyard-sans.woff')
 license=Path('/usr/share/doc/fonts-noto-cjk/copyright').read_text();license=license[license.index('License: SIL-1.1\n ------------------------------------------------'):];license='Copyright 2014-2021 Adobe (http://www.adobe.com/)\nCopyright 2010-2012 Google Corporation\n\n'+license
 (root/'public/fonts/LICENSE.txt').write_text(license)
-(root/'public/fonts/SOURCE.md').write_text('# Courtyard Sans subset\n\nDerived from Noto Sans CJK SC Regular, supplied by the fonts-noto-cjk package. Only characters used by the game plus printable ASCII are retained. Renamed Courtyard Sans and redistributed under SIL Open Font License 1.1.\n\nUpstream: https://github.com/notofonts/noto-cjk\n')
+(root/'public/fonts/SOURCE.md').write_text('# Courtyard Sans subset\n\nDerived from Noto Sans CJK SC Regular, supplied by the fonts-noto-cjk package. Only characters used by the game plus printable ASCII are retained. Renamed Courtyard Sans and redistributed under SIL Open Font License 1.1.\n\nUpstream: https://github.com/notofonts/noto-cjk\n\nThe isolated laboratory uses structural-sans.woff, a separately renamed Structural Sans subset of the same source under the same OFL license. No external font service is used.\n')
 print('Font subset:',(root/'public/fonts/courtyard-sans.woff').stat().st_size,'bytes')

@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {createStructuralGameWorld} from '../src/structural/game-world.js';
+import {createProjectilePhysics} from '../src/physics.js';
+import {getEnvironmentSpec} from '../src/scene-environments.js';
+import {getSceneLaunchOrigin} from '../src/scene.js';
+import {createVoxelInstanceRenderer} from '../src/voxel-renderer.js';
+const map=process.argv[2]==='neighborhood'?'neighborhood':'city';
+const stamp=(stage:string,extra={})=>console.log(JSON.stringify({stage,map,rssMiB:Math.round(process.memoryUsage().rss/1048576),heapMiB:Math.round(process.memoryUsage().heapUsed/1048576),...extra}));
+stamp('start');const world=createStructuralGameWorld({free:true});const started=performance.now();await world.loadMap(map,true);stamp('world-ready',{ms:performance.now()-started,cells:world.getVoxels().length});
+const physics=await createProjectilePhysics({host:world.physicsHost!});
+const scene=new THREE.Scene(),box=new THREE.BoxGeometry(1,1,1),mat=new THREE.MeshBasicMaterial(),renderer=createVoxelInstanceRenderer(scene,box,mat);renderer.set(world.getVoxels());renderer.mesh.updateMatrixWorld();
+const spec=getEnvironmentSpec(map,{authoritative:true}),camera=new THREE.PerspectiveCamera(42,1440/900,spec.camera.near,spec.camera.far);camera.position.set(...spec.camera.position);camera.lookAt(new THREE.Vector3(...spec.camera.target));camera.updateMatrixWorld();
+const selected=world.getVoxel(map==='city'?-4649:-4264)!;assert.ok(selected);const p=new THREE.Vector3(...[selected.position.x,selected.position.y,selected.position.z] as [number,number,number]).project(camera),ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(p.x,p.y),camera);const hit=ray.intersectObject(renderer.mesh)[0];assert.ok(hit?.instanceId!==undefined);assert.equal(renderer.getVoxel(hit.instanceId)!.id,selected.id);
+const target={x:hit.point.x,y:hit.point.y,z:hit.point.z},before=world.getVoxels().filter(v=>v.role==='terrain').reduce((n,v)=>n+v.hp,0);stamp('render-ready',{render:renderer.getDiagnostics()});
+assert.ok(physics.launch({id:'native-scale-soil',epoch:world.epoch,origin:getSceneLaunchOrigin(camera,target),target,weapon:'pulse',power:1}));let detonations=0,ticks=0;const simulationStarted=performance.now();
+for(;ticks<2400;ticks++){for(const event of physics.step(1/120)){detonations++;assert.ok(world.damage({id:event.id,epoch:event.epoch,target:event.position,weapon:event.weapon,power:event.power,reward:false}).accepted);}if(detonations&&world.pending()===0)break;}
+const after=world.getVoxels().filter(v=>v.role==='terrain').reduce((n,v)=>n+v.hp,0);assert.ok(detonations>0);assert.ok(after<before,'Actual camera-offset projectile must hit soil');assert.equal(world.pending(),0);assert.ok(world.getVoxels().some(v=>v.role==='terrain'&&v.position.y<=-6));stamp('crater-settled',{ticks,ms:performance.now()-simulationStarted,detonations,soilHpLost:before-after});
+const encoded=JSON.stringify(world.getSnapshot());assert.ok(encoded.length<4_500_000,'Sparse saved city should fit ordinary browser storage budget');stamp('saved',{bytes:Buffer.byteLength(encoded)});
+physics.dispose();world.suspend();renderer.dispose();box.dispose();mat.dispose();stamp('done');

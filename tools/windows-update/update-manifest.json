@@ -1,0 +1,254 @@
+{
+  "schema": 1,
+  "original": {
+    "archive_sha256": "fb32cafefd1faa2a791c12c6db24d8101f9eba7f5101060de615dd89177e8a38",
+    "root_directory": "核平-Godot城市验证片-5719b564-Windows",
+    "files": [
+      {
+        "path": "THIRD-PARTY-NOTICES/APACHE-2.0.txt",
+        "bytes": 11357,
+        "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/FASTNOISELITE-NOTICE.txt",
+        "bytes": 1187,
+        "sha256": "e44e16da4f9928cfa3d8169ab41bec17e46f302e18e7ae315032fc597d17e7a3"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/GODOT-RANDOM-PCG-NOTICE.txt",
+        "bytes": 2285,
+        "sha256": "073b8da855d9000fbd9e6ee61ce5a109f1b5a92a8ba9c930c2b47095447664e2"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/LZ4-C-SOURCE-NOTICE.txt",
+        "bytes": 1598,
+        "sha256": "c5cc80af5cbc31e989d4f74a7cecfb2caa9a245ad1b03947bbb34b77c6d5a74e"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/LZ4-HEADER-NOTICE.txt",
+        "bytes": 1616,
+        "sha256": "4af8f46e6ad8dd7302e81bae55f9f5483c862c972d3544c1811984d9dc5747b0"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/LZ4-LICENSE.txt",
+        "bytes": 1311,
+        "sha256": "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/MESHOPTIMIZER-LICENSE.txt",
+        "bytes": 1079,
+        "sha256": "e4a26033e3551fb2722888949fbb41e77aee628e8e8f04dcffeee301aa7e5634"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/PCG-NOTICE.txt",
+        "bytes": 142,
+        "sha256": "56f974c15d0fee39e4a6db165443f857d30a1b4ef53af8f9f1bcacfaa2e2c678"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/README.md",
+        "bytes": 2257,
+        "sha256": "aaff4d927c573da86f31d91639f7885805a567aa2206c0a9b7d3fa1a826ea9dd"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/SHA256SUMS",
+        "bytes": 4125,
+        "sha256": "0b7d2c40c6d1b45036bca1daaaefd22dd4ac870b248d12b9eeb33bcf59feff7c"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/SQLITE-PUBLIC-DOMAIN-NOTICE.txt",
+        "bytes": 1485,
+        "sha256": "85806d613cfda5901f848b3b5b4b04396c8c64e89c97c0af3706c42b0c44bb47"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/TRANSVOXEL-PINNED-NOTICE.txt",
+        "bytes": 1632,
+        "sha256": "d5f0a1019e0a5784491d17a3e60990ca3efaf14204ed27a51e302be00c1a8ee1"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/VOXEL-TOOLS-LICENSE.txt",
+        "bytes": 1075,
+        "sha256": "3a1f742145830b5702fe9e7aa2566c5896012a88fb3f70a00d6fd64e9cc203ee"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GCC-GPL-3.0.txt",
+        "bytes": 35147,
+        "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GCC-LIBGCC-SOURCE-NOTICE.txt",
+        "bytes": 1057,
+        "sha256": "f0fd82b64a638c757c8929e92582347e3716e29780cddc538a00553b07fef885"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GCC-LIBSTDCXX-SOURCE-NOTICE.txt",
+        "bytes": 1062,
+        "sha256": "40001cee396296a758bb65a2722d2054be1f7a027ea695abe7856e7dfe946940"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt",
+        "bytes": 3324,
+        "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GNU-LGPL-2.1.txt",
+        "bytes": 26527,
+        "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GODOT-4.7.1-COPYRIGHT.txt",
+        "bytes": 100108,
+        "sha256": "cb1980c88089573bcacd7221d777c689bb8bbd778799f24c27fca0fe5f774d6d"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/GODOT-4.7.1-LICENSE.txt",
+        "bytes": 1149,
+        "sha256": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/MINGW-W64-COPYING.txt",
+        "bytes": 2326,
+        "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/MINGW-W64-PUBLIC-DOMAIN-DISCLAIMER.txt",
+        "bytes": 454,
+        "sha256": "87f33608570312a0f2a9745edcb2527275df813b13982e8c3b3f893d88a4141a"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/MINGW-W64-RUNTIME-LICENSES.txt",
+        "bytes": 12155,
+        "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/MINGW-W64-TLS-PUBLIC-DOMAIN-NOTICE.txt",
+        "bytes": 216,
+        "sha256": "17cf54b690656d4e7b69fb977f7ac1ac53c0a6a989f359fec838ccb6fdc4490b"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/README.md",
+        "bytes": 4944,
+        "sha256": "8bae535a4f4c1ba43291ed67008950c76205ecf80ebd7a33c96f532a35dcf2af"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/SHA256SUMS",
+        "bytes": 1497,
+        "sha256": "885c2a5140cc23ae1fce902cff98d7456b66aa30bd7e5c42abc274a60ecffd60"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/WINPTHREADS-LICENSE.txt",
+        "bytes": 2883,
+        "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/WINPTHREADS-RWLOCK-SOURCE-NOTICE.txt",
+        "bytes": 1121,
+        "sha256": "88efe6215c31d388c1a18eb849f34746206d675281d96fbe8441b2d9537d48a2"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/notice-source-manifest.json",
+        "bytes": 12788,
+        "sha256": "abb327b1094ad3fd99c8b064006920fc6b4cafb23d3b11abb06e9dab3c81fde3"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/compiler-runtime/runtime-binary-evidence.json",
+        "bytes": 14140,
+        "sha256": "f4f81e288b59c62a045687edc13c830729384b12e9fbd324f5ea69121bbd41c1"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/LZ4-VERSION.txt",
+        "bytes": 72,
+        "sha256": "6a4bbe6f6bec8f2a2b3704ceeefec738509a2fad45b92b56f58903c5f0f93631"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/MESHOPTIMIZER-VERSION.txt",
+        "bytes": 68,
+        "sha256": "48627641c211f5fee17e4d2171a2f730296f4fa1de84e29fd328a0d999650129"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/SConstruct.txt",
+        "bytes": 5285,
+        "sha256": "c5407ab52178cf32c10ca3fe2dcdb459a99a071785c0f9ce00583bcaf73cc844"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/SQLITE-VERSION.txt",
+        "bytes": 64,
+        "sha256": "3013520ae5dbc75f6f7c4028fa76e46c6259e92ffd969b0df7faf123eccb5e39"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/binary-inspection.json",
+        "bytes": 24186,
+        "sha256": "8429b44fa12da006e19336252899077033cbfb680d1200fc298a731ac9e6d0ae"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/common.py.txt",
+        "bytes": 10795,
+        "sha256": "421359d20c3506e5d911ed76c65e3a51d30426e0eaa2ae422e7e27d0065590b4"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/extension_builds.yml.txt",
+        "bytes": 7642,
+        "sha256": "8e25aa6674fe32fafcd4fabb1e02f55a9379fec415b2bb71c72c247f1bf36638"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/extension_release.yml.txt",
+        "bytes": 2696,
+        "sha256": "06893da1892e6578667b0f0b9f7be6dac5460ca396e4ab49bca02b6f3206e9bc"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/notice-source-manifest.json",
+        "bytes": 7936,
+        "sha256": "249ce73bc9da25c745c2fc8dfa991f3b1eb7bae0865659631fb67e1742c6f160"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/evidence/transvoxel-table-comparison.json",
+        "bytes": 1559,
+        "sha256": "c7fe266fafa7f37470e9d689d64fc3a451ee8d664420616b107efa27939c8305"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/font/LICENSE.txt",
+        "bytes": 4990,
+        "sha256": "de9e6d7d94c163b8e4fd9a0fa715713a7e4b98bc8a37d4e4a77576c9a9b109df"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/font/SOURCE.txt",
+        "bytes": 185,
+        "sha256": "b17388cfd3754f13ae9d4a091675055f18db58e06cb29f8944fecdfe91cf3ee2"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/font/native-slice-sans.otf",
+        "bytes": 76544,
+        "sha256": "7533a186269e5f925c39ade357e918b064f48162b57adbbf8adb815bed17d2c3"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/font/native-slice-sans.otf.import",
+        "bytes": 788,
+        "sha256": "2a00bace0d5cb25143b5d052873b1ec560606f79a0ed60c2cd83c9f8e865ac42"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/supplemental/GODOT-CPP-UPSTREAM-LICENSE.txt",
+        "bytes": 1093,
+        "sha256": "26a5b210d90760156ce886267ce9df235787dcc6cebfd7ecd95ef5b6fdcc95bf"
+      },
+      {
+        "path": "THIRD-PARTY-NOTICES/supplemental/TRANSVOXEL-CURRENT-UPSTREAM-LICENSE.txt",
+        "bytes": 1069,
+        "sha256": "fb06f8bb2f732d2df558c0d0f951b6ad4b95711410adaf840ba22b477e274749"
+      },
+      {
+        "path": "libvoxel.windows.template_release.x86_64.dll",
+        "bytes": 10173952,
+        "sha256": "cff4fdefa8d3348860bc241ed9eb86f96d31c2e6e7da8a304c890ec018115bf0"
+      },
+      {
+        "path": "nuclear-native-slice.exe",
+        "bytes": 109212160,
+        "sha256": "76269a403bb832599edeee4432a5b7a7e88c018eb5c9c798dfd8289359b0ec07"
+      }
+    ]
+  },
+  "payload": {
+    "path": "nuclear-native-slice.pck",
+    "bytes": 34851144,
+    "sha256": "61bb71e92fec3e559a6698752cc384ca1c3cfdcd61b1f20ab35c02402eb790fa"
+  }
+}

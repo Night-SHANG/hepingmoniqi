@@ -1,0 +1,25 @@
+name: Godot Windows update validation
+on:
+  push:
+    branches: [godot-validation]
+    paths:
+      - 'tools/windows-update/**'
+      - 'tests/windows-update/**'
+      - '.github/workflows/godot-update-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-update:
+    if: ${{ github.event.repository.private == false }}
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Actual CMD and Windows PowerShell update regression
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -File .\tests\windows-update\test.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Update regression failed' }

@@ -3,6 +3,9 @@ on:
   push:
     branches: [godot-validation]
     paths-ignore:
+      - 'tools/windows-update/**'
+      - 'tests/windows-update/**'
+      - '.github/workflows/godot-update-validation.yml'
       - 'tools/windows-launcher/**'
       - 'tests/windows-launcher/**'
       - '.github/workflows/godot-launcher-validation.yml'

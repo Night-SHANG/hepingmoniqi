@@ -22,13 +22,17 @@ jobs:
           node-version: '22'
       - run: npm ci --ignore-scripts
       - name: Existing and regional authority regression tests
+        id: build
         run: |
           npm test
           node --import tsx --import ./scripts/register-compact-test-assets.mjs --test --test-concurrency=1 src/scale-slice/*.test.ts
           node --test scripts/scale-slice-measurement.test.mjs
+          python3 scripts/scale-slice-launcher.test.py
           npx tsc --noEmit
           npx vite build --config vite.scale-slice.config.ts
+          node scripts/scale-slice-stage.mjs
       - name: Serve isolated slice
+        id: serve
         run: |
           python3 -m http.server 5192 --bind 127.0.0.1 --directory dist-scale-slice >/tmp/scale-slice-server.log 2>&1 &
           python3 - <<'PYREADY'
@@ -47,3 +51,12 @@ jobs:
           GAME_URL: http://127.0.0.1:5192/scale-slice.html
           QA_OUTPUT: artifacts/scale-browser
         run: node scripts/scale-slice-browser-check.mjs
+
+      - name: Real launcher flight pause crater and reentry smoke
+        if: always() && steps.serve.outcome == 'success'
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          QA_SCALE_SLICE_AUTHORIZED: 'true'
+          GAME_URL: http://127.0.0.1:5192/scale-slice.html
+          QA_OUTPUT: artifacts/scale-interaction
+        run: node scripts/scale-slice-interaction-check.mjs

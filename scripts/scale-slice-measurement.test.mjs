@@ -95,3 +95,12 @@ test('self-test detects the original helper-after-await temporal-dead-zone mutat
   assert.notEqual(r.status,0);assert.match(r.stderr,/Cannot access 'distance' before initialization/);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('direct transaction completes without waiting for later independent collapse dirty work',()=>{
+ const m=measurement.createDamageMeasurement({...damage,expectedChunkKeys:['a','b']});
+ const a=upload('a',1100),b=upload('b',1200);
+ measurement.observeDamageMeasurement(m,state({summary:{epoch:3,geometryRevision:9,mesh:{pendingDirty:5,inFlightPatches:2}},uploads:[a,b],renders:[frame(1,1210,1220)],presentation:{pending:3}}));
+ const result=measurement.damageMeasurementResult(m);
+ assert.equal(result.staticVisibleMs,220);assert.equal(result.allPatchUploadsMs,200);
+ assert.equal(result.staticVisibleEvidence.allPatchUploads.scope,'direct-transaction');
+});

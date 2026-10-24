@@ -19,7 +19,7 @@ const gates=row=>({
 // Pure reducers are shared by the executable and browser-free regression tests.
 // A frame is a real renderer submission, not GPU completion or screen presentation.
 export function createDamageMeasurement(damage){
- return {damage:{...damage},poses:new Map(),renders:new Map(),uploads:new Map(),firstEligibleReceivedPose:null,fixedPose:null,poseRender:null,skippedEligiblePoseCount:0,firstDamagedChunkRender:null,firstVfxRender:null,allPatchUploads:null,allStaticRender:null,staticObservedAt:null};
+ return {damage:{...damage},poses:new Map(),renders:new Map(),uploads:new Map(),firstEligibleReceivedPose:null,fixedPose:null,poseRender:null,skippedEligiblePoseCount:0,firstDamagedChunkRender:null,firstVfxRender:null,allPatchUploads:null,allStaticRender:null,staticObservedAt:null,queueQuiescentAt:null};
 }
 function poseKey(p){return `${p.epoch}:${p.tick}:${p.geometryRevision}:${p.sentAt}:${p.receivedAt}`;}
 function uploadKey(u){return `${u.epoch}:${u.key}:${u.revision}:${u.at}`;}
@@ -39,11 +39,15 @@ export function observeDamageMeasurement(m,d){
  m.firstDamagedChunkRender??=frames.find(r=>r.renderedChunks?.some(u=>damagedUpload(u,damage)&&u.at<=r.finishedAt))??null;
  m.firstVfxRender??=frames.find(r=>r.effectIds?.includes(damage.id))??null;
  const mesh=d.summary?.mesh,drained=d.summary?.epoch===damage.epoch&&d.summary.geometryRevision>=damage.geometryRevision&&mesh?.pendingDirty===0&&mesh.inFlightPatches===0&&d.presentation?.pending===0;
- if(!m.allStaticRender&&drained){
-  const uploads=[...m.uploads.values()];
+ if(drained)m.queueQuiescentAt??=d.at;
+ const expected=Array.isArray(damage.expectedChunkKeys)?damage.expectedChunkKeys:null;
+ const byKey=new Map();for(const u of [...m.uploads.values()].sort((a,b)=>a.at-b.at))if(damagedUpload(u,damage)&&!byKey.has(u.key))byKey.set(u.key,u);
+ const directReady=expected?.length>0&&expected.every(key=>byKey.has(key));
+ if(!m.allStaticRender&&(expected?directReady:drained)){
+  const uploads=expected?expected.map(key=>byKey.get(key)):[...m.uploads.values()];
   if(uploads.some(u=>damagedUpload(u,damage))){
    const at=Math.max(...uploads.map(u=>u.at));
-   m.allPatchUploads={at,observedAt:d.at,count:uploads.length,damageTaggedCount:uploads.filter(u=>damagedUpload(u,damage)).length,geometryRevision:d.summary.geometryRevision};
+   m.allPatchUploads={scope:expected?'direct-transaction':'legacy-global-queue',at,observedAt:d.at,count:uploads.length,damageTaggedCount:uploads.filter(u=>damagedUpload(u,damage)).length,geometryRevision:d.summary.geometryRevision};
    const r=frames.find(r=>r.at>=at);
    if(r){m.allStaticRender=r;m.staticObservedAt=d.at;}
   }
@@ -52,7 +56,7 @@ export function observeDamageMeasurement(m,d){
 }
 export function damageMeasurementResult(m){
  const since=at=>Number.isFinite(at)?at-m.damage.committedAt:null;
- return {firstVfxVisibleMs:since(m.firstVfxRender?.finishedAt),firstDamagedChunkVisibleMs:since(m.firstDamagedChunkRender?.finishedAt),allPatchUploadsMs:since(m.allPatchUploads?.at),fixedPoseVisibleMs:since(m.poseRender?.finishedAt),staticVisibleMs:since(m.allStaticRender?.finishedAt),visibleMs:m.allStaticRender&&m.poseRender?since(Math.max(m.allStaticRender.finishedAt,m.poseRender.finishedAt)):null,
+ return {queueQuiescentObservedMs:since(m.queueQuiescentAt),firstVfxVisibleMs:since(m.firstVfxRender?.finishedAt),firstDamagedChunkVisibleMs:since(m.firstDamagedChunkRender?.finishedAt),allPatchUploadsMs:since(m.allPatchUploads?.at),fixedPoseVisibleMs:since(m.poseRender?.finishedAt),staticVisibleMs:since(m.allStaticRender?.finishedAt),visibleMs:m.allStaticRender&&m.poseRender?since(Math.max(m.allStaticRender.finishedAt,m.poseRender.finishedAt)):null,
   firstVfxEvidence:m.firstVfxRender,firstDamagedChunkEvidence:m.firstDamagedChunkRender,allPatchUploadsEvidence:m.allPatchUploads,
   staticVisibleEvidence:{observedAt:m.staticObservedAt,geometryRevision:m.allPatchUploads?.geometryRevision??null,allPatchUploads:m.allPatchUploads,render:m.allStaticRender},
   completeVisibleEvidence:{firstEligibleReceivedPose:m.firstEligibleReceivedPose,pose:m.fixedPose,render:m.poseRender,skippedEligiblePoseCount:m.skippedEligiblePoseCount,staticRender:m.allStaticRender}};
@@ -74,7 +78,7 @@ export function summarizeAttribution(costs,renders,glMetrics,start,finish){
  for(const method of [...new Set(glRows.map(r=>r.method))].sort().slice(0,32)){const rows=glRows.filter(r=>r.method===method),values=rows.map(r=>r.ms).filter(Number.isFinite);windowMethods[method]={...stats(values),totalMs:values.reduce((a,b)=>a+b,0),phases:[...new Set(rows.map(r=>r.phase))].sort().slice(0,8)};}
  return {segments,topCosts,renderInfo,renderCount:rs.length,gl:{windowMethods,topCalls:glRows.filter(r=>Number.isFinite(r.ms)).sort((a,b)=>b.ms-a.ms).slice(0,8).map(({method,phase,at,ms})=>({method,phase,at,ms})),cumulativeMethods:Object.fromEntries(Object.entries(glMetrics?.calls??{}).slice(0,32)),dropped:glMetrics?.dropped??null,available:!!glMetrics,windowMethodsAreRecordedSlowCallsOnly:true,recordingThresholdMs:1}};
 }
-function boundedMeasurement(row){return {firstVfxVisibleMs:row.firstVfxVisibleMs,firstDamagedChunkVisibleMs:row.firstDamagedChunkVisibleMs,allPatchUploadsMs:row.allPatchUploadsMs,fixedPoseVisibleMs:row.fixedPoseVisibleMs,firstVfxRender:boundedFrame(row.firstVfxEvidence),firstDamagedChunkRender:boundedFrame(row.firstDamagedChunkEvidence),allPatchUploads:row.allPatchUploadsEvidence,staticRender:boundedFrame(row.staticVisibleEvidence?.render),fixedPoseRender:boundedFrame(row.completeVisibleEvidence?.render),firstEligibleReceivedPose:row.completeVisibleEvidence?.firstEligibleReceivedPose,skippedEligiblePoseCount:row.completeVisibleEvidence?.skippedEligiblePoseCount};}
+function boundedMeasurement(row){return {queueQuiescentObservedMs:row.queueQuiescentObservedMs,firstVfxVisibleMs:row.firstVfxVisibleMs,firstDamagedChunkVisibleMs:row.firstDamagedChunkVisibleMs,allPatchUploadsMs:row.allPatchUploadsMs,fixedPoseVisibleMs:row.fixedPoseVisibleMs,firstVfxRender:boundedFrame(row.firstVfxEvidence),firstDamagedChunkRender:boundedFrame(row.firstDamagedChunkEvidence),allPatchUploads:row.allPatchUploadsEvidence,staticRender:boundedFrame(row.staticVisibleEvidence?.render),fixedPoseRender:boundedFrame(row.completeVisibleEvidence?.render),firstEligibleReceivedPose:row.completeVisibleEvidence?.firstEligibleReceivedPose,skippedEligiblePoseCount:row.completeVisibleEvidence?.skippedEligiblePoseCount};}
 function selfTest(){
  assert.equal(distance({x:0,y:0,z:0},{x:3,y:4,z:0}),5);
  const fixture={structureCount:36,idAtOrdinal:i=>i,objectiveOf:()=>true,roleOf:()=> 'building',objectIdOf:i=>i,originalPosition:i=>({x:i*3,y:5,z:0}),idAt:(x,y,z)=>y===5&&z===0&&x%3===0&&x>=0&&x<108?x/3:null};
@@ -100,7 +104,7 @@ async function main(){
  const evidence={schema:'scale-priority-real-browser/v2',status:'running',startedAt:new Date().toISOString(),url,targets:TARGETS,
   provenance:{execution:'Separately authorized GitHub CI, preinstalled Chrome, software WebGL',commit:process.env.GITHUB_SHA??null,runId:process.env.GITHUB_RUN_ID??null,attempt:process.env.GITHUB_RUN_ATTEMPT??null},
   scope:{entry:'isolated scale-slice.html; normal game untouched',city:{cells:454913,terrain:401800,structures:53113,buildings:36,layers:8,bounds:fixture.bounds},novaCount:3,distinctCenters:true,radius:48,damage:20,power:1,resetBetweenShots:false,hiddenStateMutations:false,clockOverrides:false,observationLimitMs:limit},
-  limitations:['One bounded software-rendered run is evidence, not a statistical performance guarantee.','Static visible update retains the 500 ms ALL changed mesh target: queues drained and first render after the final observed patch installation. First damaged chunk and VFX timings are separate, not substitutes. Times use renderer completion timestamps, with polling observation times retained separately; not GPU completion or physical screen presentation.','Dynamic pose timing freezes the earliest eligible post-damage snapshot that is actually present in a rendered frame and exactly matches received pose history. Superseded, never-rendered snapshots are reported as skipped, not credited. It never chases the changing latest pose.','Natural recovery is real wall-clock unpaused work; reset, forced GC, artificial clock jumps and screenshots are forbidden during pressure.','Browser read-only diagnostics add overhead. CDP heap measures the page realm, not the Node candidate inventory; WASM/GPU residency is unknown. Candidate inventory generation uses the same immutable city but no second native physics world.','Regional HP/support is intentionally approximate; no exact legacy per-voxel damage equivalence is asserted.'],
+  limitations:['One bounded software-rendered run is evidence, not a statistical performance guarantee.','Static visible update retains the 500 ms target for ALL direct-transaction chunk/version obligations, not a wait for later independent collapse dirties. Global queue quiescence is reported separately. First damaged chunk and VFX timings are separate, not substitutes. Times use renderer completion timestamps, with polling observation times retained separately; not GPU completion or physical screen presentation.','Dynamic pose timing freezes the earliest eligible post-damage snapshot that is actually present in a rendered frame and exactly matches received pose history. Superseded, never-rendered snapshots are reported as skipped, not credited. It never chases the changing latest pose.','Natural recovery is real wall-clock unpaused work; reset, forced GC, artificial clock jumps and screenshots are forbidden during pressure.','Browser read-only diagnostics add overhead. CDP heap measures the page realm, not the Node candidate inventory; WASM/GPU residency is unknown. Candidate inventory generation uses the same immutable city but no second native physics world.','Regional HP/support is intentionally approximate; no exact legacy per-voxel damage equivalence is asserted.'],
   shots:[],errors:[],consoleErrors:[],workers:[],screenshots:[],memory:[],statusSamples:[],performanceVerdict:'unassessed'};
  await fs.mkdir(output,{recursive:true});const persist=()=>fs.writeFile(`${output}/results.json`,JSON.stringify(evidence,null,2));
  const start=Date.now(),deadline=()=>assert.ok(Date.now()-start<limit,'Observation limit reached; unfinished work is not settlement or a pass');
@@ -168,7 +172,7 @@ async function main(){
    const trigger=await issue('detonate');await page.locator('#probe').click();row.trigger=await accepted(trigger);
    const committed=await wait(`shot ${shot} committed`,d=>d.events.some(e=>e.kind==='damage'&&e.id===`${trigger.id}:0`),{probe:true});
    const damage=committed.events.find(e=>e.id===`${trigger.id}:0`);assert.equal(damage.weapon,'nova');assert.equal(damage.transaction.accepted,true);assert.ok(distance(damage.position,selection.target.position)<1e-6);
-   assert.ok(Number.isSafeInteger(damage.geometryRevision),'damage must identify its geometry revision separately from authority revision');row.damage=damage;row.damageCommitMs=damage.committedAt-trigger.sentAt;row.nativeTransactionMs=damage.totalMs;row.authorityMs=damage.modelMs;row.colliderSyncMs=damage.collisionSyncMs;
+   assert.ok(Array.isArray(damage.expectedChunkKeys)&&damage.expectedChunkKeys.length>0,'direct transaction chunk obligations required');assert.ok(Number.isSafeInteger(damage.geometryRevision),'damage must identify its geometry revision separately from authority revision');row.damage=damage;row.damageCommitMs=damage.committedAt-trigger.sentAt;row.nativeTransactionMs=damage.totalMs;row.authorityMs=damage.modelMs;row.colliderSyncMs=damage.collisionSyncMs;
    assert.ok(Array.isArray(committed.poses),'bounded pose receipt history is required; latest lastPose alone cannot prove first visibility');
    assert.ok(committed.renders.length&&committed.renders.every(r=>Array.isArray(r.renderedChunks)&&Array.isArray(r.effectIds)),'actual chunk/effect renderer submission evidence is required, not mere scene installation');
    activeRow=row;activeMeasurement=createDamageMeasurement(damage);

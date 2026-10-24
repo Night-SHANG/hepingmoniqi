@@ -1,0 +1,316 @@
+{
+  "reviewed_utc": "2026-10-24",
+  "schema_version": 2,
+  "scope": "Read-only Windows/Linux extension binary checks. No native library loaded or executed by this audit.",
+  "method": "Direct local SHA-256 and ZIP-member byte comparison; file; strings -a; readelf -d for ELF DT_NEEDED; objdump -p for PE import tables and delay-import directory. Tool processes inspect files as data only.",
+  "tool_versions": {
+    "objdump": "GNU objdump (GNU Binutils for Debian) 2.44",
+    "readelf": "GNU readelf (GNU Binutils for Debian) 2.44",
+    "strings": "GNU strings (GNU Binutils for Debian) 2.44"
+  },
+  "archive": {
+    "path": "vendor-downloads/GodotVoxelExtension.zip",
+    "sha256": "600737572a5e25541ba6f503e842a3717ba19afafa5474510a6ceff995a1d2d8",
+    "bytes": 54457774
+  },
+  "source_audit": "vendor-notices/evidence/binary-inspection.json",
+  "source_audit_sha256": "8429b44fa12da006e19336252899077033cbfb680d1200fc298a731ac9e6d0ae",
+  "correction": "The previous supplement mistakenly read windows_imports from an audit that uses the key pe_imports, producing empty arrays. Both Windows DLL import tables were directly re-inspected and match the original pe_imports. Non-applicable formats now use null with explicit status, not an unverified empty list.",
+  "limitations": [
+    "Import/dependency tables are declared direct dependencies, not proof of every runtime-loaded library or every statically linked object.",
+    "A zero PE delay-import directory is evidence only that this directory is absent; it does not rule out runtime LoadLibrary/GetProcAddress loading.",
+    "Compiler strings and source paths identify runtime families, not exact patched toolchain or dependency source revisions. Absence of strings is not proof of absence.",
+    "This supplement covers six Windows/Linux Voxel extension libraries, not the Godot executable/export-template linkage or the Android/iOS/macOS files in the original addon archive."
+  ],
+  "string_patterns": {
+    "compiler_strings": "^GCC: ",
+    "gnu_cpp_marker": "__gnu_cxx",
+    "runtime_family_markers": "GCC: |mingw-w64-crt/crt/tls_atexit\\.c|winpthreads/src/(?:nanosleep|rwlock)\\.c|Mingw-w64 runtime failure:"
+  },
+  "native_library_files": [
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.arm64.so",
+      "bytes": 12179248,
+      "sha256": "410af7575e17ca36502516c225a40fd168f9d794c12a906c2ddf6b4a80a3c0d7",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=fdce60624fbffb8a4ad5cf67b0cc4cec31e556b3, stripped",
+      "compiler_strings": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "runtime_family_markers": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "gnu_cpp_marker_count": 185,
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "dynamic_needed_status": "verified_from_readelf_dt_needed",
+      "windows_imports": null,
+      "windows_imports_status": "not_applicable_elf_file",
+      "windows_delay_import_directory": null,
+      "dependency_inspection": {
+        "command": [
+          "readelf",
+          "-d",
+          "addons/zylann.voxel/bin/libvoxel.linux.editor.arm64.so"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [ld-linux-aarch64.so.1]"
+        ]
+      }
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.x86_64.so",
+      "bytes": 11788856,
+      "sha256": "09abf6e0979f8a8cdfb5abf448710ab49a3a4bed87cd2131759e12a522a9154c",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, stripped",
+      "compiler_strings": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "runtime_family_markers": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "gnu_cpp_marker_count": 185,
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "dynamic_needed_status": "verified_from_readelf_dt_needed",
+      "windows_imports": null,
+      "windows_imports_status": "not_applicable_elf_file",
+      "windows_delay_import_directory": null,
+      "dependency_inspection": {
+        "command": [
+          "readelf",
+          "-d",
+          "addons/zylann.voxel/bin/libvoxel.linux.editor.x86_64.so"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]"
+        ]
+      }
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.arm64.so",
+      "bytes": 10101416,
+      "sha256": "a324578faf85d428c0756c843079828f535ce32118f322e4b6db61ab8035baf1",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=a5587ff8702bc0b8e73569f0a299ec226b6182f4, stripped",
+      "compiler_strings": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "runtime_family_markers": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "gnu_cpp_marker_count": 187,
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "dynamic_needed_status": "verified_from_readelf_dt_needed",
+      "windows_imports": null,
+      "windows_imports_status": "not_applicable_elf_file",
+      "windows_delay_import_directory": null,
+      "dependency_inspection": {
+        "command": [
+          "readelf",
+          "-d",
+          "addons/zylann.voxel/bin/libvoxel.linux.template_release.arm64.so"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [ld-linux-aarch64.so.1]"
+        ]
+      }
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.x86_64.so",
+      "bytes": 10366328,
+      "sha256": "080c58503114400aafb9c8d43583f72609a819def121052bd83f02ffe27bd245",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, stripped",
+      "compiler_strings": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "runtime_family_markers": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "gnu_cpp_marker_count": 185,
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "dynamic_needed_status": "verified_from_readelf_dt_needed",
+      "windows_imports": null,
+      "windows_imports_status": "not_applicable_elf_file",
+      "windows_delay_import_directory": null,
+      "dependency_inspection": {
+        "command": [
+          "readelf",
+          "-d",
+          "addons/zylann.voxel/bin/libvoxel.linux.template_release.x86_64.so"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]",
+          "0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]"
+        ]
+      }
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.windows.editor.x86_64.dll",
+      "bytes": 11337216,
+      "sha256": "e7191869989607805660de8f54c3aa2ab2e3ab08902bdd6976ac8aa6b3fe07ad",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "PE32+ executable for MS Windows 5.02 (DLL), x86-64 (stripped to external PDB), 10 sections",
+      "compiler_strings": [
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0"
+      ],
+      "runtime_family_markers": [
+        "../../src/mingw-w64/mingw-w64-crt/crt/tls_atexit.c",
+        "../../src/mingw-w64/mingw-w64-libraries/winpthreads/src/nanosleep.c",
+        "../../src/mingw-w64/mingw-w64-libraries/winpthreads/src/rwlock.c",
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0",
+        "Mingw-w64 runtime failure:"
+      ],
+      "gnu_cpp_marker_count": 39,
+      "dynamic_needed": null,
+      "dynamic_needed_status": "not_applicable_pe_file",
+      "windows_imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll"
+      ],
+      "windows_imports_status": "verified_from_objdump_import_table",
+      "windows_delay_import_directory": {
+        "rva": 0,
+        "size": 0,
+        "status": "verified_zero_directory_entry"
+      },
+      "dependency_inspection": {
+        "command": [
+          "objdump",
+          "-p",
+          "addons/zylann.voxel/bin/libvoxel.windows.editor.x86_64.dll"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "Entry 1 0000000000ae1000 00001ed4 Import Directory [parts of .idata]",
+          "Entry b 0000000000000000 00000000 Bound Import Directory",
+          "Entry d 0000000000000000 00000000 Delay Import Directory",
+          "DLL Name: KERNEL32.dll",
+          "DLL Name: api-ms-win-crt-convert-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-environment-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-filesystem-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-heap-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-locale-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-math-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-private-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-runtime-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-stdio-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-string-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-time-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-utility-l1-1-0.dll"
+        ]
+      }
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.windows.template_release.x86_64.dll",
+      "bytes": 10173952,
+      "sha256": "cff4fdefa8d3348860bc241ed9eb86f96d31c2e6e7da8a304c890ec018115bf0",
+      "installed_matches_approved_archive": true,
+      "matches_source_audit_sha256": true,
+      "file_output": "PE32+ executable for MS Windows 5.02 (DLL), x86-64 (stripped to external PDB), 10 sections",
+      "compiler_strings": [
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0"
+      ],
+      "runtime_family_markers": [
+        "../../src/mingw-w64/mingw-w64-crt/crt/tls_atexit.c",
+        "../../src/mingw-w64/mingw-w64-libraries/winpthreads/src/nanosleep.c",
+        "../../src/mingw-w64/mingw-w64-libraries/winpthreads/src/rwlock.c",
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0",
+        "Mingw-w64 runtime failure:"
+      ],
+      "gnu_cpp_marker_count": 39,
+      "dynamic_needed": null,
+      "dynamic_needed_status": "not_applicable_pe_file",
+      "windows_imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll"
+      ],
+      "windows_imports_status": "verified_from_objdump_import_table",
+      "windows_delay_import_directory": {
+        "rva": 0,
+        "size": 0,
+        "status": "verified_zero_directory_entry"
+      },
+      "dependency_inspection": {
+        "command": [
+          "objdump",
+          "-p",
+          "addons/zylann.voxel/bin/libvoxel.windows.template_release.x86_64.dll"
+        ],
+        "exit_code": 0,
+        "relevant_output_lines": [
+          "Entry 1 00000000009c0000 00001eb8 Import Directory [parts of .idata]",
+          "Entry b 0000000000000000 00000000 Bound Import Directory",
+          "Entry d 0000000000000000 00000000 Delay Import Directory",
+          "DLL Name: KERNEL32.dll",
+          "DLL Name: api-ms-win-crt-convert-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-environment-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-filesystem-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-heap-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-locale-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-math-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-private-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-runtime-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-stdio-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-string-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-time-l1-1-0.dll",
+          "DLL Name: api-ms-win-crt-utility-l1-1-0.dll"
+        ]
+      }
+    }
+  ]
+}

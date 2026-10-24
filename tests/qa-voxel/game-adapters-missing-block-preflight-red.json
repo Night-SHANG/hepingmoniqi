@@ -1,0 +1,359 @@
+{
+	"backend": "JoltPhysicsDirectSpaceState3D",
+	"checks": [
+		{
+			"detail": null,
+			"name": "all_test_chunks_loaded",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "real_jolt_backend",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "no_voxel_terrain_collider_when_disabled",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "negative_floor_division_three_native_data_blocks",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "negative_coordinate_local_index_exact",
+			"pass": true
+		},
+		{
+			"detail": {
+				"mismatch_count": 0
+			},
+			"name": "pristine_exact_125",
+			"pass": true
+		},
+		{
+			"detail": {
+				"accepted": true,
+				"collider_ack": false,
+				"dirty_data_blocks": 2,
+				"mesh_ack": false,
+				"removed_cells": 2,
+				"submit_ms": 0.156
+			},
+			"name": "unloaded_mixed_batch_rejected",
+			"pass": false
+		},
+		{
+			"detail": {
+				"mismatch_count": 1
+			},
+			"name": "unloaded_mixed_batch_atomic_no_mutation",
+			"pass": false
+		},
+		{
+			"detail": null,
+			"name": "invalid_negative_ordinal_rejected",
+			"pass": true
+		},
+		{
+			"detail": {
+				"mismatch_count": 1
+			},
+			"name": "invalid_ordinal_atomic_no_mutation",
+			"pass": false
+		},
+		{
+			"detail": null,
+			"name": "past_end_ordinal_rejected",
+			"pass": true
+		},
+		{
+			"detail": {
+				"mismatch_count": 1
+			},
+			"name": "past_end_atomic_no_mutation",
+			"pass": false
+		},
+		{
+			"detail": null,
+			"name": "empty_edit_no_op",
+			"pass": true
+		},
+		{
+			"detail": {
+				"accepted": true,
+				"collider_ack": false,
+				"dirty_data_blocks": 3,
+				"mesh_ack": false,
+				"removed_cells": 4,
+				"submit_ms": 0.043
+			},
+			"name": "only_four_unique_cells_three_data_blocks_submitted",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "does_not_claim_async_mesh_or_collision_ack",
+			"pass": true
+		},
+		{
+			"detail": {
+				"mismatch_count": 0
+			},
+			"name": "chosen_only_exact_121",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "chosen_raw_zero_(-17, -1, -1)",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "chosen_raw_zero_(-16, -1, -1)",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "chosen_raw_zero_(-1, -1, -1)",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "chosen_raw_zero_(0, -1, -1)",
+			"pass": true
+		},
+		{
+			"detail": {
+				"mismatch_count": 1
+			},
+			"name": "restored_125_including_untargeted_neighbors",
+			"pass": false
+		},
+		{
+			"detail": null,
+			"name": "installed_ray_region_-33.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "installed_ray_region_-32.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "installed_ray_region_-17.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "installed_ray_region_0.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "installed_ray_region_1.0",
+			"pass": true
+		},
+		{
+			"detail": {
+				"bodies": 3,
+				"shape_resources": 1,
+				"shapes": 5
+			},
+			"name": "shared_shape_resource_not_per_cell_bodies",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "replace_did_not_step_physics",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "immediate_removed_hole_before_next_tick",
+			"pass": true
+		},
+		{
+			"detail": {
+				"dirty_chunks": 1,
+				"elapsed_ms": 0.054,
+				"shapes": 4
+			},
+			"name": "dirty_chunk_shape_count",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "neighbor_after_rebuild_ray_region_1.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "separate_negative_chunk_ray_region_-17.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "unaffected_distant_rid_retained",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "retired_body_rid_mapping_cleared",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "invalid_shape_index_returns_sentinel",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "restore_also_before_next_tick",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "immediately_restored_ray_region_0.0",
+			"pass": true
+		},
+		{
+			"detail": {
+				"dirty_chunks": 3,
+				"elapsed_ms": 0.017,
+				"shapes": 4
+			},
+			"name": "moved_region_dirties_old_and_new_chunks",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "all_old_region_shapes_gone_immediately",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "moved_region_ray_region_33.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "neighbor_survives_moved_region_ray_region_-17.0",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "dispose_removes_all_live_geometry_immediately",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "dispose_clears_bodies_shapes_and_cache",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "voxel_colliders_never_reappear_after_owner_dispose",
+			"pass": true
+		}
+	],
+	"display_server": "headless",
+	"engine": "4.7.1-stable (official)",
+	"failures": [
+		"unloaded_mixed_batch_rejected",
+		"unloaded_mixed_batch_atomic_no_mutation",
+		"invalid_ordinal_atomic_no_mutation",
+		"past_end_atomic_no_mutation",
+		"restored_125_including_untargeted_neighbors"
+	],
+	"gpu_frame_verified": false,
+	"pass": false,
+	"physics_hz": 60,
+	"ray_evidence": [
+		{
+			"actual_region": 100,
+			"expected_region": 100,
+			"phase": "installed",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": -33.0
+		},
+		{
+			"actual_region": 100,
+			"expected_region": 100,
+			"phase": "installed",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": -32.0
+		},
+		{
+			"actual_region": 200,
+			"expected_region": 200,
+			"phase": "installed",
+			"physics_frame": 4,
+			"shape_index": 1,
+			"x": -17.0
+		},
+		{
+			"actual_region": 300,
+			"expected_region": 300,
+			"phase": "installed",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": 0.0
+		},
+		{
+			"actual_region": 400,
+			"expected_region": 400,
+			"phase": "installed",
+			"physics_frame": 4,
+			"shape_index": 1,
+			"x": 1.0
+		},
+		{
+			"actual_region": 400,
+			"expected_region": 400,
+			"phase": "neighbor_after_rebuild",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": 1.0
+		},
+		{
+			"actual_region": 200,
+			"expected_region": 200,
+			"phase": "separate_negative_chunk",
+			"physics_frame": 4,
+			"shape_index": 1,
+			"x": -17.0
+		},
+		{
+			"actual_region": 300,
+			"expected_region": 300,
+			"phase": "immediately_restored",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": 0.0
+		},
+		{
+			"actual_region": 100,
+			"expected_region": 100,
+			"phase": "moved_region",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": 33.0
+		},
+		{
+			"actual_region": 200,
+			"expected_region": 200,
+			"phase": "neighbor_survives_moved_region",
+			"physics_frame": 4,
+			"shape_index": 0,
+			"x": -17.0
+		}
+	],
+	"schema": "voxel-game-adapter-qa/v1",
+	"voxel_generate_collisions": false
+}

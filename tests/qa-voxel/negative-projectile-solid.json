@@ -1,0 +1,4620 @@
+{
+	"backend": "JoltPhysicsDirectSpaceState3D",
+	"checks": [
+		{
+			"detail": null,
+			"name": "both_cells_initially_have_collision",
+			"pass": true
+		},
+		{
+			"detail": {
+				"retained_ring_hits": 8
+			},
+			"name": "hole_sync_before_next_tick",
+			"pass": false
+		},
+		{
+			"detail": null,
+			"name": "observed_at_least_120_real_physics_ticks",
+			"pass": true
+		},
+		{
+			"detail": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"name": "removed_cell_projectile_falls_below_floor",
+			"pass": false
+		},
+		{
+			"detail": [
+				{
+					"physics_frame": 67,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 68,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 69,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 70,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 71,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 72,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 73,
+					"region": 100,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 74,
+					"region": 100,
+					"source_shape": 0
+				}
+			],
+			"name": "removed_cell_projectile_has_no_contact",
+			"pass": false
+		},
+		{
+			"detail": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"name": "retained_neighbor_projectile_supported",
+			"pass": true
+		},
+		{
+			"detail": [
+				{
+					"physics_frame": 67,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 68,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 69,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 70,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 71,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 72,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 73,
+					"region": 200,
+					"source_shape": 0
+				},
+				{
+					"physics_frame": 74,
+					"region": 200,
+					"source_shape": 0
+				}
+			],
+			"name": "retained_neighbor_actual_contact_observed",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "neighbor_contact_maps_to_retained_region",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "neighbor_does_not_tunnel_through_solid",
+			"pass": true
+		},
+		{
+			"detail": null,
+			"name": "single_real_jolt_space",
+			"pass": true
+		}
+	],
+	"contacts": {
+		"hole": [
+			{
+				"physics_frame": 67,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 68,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 69,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 70,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 71,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 72,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 73,
+				"region": 100,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 74,
+				"region": 100,
+				"source_shape": 0
+			}
+		],
+		"neighbor": [
+			{
+				"physics_frame": 67,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 68,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 69,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 70,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 71,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 72,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 73,
+				"region": 200,
+				"source_shape": 0
+			},
+			{
+				"physics_frame": 74,
+				"region": 200,
+				"source_shape": 0
+			}
+		]
+	},
+	"display_server": "headless",
+	"engine": "4.7.1-stable (official)",
+	"failures": [
+		"hole_sync_before_next_tick",
+		"removed_cell_projectile_falls_below_floor",
+		"removed_cell_projectile_has_no_contact"
+	],
+	"gpu_frame_verified": false,
+	"gravity_enabled": true,
+	"initial_floor_cells": 9,
+	"negative_keep_hole_cell": true,
+	"pass": false,
+	"physics_hz": 120,
+	"real_physics_ticks": 150,
+	"remaining_owned_static_bodies": 0,
+	"retained_ring_cells": 8,
+	"samples": [
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.99931943416595,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.0816666707396507,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.99931943416595,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.0816666707396507,
+					0.0
+				]
+			},
+			"physics_frame": 3
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.99795889854431,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.163265287876129,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.99795889854431,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.163265287876129,
+					0.0
+				]
+			},
+			"physics_frame": 4
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.99591898918152,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.244795918464661,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.99591898918152,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.244795918464661,
+					0.0
+				]
+			},
+			"physics_frame": 5
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.99320018291473,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.326258599758148,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.99320018291473,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.326258599758148,
+					0.0
+				]
+			},
+			"physics_frame": 6
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.98980307579041,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.407653391361237,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.98980307579041,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.407653391361237,
+					0.0
+				]
+			},
+			"physics_frame": 7
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.98572826385498,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.488980352878571,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.98572826385498,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.488980352878571,
+					0.0
+				]
+			},
+			"physics_frame": 8
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.98097622394562,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.570239543914795,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.98097622394562,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.570239543914795,
+					0.0
+				]
+			},
+			"physics_frame": 9
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.97554767131805,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.65143096446991,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.97554767131805,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.65143096446991,
+					0.0
+				]
+			},
+			"physics_frame": 10
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.96944308280945,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.732554733753204,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.96944308280945,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.732554733753204,
+					0.0
+				]
+			},
+			"physics_frame": 11
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.96266293525696,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.813610911369324,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.96266293525696,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.813610911369324,
+					0.0
+				]
+			},
+			"physics_frame": 12
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.95520794391632,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.894599556922913,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.95520794391632,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.894599556922913,
+					0.0
+				]
+			},
+			"physics_frame": 13
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.94707858562469,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.975520730018616,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.94707858562469,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.975520730018616,
+					0.0
+				]
+			},
+			"physics_frame": 14
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.93827545642853,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.05637443065643,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.93827545642853,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.05637443065643,
+					0.0
+				]
+			},
+			"physics_frame": 15
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.92879915237427,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.13716077804565,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.92879915237427,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.13716077804565,
+					0.0
+				]
+			},
+			"physics_frame": 16
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.91865015029907,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.21787989139557,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.91865015029907,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.21787989139557,
+					0.0
+				]
+			},
+			"physics_frame": 17
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.90782904624939,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.29853165149689,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.90782904624939,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.29853165149689,
+					0.0
+				]
+			},
+			"physics_frame": 18
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.89633643627167,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.37911629676819,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.89633643627167,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.37911629676819,
+					0.0
+				]
+			},
+			"physics_frame": 19
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.88417279720306,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.45963370800018,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.88417279720306,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.45963370800018,
+					0.0
+				]
+			},
+			"physics_frame": 20
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.87133872509003,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.54008400440216,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.87133872509003,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.54008400440216,
+					0.0
+				]
+			},
+			"physics_frame": 21
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.857834815979,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.62046730518341,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.857834815979,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.62046730518341,
+					0.0
+				]
+			},
+			"physics_frame": 22
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.84366166591644,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.70078361034393,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.84366166591644,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.70078361034393,
+					0.0
+				]
+			},
+			"physics_frame": 23
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.8288197517395,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.78103303909302,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.8288197517395,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.78103303909302,
+					0.0
+				]
+			},
+			"physics_frame": 24
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.81330966949463,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.86121559143066,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.81330966949463,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.86121559143066,
+					0.0
+				]
+			},
+			"physics_frame": 25
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.79713189601898,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.94133126735687,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.79713189601898,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-1.94133126735687,
+					0.0
+				]
+			},
+			"physics_frame": 26
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.78028702735901,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.02138018608093,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.78028702735901,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.02138018608093,
+					0.0
+				]
+			},
+			"physics_frame": 27
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.76277565956116,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.10136246681213,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.76277565956116,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.10136246681213,
+					0.0
+				]
+			},
+			"physics_frame": 28
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.74459838867188,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.18127799034119,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.74459838867188,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.18127799034119,
+					0.0
+				]
+			},
+			"physics_frame": 29
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.72575569152832,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.26112699508667,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.72575569152832,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.26112699508667,
+					0.0
+				]
+			},
+			"physics_frame": 30
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.70624816417694,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.34090948104858,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.70624816417694,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.34090948104858,
+					0.0
+				]
+			},
+			"physics_frame": 31
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.6860762834549,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.42062544822693,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.6860762834549,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.42062544822693,
+					0.0
+				]
+			},
+			"physics_frame": 32
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.66524064540863,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.5002748966217,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.66524064540863,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.5002748966217,
+					0.0
+				]
+			},
+			"physics_frame": 33
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.64374184608459,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.57985806465149,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.64374184608459,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.57985806465149,
+					0.0
+				]
+			},
+			"physics_frame": 34
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.62158036231995,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.65937495231628,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.62158036231995,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.65937495231628,
+					0.0
+				]
+			},
+			"physics_frame": 35
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.59875679016113,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.73882555961609,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.59875679016113,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.73882555961609,
+					0.0
+				]
+			},
+			"physics_frame": 36
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.5752717256546,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.8182098865509,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.5752717256546,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.8182098865509,
+					0.0
+				]
+			},
+			"physics_frame": 37
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.55112564563751,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.89752817153931,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.55112564563751,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.89752817153931,
+					0.0
+				]
+			},
+			"physics_frame": 38
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.52631914615631,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.97678017616272,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.52631914615631,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-2.97678017616272,
+					0.0
+				]
+			},
+			"physics_frame": 39
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.50085270404816,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.05596613883972,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.50085270404816,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.05596613883972,
+					0.0
+				]
+			},
+			"physics_frame": 40
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.47472703456879,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.13508629798889,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.47472703456879,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.13508629798889,
+					0.0
+				]
+			},
+			"physics_frame": 41
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.44794249534607,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.21414041519165,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.44794249534607,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.21414041519165,
+					0.0
+				]
+			},
+			"physics_frame": 42
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.42049980163574,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.29312872886658,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.42049980163574,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.29312872886658,
+					0.0
+				]
+			},
+			"physics_frame": 43
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.39239943027496,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.37205123901367,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.39239943027496,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.37205123901367,
+					0.0
+				]
+			},
+			"physics_frame": 44
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.36364185810089,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.45090794563293,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.36364185810089,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.45090794563293,
+					0.0
+				]
+			},
+			"physics_frame": 45
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.33422768115997,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.52969884872437,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.33422768115997,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.52969884872437,
+					0.0
+				]
+			},
+			"physics_frame": 46
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.30415749549866,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.60842418670654,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.30415749549866,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.60842418670654,
+					0.0
+				]
+			},
+			"physics_frame": 47
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.2734317779541,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.68708395957947,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.2734317779541,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.68708395957947,
+					0.0
+				]
+			},
+			"physics_frame": 48
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.24205112457275,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.76567816734314,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.24205112457275,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.76567816734314,
+					0.0
+				]
+			},
+			"physics_frame": 49
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.21001601219177,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.84420680999756,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.21001601219177,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.84420680999756,
+					0.0
+				]
+			},
+			"physics_frame": 50
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.1773270368576,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.9226701259613,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.1773270368576,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-3.9226701259613,
+					0.0
+				]
+			},
+			"physics_frame": 51
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.1439847946167,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.00106763839722,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.1439847946167,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.00106763839722,
+					0.0
+				]
+			},
+			"physics_frame": 52
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.10998976230621,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.07940006256104,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.10998976230621,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.07940006256104,
+					0.0
+				]
+			},
+			"physics_frame": 53
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.0753425359726,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.15766716003418,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.0753425359726,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.15766716003418,
+					0.0
+				]
+			},
+			"physics_frame": 54
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.040043592453,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.23586893081665,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.040043592453,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.23586893081665,
+					0.0
+				]
+			},
+			"physics_frame": 55
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					1.00409352779388,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.31400537490845,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					1.00409352779388,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.31400537490845,
+					0.0
+				]
+			},
+			"physics_frame": 56
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.967492878437042,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.39207696914673,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.967492878437042,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.39207696914673,
+					0.0
+				]
+			},
+			"physics_frame": 57
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.93024218082428,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.47008323669434,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.93024218082428,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.47008323669434,
+					0.0
+				]
+			},
+			"physics_frame": 58
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.8923419713974,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.54802465438843,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.8923419713974,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.54802465438843,
+					0.0
+				]
+			},
+			"physics_frame": 59
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.853792786598206,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.625901222229,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.853792786598206,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.625901222229,
+					0.0
+				]
+			},
+			"physics_frame": 60
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.8145951628685,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.70371294021606,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.8145951628685,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.70371294021606,
+					0.0
+				]
+			},
+			"physics_frame": 61
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.774749636650085,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.78145980834961,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.774749636650085,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.78145980834961,
+					0.0
+				]
+			},
+			"physics_frame": 62
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.73425680398941,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.85914182662964,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.73425680398941,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.85914182662964,
+					0.0
+				]
+			},
+			"physics_frame": 63
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.693117141723633,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.93675899505615,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.693117141723633,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-4.93675899505615,
+					0.0
+				]
+			},
+			"physics_frame": 64
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.651331186294556,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-5.01431131362915,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.651331186294556,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-5.01431131362915,
+					0.0
+				]
+			},
+			"physics_frame": 65
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.159745216369629,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					-0.159745216369629,
+					0.0
+				]
+			},
+			"physics_frame": 66
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 67
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 68
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 69
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 70
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 71
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 72
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 73
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 74
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 75
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 76
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 77
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 78
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 79
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 80
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 81
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 82
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 83
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 84
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 85
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 86
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 87
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 88
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 89
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 90
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 91
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 92
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 93
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 94
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 95
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 96
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 97
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 98
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 99
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 100
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 101
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 102
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 103
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 104
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 105
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 106
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 107
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 108
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 109
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 110
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 111
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 112
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 113
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 114
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 115
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 116
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 117
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 118
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 119
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 120
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 121
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 122
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 123
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 124
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": false,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 125
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 126
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 127
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 128
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 129
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 130
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 131
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 132
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 133
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 134
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 135
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 136
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 137
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 138
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 139
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 140
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 141
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 142
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 143
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 144
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 145
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 146
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 147
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 148
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 149
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 150
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 151
+		},
+		{
+			"hole": {
+				"position": [
+					0.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"neighbor": {
+				"position": [
+					1.0,
+					0.649999976158142,
+					0.0
+				],
+				"sleeping": true,
+				"velocity": [
+					0.0,
+					0.0,
+					0.0
+				]
+			},
+			"physics_frame": 152
+		}
+	],
+	"schema": "native-jolt-projectile-hole-qa/v1",
+	"sphere_radius": 0.15,
+	"wall_ms": 1255.792
+}

@@ -1,0 +1,51 @@
+{
+  "method": "For each of seven named table initializers, compare the ordered integer tokens after removing // comments; ignores C++ formatting, wrappers and padding represented by empty initializers. This is a data-identity check, not a legal opinion or executable comparison.",
+  "pinned_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/meshers/transvoxel/transvoxel_tables.cpp",
+  "pinned_blob": "d1764da93ff24e4e2a553395291caac9387a5dc5",
+  "current_url": "https://github.com/EricLengyel/Transvoxel/blob/51a494f03c5b024cd153b596bcc7152eb3cc93a6/Transvoxel.cpp",
+  "current_blob": "2c4ceb79a513e368dbf24ea2650947044f089d7c",
+  "tables": [
+    {
+      "name": "regularCellClass",
+      "pinned_count": 256,
+      "current_count": 256,
+      "equal": true
+    },
+    {
+      "name": "regularCellData",
+      "pinned_count": 172,
+      "current_count": 172,
+      "equal": true
+    },
+    {
+      "name": "regularVertexData",
+      "pinned_count": 1536,
+      "current_count": 1536,
+      "equal": true
+    },
+    {
+      "name": "transitionCellClass",
+      "pinned_count": 512,
+      "current_count": 512,
+      "equal": true
+    },
+    {
+      "name": "transitionCellData",
+      "pinned_count": 980,
+      "current_count": 980,
+      "equal": true
+    },
+    {
+      "name": "transitionCornerData",
+      "pinned_count": 13,
+      "current_count": 13,
+      "equal": true
+    },
+    {
+      "name": "transitionVertexData",
+      "pinned_count": 4096,
+      "current_count": 4096,
+      "equal": true
+    }
+  ]
+}

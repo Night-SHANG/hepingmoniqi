@@ -1,0 +1,198 @@
+{
+  "reviewed_utc": "2026-10-24",
+  "scope": "Windows x86_64 and Linux x86_64/arm64 Voxel Tools v1.7x runtime notice supplement; official Godot 4.7.1 engine notices. No downloaded code executed.",
+  "archive_sha256": "600737572a5e25541ba6f503e842a3717ba19afafa5474510a6ceff995a1d2d8",
+  "notice_source_commits": {
+    "gcc_15_2_0": "5115c7e447fc07457443df874bf57840e8316d5f",
+    "gcc_13_2_0": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+    "gcc_11_4_0": "ff4bf326d03e750a8d4905ea49425fe7d15a04b8",
+    "mingw_w64_notice_snapshot": "7ce22f6637cc93fd2eb37c8a645908c92bb80bbd",
+    "godot_4_7_1": "a13da4feb8d8aefc283c3763d33a2f170a18d541"
+  },
+  "gcc_license_cross_checks": [
+    {
+      "version": "13.2.0",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/c891d8dc23e1a46ad9f3e757d09e57b500d40044/COPYING3",
+      "source_git_blob_sha1": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+      "bytes_identical_to_gcc_15_2_0": true
+    },
+    {
+      "version": "13.2.0",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/c891d8dc23e1a46ad9f3e757d09e57b500d40044/COPYING.RUNTIME",
+      "source_git_blob_sha1": "e1b3c69c179dfaff5744ea4bf853e6b0d90c9ef9",
+      "bytes_identical_to_gcc_15_2_0": true
+    },
+    {
+      "version": "11.4.0",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/ff4bf326d03e750a8d4905ea49425fe7d15a04b8/COPYING3",
+      "source_git_blob_sha1": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+      "bytes_identical_to_gcc_15_2_0": true
+    },
+    {
+      "version": "11.4.0",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/ff4bf326d03e750a8d4905ea49425fe7d15a04b8/COPYING.RUNTIME",
+      "source_git_blob_sha1": "e1b3c69c179dfaff5744ea4bf853e6b0d90c9ef9",
+      "bytes_identical_to_gcc_15_2_0": true
+    }
+  ],
+  "limitations": [
+    "Notice-source commits are immutable citations for collected text; only Godot's official 4.7.1 tag is associated with the installed engine version. They do not attest that the Voxel binaries were built from these exact GCC/MinGW/godot-cpp revisions.",
+    "Compiler names and source-path strings corroborate runtime families, not exhaustive linked-object identity.",
+    "The MinGW runtime aggregate retains upstream ambiguity about Cephes and Wine-derived headers; this supplement does not settle which conditional portions are linked.",
+    "Final export notice packaging and file-in-archive verification must be performed by the export task.",
+    "Four extracted source-comment notices have exact local hashes and cited full-source blob IDs, but their full source files are not retained in this bundle. This local pass revalidates the recorded excerpt bytes, not independent extraction from fetched upstream sources."
+  ],
+  "files": [
+    {
+      "file": "GCC-GPL-3.0.txt",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/5115c7e447fc07457443df874bf57840e8316d5f/COPYING3",
+      "source_git_blob_sha1": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "bytes": 35147,
+      "local_git_blob_sha1": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/5115c7e447fc07457443df874bf57840e8316d5f/COPYING.RUNTIME",
+      "source_git_blob_sha1": "e1b3c69c179dfaff5744ea4bf853e6b0d90c9ef9",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "bytes": 3324,
+      "local_git_blob_sha1": "e1b3c69c179dfaff5744ea4bf853e6b0d90c9ef9",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "MINGW-W64-RUNTIME-LICENSES.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt",
+      "source_git_blob_sha1": "776d5f1034240f6dae0ce59d592f9c6f4ad29e7d",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "bytes": 12155,
+      "local_git_blob_sha1": "776d5f1034240f6dae0ce59d592f9c6f4ad29e7d",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "MINGW-W64-COPYING.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/COPYING",
+      "source_git_blob_sha1": "28fa9514c036c2ae6a545fc9fe75c37baecf596d",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "bytes": 2326,
+      "local_git_blob_sha1": "28fa9514c036c2ae6a545fc9fe75c37baecf596d",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "WINPTHREADS-LICENSE.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/mingw-w64-libraries/winpthreads/COPYING",
+      "source_git_blob_sha1": "3507701238b798b1ddbf4d5ffe16f285f4458963",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "bytes": 2883,
+      "local_git_blob_sha1": "3507701238b798b1ddbf4d5ffe16f285f4458963",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "GODOT-4.7.1-LICENSE.txt",
+      "source_url": "https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/LICENSE.txt",
+      "source_git_blob_sha1": "0e3ba08d6b2e8cf435241829c96f10b74e4356fe",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "b0435e3b3e4e55238f05f4b306f30524a1b2e20147810d436eaa554fa6855c80",
+      "bytes": 1149,
+      "local_git_blob_sha1": "0e3ba08d6b2e8cf435241829c96f10b74e4356fe",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "GODOT-4.7.1-COPYRIGHT.txt",
+      "source_url": "https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/COPYRIGHT.txt",
+      "source_git_blob_sha1": "758917ae4c861384e9596e2271534a4534859d87",
+      "scope": "Full upstream notice text. Notice-source snapshot, not proof of the exact runtime build revision.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "cb1980c88089573bcacd7221d777c689bb8bbd778799f24c27fca0fe5f774d6d",
+      "bytes": 100108,
+      "local_git_blob_sha1": "758917ae4c861384e9596e2271534a4534859d87",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "GCC-LIBSTDCXX-SOURCE-NOTICE.txt",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/5115c7e447fc07457443df874bf57840e8316d5f/libstdc%2B%2B-v3/src/c%2B%2B11/thread.cc",
+      "source_git_blob_sha1": "6c2ec2978f88f5fd9fed3f5e396a95a2c9ca560d",
+      "extraction": "Opening copyright/license comments only; before first implementation directive.",
+      "scope": "Representative observed runtime component notice, not an exhaustive linked-object list.",
+      "local_sha256": "40001cee396296a758bb65a2722d2054be1f7a027ea695abe7856e7dfe946940",
+      "bytes": 1062,
+      "local_git_blob_sha1": "3c857694ad3916c4600477a1b847c46c2d2f4ee3",
+      "local_recheck_status": "sha256_and_size_match_recorded_excerpt; full_source_not_retained_for_independent_reextraction"
+    },
+    {
+      "file": "GCC-LIBGCC-SOURCE-NOTICE.txt",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/5115c7e447fc07457443df874bf57840e8316d5f/libgcc/libgcc2.c",
+      "source_git_blob_sha1": "92cb79dc8f8de0b59f94ca65369c1e56a911845c",
+      "extraction": "Opening copyright/license comments only; before first implementation directive.",
+      "scope": "Representative observed runtime component notice, not an exhaustive linked-object list.",
+      "local_sha256": "f0fd82b64a638c757c8929e92582347e3716e29780cddc538a00553b07fef885",
+      "bytes": 1057,
+      "local_git_blob_sha1": "e8f1580c5d87383726863e4ce337d7b821e6791d",
+      "local_recheck_status": "sha256_and_size_match_recorded_excerpt; full_source_not_retained_for_independent_reextraction"
+    },
+    {
+      "file": "WINPTHREADS-RWLOCK-SOURCE-NOTICE.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/mingw-w64-libraries/winpthreads/src/rwlock.c",
+      "source_git_blob_sha1": "68ef2a7330a0edfe84530b9a0e0642783416a8ea",
+      "extraction": "Opening copyright/license comments only; before first implementation directive.",
+      "scope": "Representative observed runtime component notice, not an exhaustive linked-object list.",
+      "local_sha256": "88efe6215c31d388c1a18eb849f34746206d675281d96fbe8441b2d9537d48a2",
+      "bytes": 1121,
+      "local_git_blob_sha1": "68ceab0ae2b17f39a50f551ef9bb9dcdd438e09e",
+      "local_recheck_status": "sha256_and_size_match_recorded_excerpt; full_source_not_retained_for_independent_reextraction"
+    },
+    {
+      "file": "MINGW-W64-TLS-PUBLIC-DOMAIN-NOTICE.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/mingw-w64-crt/crt/tls_atexit.c",
+      "source_git_blob_sha1": "bb0390fa0c6a4a94d30aec5d802e14eaa4bbf9e1",
+      "extraction": "Opening copyright/license comments only; before first implementation directive.",
+      "scope": "Representative observed runtime component notice, not an exhaustive linked-object list.",
+      "local_sha256": "17cf54b690656d4e7b69fb977f7ac1ac53c0a6a989f359fec838ccb6fdc4490b",
+      "bytes": 216,
+      "local_git_blob_sha1": "18123ed4f59a03c86d22728e03ed3bff3830f22d",
+      "local_recheck_status": "sha256_and_size_match_recorded_excerpt; full_source_not_retained_for_independent_reextraction"
+    },
+    {
+      "file": "MINGW-W64-PUBLIC-DOMAIN-DISCLAIMER.txt",
+      "source_url": "https://github.com/mingw-w64/mingw-w64/blob/7ce22f6637cc93fd2eb37c8a645908c92bb80bbd/DISCLAIMER.PD",
+      "source_git_blob_sha1": "91fb0d6dc9d1f65394cbec575a857e635868ed74",
+      "scope": "Full upstream public-domain disclaimer referenced by the observed MinGW CRT source-family notice. Notice snapshot, not exact toolchain build attestation.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "87f33608570312a0f2a9745edcb2527275df813b13982e8c3b3f893d88a4141a",
+      "bytes": 454,
+      "local_git_blob_sha1": "91fb0d6dc9d1f65394cbec575a857e635868ed74",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    },
+    {
+      "file": "GNU-LGPL-2.1.txt",
+      "source_url": "https://github.com/gcc-mirror/gcc/blob/5115c7e447fc07457443df874bf57840e8316d5f/COPYING.LIB",
+      "source_git_blob_sha1": "2d2d780e6014b850ca3b8437452e24eba5f96508",
+      "scope": "Full upstream reference notice. LGPL 2.1 is included because the MinGW aggregate discusses Wine-derived headers; inclusion is not a determination that the game is LGPL.",
+      "full_file_git_blob_matches": true,
+      "local_sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861",
+      "bytes": 26527,
+      "local_git_blob_sha1": "2d2d780e6014b850ca3b8437452e24eba5f96508",
+      "local_recheck_status": "sha256_size_and_recorded_upstream_git_blob_match"
+    }
+  ],
+  "local_reverification": {
+    "date_utc": "2026-10-24",
+    "notice_files": 13,
+    "full_files_matching_recorded_upstream_git_blob_sha1": 9,
+    "excerpt_files_matching_recorded_sha256_and_size": 4,
+    "upstream_refetched": false,
+    "method": "Recompute local byte counts, SHA-256 and Git blob SHA-1. Full-file hashes match the previously recorded upstream Git blobs. Original excerpt source files and upstream version cross-check responses are not retained in this bundle; this pass preserves their earlier provenance records without claiming a fresh upstream fetch or independent excerpt re-extraction."
+  }
+}

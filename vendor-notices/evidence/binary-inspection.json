@@ -1,0 +1,593 @@
+{
+  "reviewed_utc": "2026-10-24",
+  "method": "Read-only archive hashing, file, strings, readelf, nm and objdump. No native library loaded or executed by this audit. String markers corroborate component identity, not precise dependency commit or exhaustive link coverage. Absence of a marker is not proof of absence.",
+  "archive": {
+    "path": "vendor-downloads/GodotVoxelExtension.zip",
+    "bytes": 54457774,
+    "sha256": "600737572a5e25541ba6f503e842a3717ba19afafa5474510a6ceff995a1d2d8",
+    "file_count": 34,
+    "files": [
+      {
+        "path": "addons/zylann.voxel/LICENSE.md",
+        "bytes": 1075,
+        "sha256": "3a1f742145830b5702fe9e7aa2566c5896012a88fb3f70a00d6fd64e9cc203ee",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/liblibvoxel.windows.template_release.x86_64.a",
+        "bytes": 1916,
+        "sha256": "63fcd4587d2da25c7430afa561599a27775030d0bd170ea53b794dc11bfb9c29",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/liblibvoxel.windows.editor.x86_64.a",
+        "bytes": 1814,
+        "sha256": "50a8814bbe43fa4b361fb53f10d7ff58b4f737a70dddbf8592b5759ad83b5c2b",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.android.editor.arm64.so",
+        "bytes": 9031288,
+        "sha256": "641f87ad6e0402d47240a4d3344fead59f72537230abbc4d98ab7ef962dc225a",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.android.editor.x86_64.so",
+        "bytes": 9177136,
+        "sha256": "1143c0f4aaa00db96d8d696cdfe9b39895651d8641a8966730875e03a6664dff",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.android.template_release.arm64.so",
+        "bytes": 7301800,
+        "sha256": "09d696b76112fbd0445a07d0ccc08fede1dee606d827a98611e5f4c1e12e79ec",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.android.template_release.x86_64.so",
+        "bytes": 7523376,
+        "sha256": "c2de6c79edbe34fb74702cac83804b2af6a1c902d39783e51590f41c6b4d4825",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.ios.editor.arm64.dylib",
+        "bytes": 6074760,
+        "sha256": "e229db24a8aac94173f7b1aeddd14fc26dd170696a5869668e6f7ff77da21c04",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.ios.template_release.arm64.dylib",
+        "bytes": 5207400,
+        "sha256": "8a7483f10375978d46301c1c29fb1d71ea9e9812577104c4b903d3d64595cc9e",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.arm64.so",
+        "bytes": 12179248,
+        "sha256": "410af7575e17ca36502516c225a40fd168f9d794c12a906c2ddf6b4a80a3c0d7",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.x86_64.so",
+        "bytes": 11788856,
+        "sha256": "09abf6e0979f8a8cdfb5abf448710ab49a3a4bed87cd2131759e12a522a9154c",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.arm64.so",
+        "bytes": 10101416,
+        "sha256": "a324578faf85d428c0756c843079828f535ce32118f322e4b6db61ab8035baf1",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.x86_64.so",
+        "bytes": 10366328,
+        "sha256": "080c58503114400aafb9c8d43583f72609a819def121052bd83f02ffe27bd245",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.macos.editor.universal.framework/libvoxel.macos.editor.universal",
+        "bytes": 12899248,
+        "sha256": "8607ba5e6daeae23c0b4ddf78160b33e7cf6f81dea89abfbdab96f549bd07b01",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.macos.template_release.universal.framework/libvoxel.macos.template_release.universal",
+        "bytes": 11142104,
+        "sha256": "3c3c13069e729bbbf3743a90564cdfdac3e2c6ff612b2341c88929492b2fe4cc",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.windows.editor.x86_64.dll",
+        "bytes": 11337216,
+        "sha256": "e7191869989607805660de8f54c3aa2ab2e3ab08902bdd6976ac8aa6b3fe07ad",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/bin/libvoxel.windows.template_release.x86_64.dll",
+        "bytes": 10173952,
+        "sha256": "cff4fdefa8d3348860bc241ed9eb86f96d31c2e6e7da8a304c890ec018115bf0",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelBlockyLibrary.svg",
+        "bytes": 3204,
+        "sha256": "3f51eb273c452d165d38b4ce04886e092b4021b2f0484835980ebb72cd30f6aa",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/FastNoise2.svg",
+        "bytes": 408,
+        "sha256": "1544bd25ce89a2563a4f827c8c0d560965ce45b29a86360b6add2b720db2dbbe",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelBlockyModel.svg",
+        "bytes": 1711,
+        "sha256": "85d5e768c039c0e8d161fd99fb934655859088b46ce060a44c5c025a651279dc",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelInstanceLibrary.svg",
+        "bytes": 2766,
+        "sha256": "00f23474cdf889a936d8962c5c2a4d21cced913a4aca8c7e173796b45950bfd6",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelInstanceLibraryItem.svg",
+        "bytes": 1259,
+        "sha256": "be92931beff468eb71d79c98e7baad4408089393f8eaf3e5409c5d049a751ad1",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelInstanceLibraryMultiMeshItem.svg",
+        "bytes": 1259,
+        "sha256": "be92931beff468eb71d79c98e7baad4408089393f8eaf3e5409c5d049a751ad1",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelInstanceLibrarySceneItem.svg",
+        "bytes": 1259,
+        "sha256": "be92931beff468eb71d79c98e7baad4408089393f8eaf3e5409c5d049a751ad1",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelInstancer.svg",
+        "bytes": 3271,
+        "sha256": "40b3effa68620a76ac80439f6251ec93d970fa2cc6a2d3e2cef4270a400b7333",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelLodTerrain.svg",
+        "bytes": 351,
+        "sha256": "5b34e318060307911bf83447d8957ccf1f0e0501c696cb45d0bbffe7d1b18262",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelMesher.svg",
+        "bytes": 4088,
+        "sha256": "2981db0e9db0900664a4919a8d996908946051505cd2068a26bad49070da15a2",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelNode.svg",
+        "bytes": 351,
+        "sha256": "5b34e318060307911bf83447d8957ccf1f0e0501c696cb45d0bbffe7d1b18262",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelTerrain.svg",
+        "bytes": 351,
+        "sha256": "5b34e318060307911bf83447d8957ccf1f0e0501c696cb45d0bbffe7d1b18262",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelTerrainLarge.svg",
+        "bytes": 993,
+        "sha256": "1014aad59777a303b6b3d54b23cb7c9142356f821ad610ad5a0ed043e182829c",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/VoxelViewer.svg",
+        "bytes": 2998,
+        "sha256": "df56b7190b9f1bc251f64f2f0c6a3e22faddfb3143dfbf5dedd1f93fccc2a150",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/editor/icons/ZN_FastNoiseLite.svg",
+        "bytes": 408,
+        "sha256": "1544bd25ce89a2563a4f827c8c0d560965ce45b29a86360b6add2b720db2dbbe",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/voxel.gdextension",
+        "bytes": 2149,
+        "sha256": "353b33a3b5631803785a7fb28810c8dee2ff97bc0a1675d80e1b7b28b7101770",
+        "installed_matches_archive": true
+      },
+      {
+        "path": "addons/zylann.voxel/voxel.gdextension.uid",
+        "bytes": 20,
+        "sha256": "a8e4b703888c739acb5e37f4a0819b8945b0245b7dee91c7190e921149af4f3a",
+        "installed_matches_archive": true
+      }
+    ]
+  },
+  "string_patterns": {
+    "lz4_export_name": "^LZ4_(compress_default|versionNumber)$",
+    "fast_noise_lite_type": "ZN_FastNoiseLite",
+    "sqlite_stream_type": "VoxelStreamSQLite",
+    "sqlite_exact_source_id": "^2025-11-04 19:38:17 fb2c931ae597f8d00a37574ff67aeed3eced4e5547f9120744ae4bfa8e74527b$",
+    "transvoxel_type": "VoxelMesherTransvoxel",
+    "godot_cpp_path_or_diagnostic": "godot-cpp/include|godot-cpp/issues",
+    "fastsimd_name": "FastSIMD",
+    "gnu_cpp_marker": "__gnu_cxx",
+    "llvm_cpp_marker": "__ndk1|__libcpp|libc\\+\\+"
+  },
+  "native_library_files": [
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.android.editor.arm64.so",
+      "sha256": "641f87ad6e0402d47240a4d3344fead59f72537230abbc4d98ab7ef962dc225a",
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, for Android 24, built by NDK r28b (13356709), stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 17,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 90
+      },
+      "compiler_strings": [
+        "Android (13324770, +pgo, +bolt, +lto, +mlgo, based on r530567d) clang version 19.0.0 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)"
+      ],
+      "dynamic_needed": [
+        "libc++_shared.so",
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ],
+      "representative_lz4_exports": [
+        "00000000004a8624 T LZ4_compress_default",
+        "00000000004a4d90 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.android.editor.x86_64.so",
+      "sha256": "1143c0f4aaa00db96d8d696cdfe9b39895651d8641a8966730875e03a6664dff",
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, for Android 24, built by NDK r28b (13356709), stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 17,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 90
+      },
+      "compiler_strings": [
+        "Android (13324770, +pgo, +bolt, +lto, +mlgo, based on r530567d) clang version 19.0.0 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)"
+      ],
+      "dynamic_needed": [
+        "libc++_shared.so",
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ],
+      "representative_lz4_exports": [
+        "00000000004b9810 T LZ4_compress_default",
+        "00000000004b5ab0 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.android.template_release.arm64.so",
+      "sha256": "09d696b76112fbd0445a07d0ccc08fede1dee606d827a98611e5f4c1e12e79ec",
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, for Android 24, built by NDK r28b (13356709), stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 11,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 89
+      },
+      "compiler_strings": [
+        "Android (13324770, +pgo, +bolt, +lto, +mlgo, based on r530567d) clang version 19.0.0 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)"
+      ],
+      "dynamic_needed": [
+        "libc++_shared.so",
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ],
+      "representative_lz4_exports": [
+        "00000000003f5ea8 T LZ4_compress_default",
+        "00000000003f23b4 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.android.template_release.x86_64.so",
+      "sha256": "c2de6c79edbe34fb74702cac83804b2af6a1c902d39783e51590f41c6b4d4825",
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, for Android 24, built by NDK r28b (13356709), stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 11,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 89
+      },
+      "compiler_strings": [
+        "Android (13324770, +pgo, +bolt, +lto, +mlgo, based on r530567d) clang version 19.0.0 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)"
+      ],
+      "dynamic_needed": [
+        "libc++_shared.so",
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ],
+      "representative_lz4_exports": [
+        "000000000041afc0 T LZ4_compress_default",
+        "0000000000417180 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.ios.editor.arm64.dylib",
+      "sha256": "e229db24a8aac94173f7b1aeddd14fc26dd170696a5869668e6f7ff77da21c04",
+      "file_output": "Mach-O 64-bit arm64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 16,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 1
+      },
+      "compiler_strings": []
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.ios.template_release.arm64.dylib",
+      "sha256": "8a7483f10375978d46301c1c29fb1d71ea9e9812577104c4b903d3d64595cc9e",
+      "file_output": "Mach-O 64-bit arm64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 9,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 1
+      },
+      "compiler_strings": []
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.arm64.so",
+      "sha256": "410af7575e17ca36502516c225a40fd168f9d794c12a906c2ddf6b4a80a3c0d7",
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=fdce60624fbffb8a4ad5cf67b0cc4cec31e556b3, stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 17,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 185,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "representative_lz4_exports": [
+        "00000000003dfca0 T LZ4_compress_default",
+        "00000000003dcf70 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.editor.x86_64.so",
+      "sha256": "09abf6e0979f8a8cdfb5abf448710ab49a3a4bed87cd2131759e12a522a9154c",
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 17,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 185,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "representative_lz4_exports": [
+        "00000000003eff40 T LZ4_compress_default",
+        "00000000003ecee0 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.arm64.so",
+      "sha256": "a324578faf85d428c0756c843079828f535ce32118f322e4b6db61ab8035baf1",
+      "file_output": "ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=a5587ff8702bc0b8e73569f0a299ec226b6182f4, stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 11,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 187,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      ],
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "representative_lz4_exports": [
+        "00000000003aaeb0 T LZ4_compress_default",
+        "00000000003a4e84 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.linux.template_release.x86_64.so",
+      "sha256": "080c58503114400aafb9c8d43583f72609a819def121052bd83f02ffe27bd245",
+      "file_output": "ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, stripped",
+      "marker_counts": {
+        "lz4_export_name": 2,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 11,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 185,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (Buildroot 2023.08.4-12-g7810288c77) 13.2.0"
+      ],
+      "dynamic_needed": [
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "representative_lz4_exports": [
+        "000000000040bc70 T LZ4_compress_default",
+        "0000000000404360 T LZ4_versionNumber"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.macos.editor.universal.framework/libvoxel.macos.editor.universal",
+      "sha256": "8607ba5e6daeae23c0b4ddf78160b33e7cf6f81dea89abfbdab96f549bd07b01",
+      "file_output": "Mach-O universal binary with 2 architectures: [x86_64:\\012- Mach-O 64-bit x86_64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>] [\\012- arm64:\\012- Mach-O 64-bit arm64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>]",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 72,
+        "sqlite_stream_type": 40,
+        "sqlite_exact_source_id": 2,
+        "transvoxel_type": 8,
+        "godot_cpp_path_or_diagnostic": 32,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 2
+      },
+      "compiler_strings": []
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.macos.template_release.universal.framework/libvoxel.macos.template_release.universal",
+      "sha256": "3c3c13069e729bbbf3743a90564cdfdac3e2c6ff612b2341c88929492b2fe4cc",
+      "file_output": "Mach-O universal binary with 2 architectures: [x86_64:\\012- Mach-O 64-bit x86_64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>] [\\012- arm64:\\012- Mach-O 64-bit arm64 dynamically linked shared library, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|BINDS_TO_WEAK|NO_REEXPORTED_DYLIBS|HAS_TLV_DESCRIPTORS>]",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 58,
+        "sqlite_stream_type": 40,
+        "sqlite_exact_source_id": 2,
+        "transvoxel_type": 8,
+        "godot_cpp_path_or_diagnostic": 18,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 0,
+        "llvm_cpp_marker": 2
+      },
+      "compiler_strings": []
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.windows.editor.x86_64.dll",
+      "sha256": "e7191869989607805660de8f54c3aa2ab2e3ab08902bdd6976ac8aa6b3fe07ad",
+      "file_output": "PE32+ executable for MS Windows 5.02 (DLL), x86-64 (stripped to external PDB), 10 sections",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 36,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 1,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 39,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0"
+      ],
+      "pe_imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll"
+      ]
+    },
+    {
+      "path": "addons/zylann.voxel/bin/libvoxel.windows.template_release.x86_64.dll",
+      "sha256": "cff4fdefa8d3348860bc241ed9eb86f96d31c2e6e7da8a304c890ec018115bf0",
+      "file_output": "PE32+ executable for MS Windows 5.02 (DLL), x86-64 (stripped to external PDB), 10 sections",
+      "marker_counts": {
+        "lz4_export_name": 0,
+        "fast_noise_lite_type": 29,
+        "sqlite_stream_type": 20,
+        "sqlite_exact_source_id": 1,
+        "transvoxel_type": 4,
+        "godot_cpp_path_or_diagnostic": 1,
+        "fastsimd_name": 0,
+        "gnu_cpp_marker": 39,
+        "llvm_cpp_marker": 0
+      },
+      "compiler_strings": [
+        "GCC: (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 15.2.0"
+      ],
+      "pe_imports": [
+        "KERNEL32.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-private-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll"
+      ]
+    }
+  ]
+}

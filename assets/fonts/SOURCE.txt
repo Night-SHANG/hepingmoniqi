@@ -1,0 +1,1 @@
+Subset of installed Noto Sans CJK SC Regular, renamed Native Slice Sans. https://github.com/notofonts/noto-cjk . SIL OFL 1.1 in LICENSE.txt. Reproduce using tools/build-native-font.py.

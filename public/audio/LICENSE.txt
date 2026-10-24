@@ -1,5 +1,0 @@
-All runtime WAV samples in this folder are CC0 1.0.
-https://creativecommons.org/publicdomain/zero/1.0/
-Authors: Kenney, Dustyroom, rubberduck, EZduzziteh and NenadSimic.
-SOURCES.json preserves each original source URL, author, original/preview/runtime SHA-256, and gain processing. Attribution is not required but is retained for provenance.
-No source archives or research evidence pages are shipped in this runtime folder.

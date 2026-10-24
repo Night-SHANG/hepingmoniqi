@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:heping:godot-same-city-report:v1",
+  "title": "Godot same-city feasibility evidence, not an execution result",
+  "type": "object",
+  "required": [
+    "schema",
+    "measurementMode",
+    "provenance",
+    "fixture",
+    "scope",
+    "shots"
+  ],
+  "properties": {
+    "schema": {
+      "const": "godot-same-city-report/v1"
+    },
+    "measurementMode": {
+      "enum": [
+        "headless-accelerated",
+        "headless-real-time",
+        "software-window-real-time",
+        "native-window-real-time"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "engineVersion",
+        "physicsEngine",
+        "renderer",
+        "hardwareGpuVerified"
+      ],
+      "properties": {
+        "engineVersion": {
+          "type": "string"
+        },
+        "physicsEngine": {
+          "type": "string"
+        },
+        "renderer": {
+          "type": "string"
+        },
+        "hardwareGpuVerified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "required": [
+        "inventorySha256",
+        "cellCount",
+        "structureCount",
+        "terrainCount",
+        "buildingCount",
+        "bounds"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "resetBetweenShots",
+        "liveWorldsPeak",
+        "stepSeconds",
+        "observationLimitSecondsPerShot"
+      ]
+    },
+    "shots": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "shot",
+          "command",
+          "accepted",
+          "authorityMs",
+          "collisionSyncMs",
+          "damagePlusCollisionMs",
+          "changedRegionCount",
+          "settlement",
+          "clock",
+          "research",
+          "presentation"
+        ],
+        "properties": {
+          "shot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "command": {
+            "type": "object",
+            "required": [
+              "id",
+              "sequence",
+              "position",
+              "radius",
+              "damage",
+              "impulse",
+              "power"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "position": {
+                "type": "object",
+                "required": [
+                  "x",
+                  "y",
+                  "z"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "z": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "radius": {
+                "type": "number",
+                "minimum": 0
+              },
+              "damage": {
+                "type": "number",
+                "minimum": 0
+              },
+              "impulse": {
+                "type": "number",
+                "minimum": 0
+              },
+              "power": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "authorityMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "collisionSyncMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "damagePlusCollisionMs": {
+            "type": "number",
+            "minimum": 0
+          },
+          "changedRegionCount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "settlement": {
+            "type": "object",
+            "required": [
+              "settled",
+              "wallMs",
+              "simulatedSeconds",
+              "pendingGroups",
+              "activeBodies",
+              "sleepingBodies",
+              "escapedBodies",
+              "resetUsed",
+              "forcedSleepUsed",
+              "forcedGarbageCollectionUsed",
+              "screenshotDuringPressure"
+            ],
+            "properties": {
+              "settled": {
+                "type": "boolean"
+              },
+              "resetUsed": {
+                "type": "boolean"
+              },
+              "forcedSleepUsed": {
+                "type": "boolean"
+              },
+              "forcedGarbageCollectionUsed": {
+                "type": "boolean"
+              },
+              "screenshotDuringPressure": {
+                "type": "boolean"
+              },
+              "wallMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "simulatedSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "pendingGroups": {
+                "type": "number",
+                "minimum": 0
+              },
+              "activeBodies": {
+                "type": "number",
+                "minimum": 0
+              },
+              "sleepingBodies": {
+                "type": "number",
+                "minimum": 0
+              },
+              "escapedBodies": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "clock": {
+            "type": "object",
+            "required": [
+              "requestedMs",
+              "processedMs",
+              "discardedMs",
+              "debtMs",
+              "peakDebtMs",
+              "pausedMs",
+              "hiddenMs"
+            ],
+            "properties": {
+              "requestedMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "processedMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "discardedMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "debtMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "peakDebtMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "pausedMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hiddenMs": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "research": {
+            "type": "object",
+            "required": [
+              "before",
+              "after",
+              "delta",
+              "independentLossBefore",
+              "independentLossAfter",
+              "objectiveWeight",
+              "replayDelta",
+              "replayStateUnchanged"
+            ],
+            "properties": {
+              "before": {
+                "type": "number",
+                "minimum": 0
+              },
+              "after": {
+                "type": "number",
+                "minimum": 0
+              },
+              "delta": {
+                "type": "number",
+                "minimum": 0
+              },
+              "independentLossBefore": {
+                "type": "number",
+                "minimum": 0
+              },
+              "independentLossAfter": {
+                "type": "number",
+                "minimum": 0
+              },
+              "objectiveWeight": {
+                "type": "number",
+                "minimum": 0
+              },
+              "replayDelta": {
+                "type": "number",
+                "minimum": 0
+              },
+              "replayStateUnchanged": {
+                "type": "boolean"
+              }
+            }
+          },
+          "presentation": {
+            "type": "object",
+            "required": [
+              "inputSamplesMs",
+              "trustedInputObserved",
+              "maxMainThreadStallMs",
+              "allDirectStaticRenderedMs",
+              "completeVisibleMs",
+              "actualRenderCount",
+              "obligationsOutstanding"
+            ],
+            "properties": {
+              "inputSamplesMs": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "trustedInputObserved": {
+                "type": "boolean"
+              },
+              "maxMainThreadStallMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "allDirectStaticRenderedMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "completeVisibleMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "obligationsOutstanding": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "actualRenderCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "semanticChecks": {
+      "type": "object"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$comment": "An interrupted report may have fewer than three shots and must fail the three-shot gate. Use null for unmeasured presentation fields. The independent reducer checks targets and conservation. Raw logs and tests establish actual behavior."
+}

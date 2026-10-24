@@ -1,0 +1,5240 @@
+{
+	"classes": {
+		"VoxelBuffer": {
+			"constants": {
+				"ALLOCATOR_COUNT": 2,
+				"ALLOCATOR_DEFAULT": 0,
+				"ALLOCATOR_POOL": 1,
+				"ALL_CHANNELS_MASK": 255,
+				"CHANNEL_COLOR": 2,
+				"CHANNEL_COLOR_BIT": 4,
+				"CHANNEL_DATA5": 5,
+				"CHANNEL_DATA5_BIT": 32,
+				"CHANNEL_DATA6": 6,
+				"CHANNEL_DATA6_BIT": 64,
+				"CHANNEL_DATA7": 7,
+				"CHANNEL_DATA7_BIT": 128,
+				"CHANNEL_INDICES": 3,
+				"CHANNEL_INDICES_BIT": 8,
+				"CHANNEL_SDF": 1,
+				"CHANNEL_SDF_BIT": 2,
+				"CHANNEL_TYPE": 0,
+				"CHANNEL_TYPE_BIT": 1,
+				"CHANNEL_WEIGHTS": 4,
+				"CHANNEL_WEIGHTS_BIT": 16,
+				"COMPRESSION_COUNT": 2,
+				"COMPRESSION_NONE": 0,
+				"COMPRESSION_UNIFORM": 1,
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DEPTH_16_BIT": 1,
+				"DEPTH_32_BIT": 2,
+				"DEPTH_64_BIT": 3,
+				"DEPTH_8_BIT": 0,
+				"DEPTH_COUNT": 4,
+				"MAX_CHANNELS": 8,
+				"MAX_SIZE": 65535,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_PREDELETE": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sx",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sy",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sz",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15561,
+					"name": "create",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15562,
+					"name": "get_allocator",
+					"return": {
+						"class_name": "VoxelBuffer.Allocator",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 1,
+					"id": 15563,
+					"name": "clear",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15564,
+					"name": "get_size",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 10,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "x",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "y",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "z",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15565,
+					"name": "set_voxel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "x",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "y",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "z",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15566,
+					"name": "set_voxel_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15567,
+					"name": "set_voxel_v",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "x",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "y",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "z",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 5,
+					"id": 15568,
+					"name": "get_voxel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "x",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "y",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "z",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 5,
+					"id": 15569,
+					"name": "get_voxel_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 5,
+					"id": 15570,
+					"name": "get_voxel_v",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 1,
+					"id": 15571,
+					"name": "get_voxel_tool",
+					"return": {
+						"class_name": "VoxelTool",
+						"hint": 17,
+						"hint_string": "VoxelTool",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15572,
+					"name": "get_channel_depth",
+					"return": {
+						"class_name": "VoxelBuffer.Depth",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.Depth",
+							"hint": 0,
+							"hint_string": "",
+							"name": "depth",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15573,
+					"name": "set_channel_depth",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15574,
+					"name": "fill",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15575,
+					"name": "fill_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "min",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "max",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0
+					],
+					"flags": 1,
+					"id": 15576,
+					"name": "fill_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "min",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "max",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15577,
+					"name": "fill_area_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15578,
+					"name": "copy_channel_from",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_min",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_max",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_min",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15579,
+					"name": "copy_channel_from_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "dst",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_min",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_max",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_min",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15580,
+					"name": "downscale_to",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Vector3i.Axis",
+							"hint": 0,
+							"hint_string": "",
+							"name": "axis",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "turns",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15581,
+					"name": "rotate_90",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Vector3i.Axis",
+							"hint": 0,
+							"hint_string": "",
+							"name": "axis",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15582,
+					"name": "mirror",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15583,
+					"name": "is_uniform",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 1,
+					"id": 15584,
+					"name": "compress_uniform_channels",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15585,
+					"name": "get_channel_compression",
+					"return": {
+						"class_name": "VoxelBuffer.Compression",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15586,
+					"name": "decompress_channel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "map",
+							"type": 30,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15587,
+					"name": "remap_values",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15588,
+					"name": "op_add_buffer_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15589,
+					"name": "op_sub_buffer_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15590,
+					"name": "op_mul_buffer_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "other",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15591,
+					"name": "op_mul_value_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15592,
+					"name": "op_min_buffer_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "other",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15593,
+					"name": "op_max_buffer_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "src",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_channel",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "threshold",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value_if_less",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value_if_more",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_channel",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15594,
+					"name": "op_select_less_src_f_dst_i_values",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15595,
+					"name": "get_block_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 131078
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "meta",
+							"type": 0,
+							"usage": 131078
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15596,
+					"name": "set_block_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15597,
+					"name": "get_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 131078
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "value",
+							"type": 0,
+							"usage": 131078
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15598,
+					"name": "set_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "callback",
+							"type": 25,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15599,
+					"name": "for_each_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "callback",
+							"type": 25,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "min_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "max_pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15600,
+					"name": "for_each_voxel_metadata_in_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 1,
+					"id": 15601,
+					"name": "clear_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "min_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "max_pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15602,
+					"name": "clear_voxel_metadata_in_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "src_buffer",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_min_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_max_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_min_pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15603,
+					"name": "copy_voxel_metadata_in_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Image.Format",
+							"hint": 0,
+							"hint_string": "",
+							"name": "output_format",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15604,
+					"name": "create_3d_texture_from_sdf_zxy",
+					"return": {
+						"class_name": "ImageTexture3D",
+						"hint": 17,
+						"hint_string": "ImageTexture3D",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "ImageTexture3D",
+							"hint": 17,
+							"hint_string": "ImageTexture3D",
+							"name": "existing_texture",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15605,
+					"name": "update_3d_texture_from_sdf_zxy",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel_index",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15606,
+					"name": "get_channel_as_byte_array",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 29,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel_index",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "data",
+							"type": 29,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15607,
+					"name": "set_channel_from_byte_array",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "scale",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						1.0
+					],
+					"flags": 5,
+					"id": 15608,
+					"name": "debug_print_sdf_y_slices",
+					"return": {
+						"class_name": "",
+						"hint": 31,
+						"hint_string": "Image",
+						"name": "",
+						"type": 28,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [],
+			"required_methods": {
+				"create": true,
+				"get_voxel": true,
+				"set_channel_depth": true,
+				"set_voxel": true
+			},
+			"signals": []
+		},
+		"VoxelFormat": {
+			"constants": {
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DEEP_DUPLICATE_ALL": 2,
+				"DEEP_DUPLICATE_INTERNAL": 1,
+				"DEEP_DUPLICATE_NONE": 0,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_PREDELETE": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel_index",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "VoxelBuffer.Depth",
+							"hint": 0,
+							"hint_string": "",
+							"name": "depth",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15609,
+					"name": "set_channel_depth",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channel_index",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15610,
+					"name": "get_channel_depth",
+					"return": {
+						"class_name": "VoxelBuffer.Depth",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "buffer",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15611,
+					"name": "configure_buffer",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "size",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15612,
+					"name": "create_buffer",
+					"return": {
+						"class_name": "VoxelBuffer",
+						"hint": 17,
+						"hint_string": "VoxelBuffer",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "data",
+							"type": 28,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15613,
+					"name": "_set_data",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15614,
+					"name": "_get_data",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 28,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "_data",
+					"type": 28,
+					"usage": 2
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "8bit,16bit,32bit",
+					"name": "type_depth",
+					"type": 2,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "8bit,16bit,32bit",
+					"name": "sdf_depth",
+					"type": 2,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "8bit,16bit,32bit",
+					"name": "indices_depth",
+					"type": 2,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "8bit,16bit,32bit",
+					"name": "color_depth",
+					"type": 2,
+					"usage": 4
+				}
+			],
+			"required_methods": {
+				"get_channel_depth": true,
+				"set_channel_depth": true
+			},
+			"signals": []
+		},
+		"VoxelGeneratorScript": {
+			"constants": {
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DEEP_DUPLICATE_ALL": 2,
+				"DEEP_DUPLICATE_INTERNAL": 1,
+				"DEEP_DUPLICATE_NONE": 0,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_PREDELETE": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "out_buffer",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "origin_in_voxels",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "lod",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 8,
+					"id": 0,
+					"name": "_generate_block",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 12,
+					"id": 0,
+					"name": "_get_used_channels_mask",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [],
+			"required_methods": {},
+			"signals": []
+		},
+		"VoxelMesherCubes": {
+			"constants": {
+				"COLOR_MESHER_PALETTE": 1,
+				"COLOR_RAW": 0,
+				"COLOR_SHADER_PALETTE": 2,
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DEEP_DUPLICATE_ALL": 2,
+				"DEEP_DUPLICATE_INTERNAL": 1,
+				"DEEP_DUPLICATE_NONE": 0,
+				"MATERIAL_COUNT": 2,
+				"MATERIAL_OPAQUE": 0,
+				"MATERIAL_TRANSPARENT": 1,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_PREDELETE": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enable",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15989,
+					"name": "set_greedy_meshing_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15990,
+					"name": "is_greedy_meshing_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelColorPalette",
+							"hint": 17,
+							"hint_string": "VoxelColorPalette",
+							"name": "palette",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15991,
+					"name": "set_palette",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15992,
+					"name": "get_palette",
+					"return": {
+						"class_name": "VoxelColorPalette",
+						"hint": 17,
+						"hint_string": "VoxelColorPalette",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelMesherCubes.ColorMode",
+							"hint": 0,
+							"hint_string": "",
+							"name": "mode",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15993,
+					"name": "set_color_mode",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15994,
+					"name": "get_color_mode",
+					"return": {
+						"class_name": "VoxelMesherCubes.ColorMode",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelMesherCubes.Materials",
+							"hint": 0,
+							"hint_string": "",
+							"name": "id",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "Material",
+							"hint": 17,
+							"hint_string": "Material",
+							"name": "material",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15995,
+					"name": "set_material_by_index",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15996,
+					"name": "_get_opaque_material",
+					"return": {
+						"class_name": "Material",
+						"hint": 17,
+						"hint_string": "Material",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Material",
+							"hint": 17,
+							"hint_string": "Material",
+							"name": "material",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15997,
+					"name": "_set_opaque_material",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15998,
+					"name": "_get_transparent_material",
+					"return": {
+						"class_name": "Material",
+						"hint": 17,
+						"hint_string": "Material",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Material",
+							"hint": 17,
+							"hint_string": "Material",
+							"name": "material",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15999,
+					"name": "_set_transparent_material",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "Image",
+							"hint": 17,
+							"hint_string": "Image",
+							"name": "image",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "voxel_size",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 16000,
+					"name": "generate_mesh_from_image",
+					"return": {
+						"class_name": "Mesh",
+						"hint": 17,
+						"hint_string": "Mesh",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "greedy_meshing_enabled",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "Raw,MesherPalette,ShaderPalette",
+					"name": "color_mode",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "VoxelColorPalette",
+					"hint": 17,
+					"hint_string": "VoxelColorPalette",
+					"name": "palette",
+					"type": 24,
+					"usage": 6
+				},
+				{
+					"class_name": "BaseMaterial3D,ShaderMaterial",
+					"hint": 17,
+					"hint_string": "BaseMaterial3D,ShaderMaterial",
+					"name": "opaque_material",
+					"type": 24,
+					"usage": 6
+				},
+				{
+					"class_name": "BaseMaterial3D,ShaderMaterial",
+					"hint": 17,
+					"hint_string": "BaseMaterial3D,ShaderMaterial",
+					"name": "transparent_material",
+					"type": 24,
+					"usage": 6
+				}
+			],
+			"required_methods": {
+				"build_mesh": true
+			},
+			"signals": []
+		},
+		"VoxelTerrain": {
+			"constants": {
+				"AUTO_TRANSLATE_MODE_ALWAYS": 1,
+				"AUTO_TRANSLATE_MODE_DISABLED": 2,
+				"AUTO_TRANSLATE_MODE_INHERIT": 0,
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DEBUG_DRAW_FLAGS_COUNT": 3,
+				"DEBUG_DRAW_VISUAL_AND_COLLISION_BLOCKS": 1,
+				"DEBUG_DRAW_VOLUME_BOUNDS": 0,
+				"DEBUG_DRAW_VOXEL_METADATA": 2,
+				"DUPLICATE_DEFAULT": 15,
+				"DUPLICATE_GROUPS": 2,
+				"DUPLICATE_INTERNAL_STATE": 16,
+				"DUPLICATE_SCRIPTS": 4,
+				"DUPLICATE_SIGNALS": 1,
+				"DUPLICATE_USE_INSTANTIATION": 8,
+				"FLAG_PROCESS_THREAD_MESSAGES": 1,
+				"FLAG_PROCESS_THREAD_MESSAGES_ALL": 3,
+				"FLAG_PROCESS_THREAD_MESSAGES_PHYSICS": 2,
+				"INTERNAL_MODE_BACK": 2,
+				"INTERNAL_MODE_DISABLED": 0,
+				"INTERNAL_MODE_FRONT": 1,
+				"NODE_CONVERSION_INCLUDE_INSTANCER": 1,
+				"NODE_CONVERSION_INCLUDE_INVISIBLE_BLOCKS": 2,
+				"NODE_CONVERSION_INCLUDE_MATERIAL_OVERRIDES": 4,
+				"NOTIFICATION_ACCESSIBILITY_INVALIDATE": 3001,
+				"NOTIFICATION_ACCESSIBILITY_UPDATE": 3000,
+				"NOTIFICATION_APPLICATION_FOCUS_IN": 2016,
+				"NOTIFICATION_APPLICATION_FOCUS_OUT": 2017,
+				"NOTIFICATION_APPLICATION_PAUSED": 2015,
+				"NOTIFICATION_APPLICATION_PIP_MODE_ENTERED": 2019,
+				"NOTIFICATION_APPLICATION_PIP_MODE_EXITED": 2020,
+				"NOTIFICATION_APPLICATION_RESUMED": 2014,
+				"NOTIFICATION_CHILD_ORDER_CHANGED": 24,
+				"NOTIFICATION_CRASH": 2012,
+				"NOTIFICATION_DISABLED": 28,
+				"NOTIFICATION_DRAG_BEGIN": 21,
+				"NOTIFICATION_DRAG_END": 22,
+				"NOTIFICATION_EDITOR_POST_SAVE": 9002,
+				"NOTIFICATION_EDITOR_PRE_SAVE": 9001,
+				"NOTIFICATION_ENABLED": 29,
+				"NOTIFICATION_ENTER_TREE": 10,
+				"NOTIFICATION_ENTER_WORLD": 41,
+				"NOTIFICATION_EXIT_TREE": 11,
+				"NOTIFICATION_EXIT_WORLD": 42,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_INTERNAL_PHYSICS_PROCESS": 26,
+				"NOTIFICATION_INTERNAL_PROCESS": 25,
+				"NOTIFICATION_LOCAL_TRANSFORM_CHANGED": 44,
+				"NOTIFICATION_MOVED_IN_PARENT": 12,
+				"NOTIFICATION_OS_IME_UPDATE": 2013,
+				"NOTIFICATION_OS_MEMORY_WARNING": 2009,
+				"NOTIFICATION_PARENTED": 18,
+				"NOTIFICATION_PATH_RENAMED": 23,
+				"NOTIFICATION_PAUSED": 14,
+				"NOTIFICATION_PHYSICS_PROCESS": 16,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_POST_ENTER_TREE": 27,
+				"NOTIFICATION_PREDELETE": 1,
+				"NOTIFICATION_PROCESS": 17,
+				"NOTIFICATION_READY": 13,
+				"NOTIFICATION_RESET_PHYSICS_INTERPOLATION": 2001,
+				"NOTIFICATION_SCENE_INSTANTIATED": 20,
+				"NOTIFICATION_TEXT_SERVER_CHANGED": 2018,
+				"NOTIFICATION_TRANSFORM_CHANGED": 2000,
+				"NOTIFICATION_TRANSLATION_CHANGED": 2010,
+				"NOTIFICATION_UNPARENTED": 19,
+				"NOTIFICATION_UNPAUSED": 15,
+				"NOTIFICATION_VISIBILITY_CHANGED": 43,
+				"NOTIFICATION_VP_MOUSE_ENTER": 1010,
+				"NOTIFICATION_VP_MOUSE_EXIT": 1011,
+				"NOTIFICATION_WM_ABOUT": 2011,
+				"NOTIFICATION_WM_CLOSE_REQUEST": 1006,
+				"NOTIFICATION_WM_DPI_CHANGE": 1009,
+				"NOTIFICATION_WM_GO_BACK_REQUEST": 1007,
+				"NOTIFICATION_WM_MOUSE_ENTER": 1002,
+				"NOTIFICATION_WM_MOUSE_EXIT": 1003,
+				"NOTIFICATION_WM_OUTPUT_MAX_LINEAR_VALUE_CHANGED": 1013,
+				"NOTIFICATION_WM_POSITION_CHANGED": 1012,
+				"NOTIFICATION_WM_SIZE_CHANGED": 1008,
+				"NOTIFICATION_WM_WINDOW_FOCUS_IN": 1004,
+				"NOTIFICATION_WM_WINDOW_FOCUS_OUT": 1005,
+				"PHYSICS_INTERPOLATION_MODE_INHERIT": 0,
+				"PHYSICS_INTERPOLATION_MODE_OFF": 2,
+				"PHYSICS_INTERPOLATION_MODE_ON": 1,
+				"PROCESS_MODE_ALWAYS": 3,
+				"PROCESS_MODE_DISABLED": 4,
+				"PROCESS_MODE_INHERIT": 0,
+				"PROCESS_MODE_PAUSABLE": 1,
+				"PROCESS_MODE_WHEN_PAUSED": 2,
+				"PROCESS_THREAD_GROUP_INHERIT": 0,
+				"PROCESS_THREAD_GROUP_MAIN_THREAD": 1,
+				"PROCESS_THREAD_GROUP_SUB_THREAD": 2,
+				"ROTATION_EDIT_MODE_BASIS": 2,
+				"ROTATION_EDIT_MODE_EULER": 0,
+				"ROTATION_EDIT_MODE_QUATERNION": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "Material",
+							"hint": 17,
+							"hint_string": "Material",
+							"name": "material",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15631,
+					"name": "set_material_override",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15632,
+					"name": "get_material_override",
+					"return": {
+						"class_name": "Material",
+						"hint": 17,
+						"hint_string": "Material",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "distance_in_voxels",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15633,
+					"name": "set_max_view_distance",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15634,
+					"name": "get_max_view_distance",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15635,
+					"name": "set_block_enter_notification_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15636,
+					"name": "is_block_enter_notification_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15637,
+					"name": "set_area_edit_notification_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15638,
+					"name": "is_area_edit_notification_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15639,
+					"name": "get_generate_collisions",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15640,
+					"name": "set_generate_collisions",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15641,
+					"name": "get_collision_layer",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "layer",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15642,
+					"name": "set_collision_layer",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15643,
+					"name": "get_collision_mask",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "mask",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15644,
+					"name": "set_collision_mask",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15645,
+					"name": "get_collision_margin",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "margin",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15646,
+					"name": "set_collision_margin",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "voxel_pos",
+							"type": 9,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15647,
+					"name": "voxel_to_data_block",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 10,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "block_pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15648,
+					"name": "data_block_to_voxel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 10,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15649,
+					"name": "get_data_block_size",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15650,
+					"name": "get_mesh_block_size",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "size",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15651,
+					"name": "set_mesh_block_size",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15652,
+					"name": "get_statistics",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 27,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 1,
+					"id": 15653,
+					"name": "save_modified_blocks",
+					"return": {
+						"class_name": "VoxelSaveCompletionTracker",
+						"hint": 17,
+						"hint_string": "VoxelSaveCompletionTracker",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15654,
+					"name": "save_block",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enable",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15655,
+					"name": "set_automatic_loading_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15656,
+					"name": "is_automatic_loading_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enable",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15657,
+					"name": "set_generator_use_gpu",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15658,
+					"name": "get_generator_use_gpu",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "bounds",
+							"type": 16,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15659,
+					"name": "set_bounds",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15660,
+					"name": "get_bounds",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 16,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "voxels",
+							"type": 24,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15661,
+					"name": "try_set_block_data",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "area_origin",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "area_size",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15662,
+					"name": "get_viewer_network_peer_ids_in_area",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 30,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "block_position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15663,
+					"name": "has_data_block",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "area_in_voxels",
+							"type": 16,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15664,
+					"name": "is_area_meshed",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15665,
+					"name": "debug_set_draw_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15666,
+					"name": "debug_is_draw_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelTerrain.DebugDrawFlag",
+							"hint": 0,
+							"hint_string": "",
+							"name": "flag_index",
+							"type": 2,
+							"usage": 65542
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15667,
+					"name": "debug_set_draw_flag",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelTerrain.DebugDrawFlag",
+							"hint": 0,
+							"hint_string": "",
+							"name": "flag_index",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15668,
+					"name": "debug_get_draw_flag",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15669,
+					"name": "debug_set_draw_shadow_occluders",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15670,
+					"name": "debug_get_draw_shadow_occluders",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "Bounds",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "bounds",
+					"type": 16,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "max_view_distance",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "Collisions",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "generate_collisions",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 11,
+					"hint_string": "",
+					"name": "collision_layer",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 11,
+					"hint_string": "",
+					"name": "collision_mask",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "collision_margin",
+					"type": 3,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "Materials",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "BaseMaterial3D,ShaderMaterial",
+					"hint": 17,
+					"hint_string": "BaseMaterial3D,ShaderMaterial",
+					"name": "material_override",
+					"type": 24,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "Networking",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "block_enter_notification_enabled",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "area_edit_notification_enabled",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "automatic_loading_enabled",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "Advanced",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "mesh_block_size",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "use_gpu_generation",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "debug_",
+					"name": "Debug",
+					"type": 0,
+					"usage": 64
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "debug_draw_enabled",
+					"type": 1,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "debug_draw_volume_bounds",
+					"type": 1,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "debug_draw_visual_and_collision_blocks",
+					"type": 1,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "debug_draw_voxel_metadata",
+					"type": 1,
+					"usage": 4
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "debug_draw_shadow_occluders",
+					"type": 1,
+					"usage": 4
+				}
+			],
+			"required_methods": {
+				"get_statistics": true,
+				"get_voxel_tool": true,
+				"is_area_meshed": true
+			},
+			"signals": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 0,
+					"name": "block_loaded",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 0,
+					"name": "block_unloaded",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 0,
+					"name": "mesh_block_entered",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 0,
+					"name": "mesh_block_exited",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				}
+			]
+		},
+		"VoxelTool": {
+			"constants": {
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"MODE_ADD": 0,
+				"MODE_REMOVE": 1,
+				"MODE_SET": 2,
+				"MODE_TEXTURE_PAINT": 3,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_PREDELETE": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "v",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15835,
+					"name": "set_value",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15836,
+					"name": "get_value",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelBuffer.ChannelId",
+							"hint": 0,
+							"hint_string": "",
+							"name": "v",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15837,
+					"name": "set_channel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15838,
+					"name": "get_channel",
+					"return": {
+						"class_name": "VoxelBuffer.ChannelId",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelTool.Mode",
+							"hint": 0,
+							"hint_string": "",
+							"name": "m",
+							"type": 2,
+							"usage": 65542
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15839,
+					"name": "set_mode",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15840,
+					"name": "get_mode",
+					"return": {
+						"class_name": "VoxelTool.Mode",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 65542
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "v",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15841,
+					"name": "set_eraser_value",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15842,
+					"name": "get_eraser_value",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "scale",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15843,
+					"name": "set_sdf_scale",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15844,
+					"name": "get_sdf_scale",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "strength",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15845,
+					"name": "set_sdf_strength",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15846,
+					"name": "get_sdf_strength",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "index",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15847,
+					"name": "set_texture_index",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15848,
+					"name": "get_texture_index",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "opacity",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15849,
+					"name": "set_texture_opacity",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15850,
+					"name": "get_texture_opacity",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "falloff",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15851,
+					"name": "set_texture_falloff",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15852,
+					"name": "get_texture_falloff",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15853,
+					"name": "get_voxel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15854,
+					"name": "get_voxel_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "v",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15855,
+					"name": "set_voxel",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "v",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15856,
+					"name": "set_voxel_f",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15857,
+					"name": "do_point",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "center",
+							"type": 9,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "radius",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15858,
+					"name": "do_sphere",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "begin",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "end",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15859,
+					"name": "do_box",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "points",
+							"type": 36,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "radii",
+							"type": 32,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15860,
+					"name": "do_path",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "VoxelMeshSDF",
+							"hint": 17,
+							"hint_string": "VoxelMeshSDF",
+							"name": "mesh_sdf",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "transform",
+							"type": 18,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "isolevel",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						0.0
+					],
+					"flags": 1,
+					"id": 15861,
+					"name": "do_mesh",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sphere_center",
+							"type": 9,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sphere_radius",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "blur_radius",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15862,
+					"name": "smooth_sphere",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sphere_center",
+							"type": 9,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "sphere_radius",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "strength",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15863,
+					"name": "grow_sphere",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "meta",
+							"type": 0,
+							"usage": 131078
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15864,
+					"name": "set_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "pos",
+							"type": 10,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15865,
+					"name": "get_voxel_metadata",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 131078
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "dst_buffer",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channels_mask",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "with_metadata",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						255,
+						true
+					],
+					"flags": 1,
+					"id": 15866,
+					"name": "copy",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "src_buffer",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channels_mask",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						255
+					],
+					"flags": 1,
+					"id": 15867,
+					"name": "paste",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_pos",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "src_buffer",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channels_mask",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "mask_channel",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "mask_value",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15868,
+					"name": "paste_masked",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "position",
+							"type": 10,
+							"usage": 6
+						},
+						{
+							"class_name": "VoxelBuffer",
+							"hint": 17,
+							"hint_string": "VoxelBuffer",
+							"name": "voxels",
+							"type": 24,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "channels_mask",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_mask_channel",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "src_mask_value",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_mask_channel",
+							"type": 2,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "dst_writable_list",
+							"type": 30,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15869,
+					"name": "paste_masked_writable_list",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "origin",
+							"type": 9,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "direction",
+							"type": 9,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "max_distance",
+							"type": 3,
+							"usage": 6
+						},
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "collision_mask",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [
+						10.0,
+						4294967295
+					],
+					"flags": 1,
+					"id": 15870,
+					"name": "raycast",
+					"return": {
+						"class_name": "VoxelRaycastResult",
+						"hint": 17,
+						"hint_string": "VoxelRaycastResult",
+						"name": "",
+						"type": 24,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15871,
+					"name": "set_raycast_normal_enabled",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "box",
+							"type": 16,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 5,
+					"id": 15872,
+					"name": "is_area_editable",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "color",
+							"type": 20,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15873,
+					"name": "color_to_u16",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "color",
+							"type": 20,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15874,
+					"name": "color_to_u32",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "_unnamed_arg0",
+							"type": 13,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15875,
+					"name": "vec4i_to_u16_indices",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "_unnamed_arg0",
+							"type": 20,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15876,
+					"name": "color_to_u16_weights",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "_unnamed_arg0",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15877,
+					"name": "u16_indices_to_vec4i",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 13,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "_unnamed_arg0",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15878,
+					"name": "u16_weights_to_color",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 20,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "_unnamed_arg0",
+							"type": 20,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 32,
+					"id": 15879,
+					"name": "normalize_color",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 20,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "value",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "Type,Sdf,Color,Indices,Weights,Data5,Data6,Data7",
+					"name": "channel",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "eraser_value",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 2,
+					"hint_string": "Add,Remove,Set",
+					"name": "mode",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "sdf_scale",
+					"type": 3,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "sdf_strength",
+					"type": 3,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "texture_index",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "texture_opacity",
+					"type": 3,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "texture_falloff",
+					"type": 3,
+					"usage": 6
+				}
+			],
+			"required_methods": {
+				"copy": true,
+				"get_voxel": true,
+				"is_area_editable": true,
+				"paste": true,
+				"raycast": true,
+				"set_voxel": true
+			},
+			"signals": []
+		},
+		"VoxelViewer": {
+			"constants": {
+				"AUTO_TRANSLATE_MODE_ALWAYS": 1,
+				"AUTO_TRANSLATE_MODE_DISABLED": 2,
+				"AUTO_TRANSLATE_MODE_INHERIT": 0,
+				"CONNECT_APPEND_SOURCE_OBJECT": 16,
+				"CONNECT_DEFERRED": 1,
+				"CONNECT_ONE_SHOT": 4,
+				"CONNECT_PERSIST": 2,
+				"CONNECT_REFERENCE_COUNTED": 8,
+				"DUPLICATE_DEFAULT": 15,
+				"DUPLICATE_GROUPS": 2,
+				"DUPLICATE_INTERNAL_STATE": 16,
+				"DUPLICATE_SCRIPTS": 4,
+				"DUPLICATE_SIGNALS": 1,
+				"DUPLICATE_USE_INSTANTIATION": 8,
+				"FLAG_PROCESS_THREAD_MESSAGES": 1,
+				"FLAG_PROCESS_THREAD_MESSAGES_ALL": 3,
+				"FLAG_PROCESS_THREAD_MESSAGES_PHYSICS": 2,
+				"INTERNAL_MODE_BACK": 2,
+				"INTERNAL_MODE_DISABLED": 0,
+				"INTERNAL_MODE_FRONT": 1,
+				"NOTIFICATION_ACCESSIBILITY_INVALIDATE": 3001,
+				"NOTIFICATION_ACCESSIBILITY_UPDATE": 3000,
+				"NOTIFICATION_APPLICATION_FOCUS_IN": 2016,
+				"NOTIFICATION_APPLICATION_FOCUS_OUT": 2017,
+				"NOTIFICATION_APPLICATION_PAUSED": 2015,
+				"NOTIFICATION_APPLICATION_PIP_MODE_ENTERED": 2019,
+				"NOTIFICATION_APPLICATION_PIP_MODE_EXITED": 2020,
+				"NOTIFICATION_APPLICATION_RESUMED": 2014,
+				"NOTIFICATION_CHILD_ORDER_CHANGED": 24,
+				"NOTIFICATION_CRASH": 2012,
+				"NOTIFICATION_DISABLED": 28,
+				"NOTIFICATION_DRAG_BEGIN": 21,
+				"NOTIFICATION_DRAG_END": 22,
+				"NOTIFICATION_EDITOR_POST_SAVE": 9002,
+				"NOTIFICATION_EDITOR_PRE_SAVE": 9001,
+				"NOTIFICATION_ENABLED": 29,
+				"NOTIFICATION_ENTER_TREE": 10,
+				"NOTIFICATION_ENTER_WORLD": 41,
+				"NOTIFICATION_EXIT_TREE": 11,
+				"NOTIFICATION_EXIT_WORLD": 42,
+				"NOTIFICATION_EXTENSION_RELOADED": 2,
+				"NOTIFICATION_INTERNAL_PHYSICS_PROCESS": 26,
+				"NOTIFICATION_INTERNAL_PROCESS": 25,
+				"NOTIFICATION_LOCAL_TRANSFORM_CHANGED": 44,
+				"NOTIFICATION_MOVED_IN_PARENT": 12,
+				"NOTIFICATION_OS_IME_UPDATE": 2013,
+				"NOTIFICATION_OS_MEMORY_WARNING": 2009,
+				"NOTIFICATION_PARENTED": 18,
+				"NOTIFICATION_PATH_RENAMED": 23,
+				"NOTIFICATION_PAUSED": 14,
+				"NOTIFICATION_PHYSICS_PROCESS": 16,
+				"NOTIFICATION_POSTINITIALIZE": 0,
+				"NOTIFICATION_POST_ENTER_TREE": 27,
+				"NOTIFICATION_PREDELETE": 1,
+				"NOTIFICATION_PROCESS": 17,
+				"NOTIFICATION_READY": 13,
+				"NOTIFICATION_RESET_PHYSICS_INTERPOLATION": 2001,
+				"NOTIFICATION_SCENE_INSTANTIATED": 20,
+				"NOTIFICATION_TEXT_SERVER_CHANGED": 2018,
+				"NOTIFICATION_TRANSFORM_CHANGED": 2000,
+				"NOTIFICATION_TRANSLATION_CHANGED": 2010,
+				"NOTIFICATION_UNPARENTED": 19,
+				"NOTIFICATION_UNPAUSED": 15,
+				"NOTIFICATION_VISIBILITY_CHANGED": 43,
+				"NOTIFICATION_VP_MOUSE_ENTER": 1010,
+				"NOTIFICATION_VP_MOUSE_EXIT": 1011,
+				"NOTIFICATION_WM_ABOUT": 2011,
+				"NOTIFICATION_WM_CLOSE_REQUEST": 1006,
+				"NOTIFICATION_WM_DPI_CHANGE": 1009,
+				"NOTIFICATION_WM_GO_BACK_REQUEST": 1007,
+				"NOTIFICATION_WM_MOUSE_ENTER": 1002,
+				"NOTIFICATION_WM_MOUSE_EXIT": 1003,
+				"NOTIFICATION_WM_OUTPUT_MAX_LINEAR_VALUE_CHANGED": 1013,
+				"NOTIFICATION_WM_POSITION_CHANGED": 1012,
+				"NOTIFICATION_WM_SIZE_CHANGED": 1008,
+				"NOTIFICATION_WM_WINDOW_FOCUS_IN": 1004,
+				"NOTIFICATION_WM_WINDOW_FOCUS_OUT": 1005,
+				"PHYSICS_INTERPOLATION_MODE_INHERIT": 0,
+				"PHYSICS_INTERPOLATION_MODE_OFF": 2,
+				"PHYSICS_INTERPOLATION_MODE_ON": 1,
+				"PROCESS_MODE_ALWAYS": 3,
+				"PROCESS_MODE_DISABLED": 4,
+				"PROCESS_MODE_INHERIT": 0,
+				"PROCESS_MODE_PAUSABLE": 1,
+				"PROCESS_MODE_WHEN_PAUSED": 2,
+				"PROCESS_THREAD_GROUP_INHERIT": 0,
+				"PROCESS_THREAD_GROUP_MAIN_THREAD": 1,
+				"PROCESS_THREAD_GROUP_SUB_THREAD": 2,
+				"ROTATION_EDIT_MODE_BASIS": 2,
+				"ROTATION_EDIT_MODE_EULER": 0,
+				"ROTATION_EDIT_MODE_QUATERNION": 1
+			},
+			"methods": [
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "distance",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15750,
+					"name": "set_view_distance",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15751,
+					"name": "get_view_distance",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "ratio",
+							"type": 3,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15752,
+					"name": "set_view_distance_vertical_ratio",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15753,
+					"name": "get_view_distance_vertical_ratio",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 3,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15754,
+					"name": "set_requires_visuals",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15755,
+					"name": "is_requiring_visuals",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15756,
+					"name": "set_requires_collisions",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15757,
+					"name": "is_requiring_collisions",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15758,
+					"name": "set_requires_data_block_notifications",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15759,
+					"name": "is_requiring_data_block_notifications",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "id",
+							"type": 2,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15760,
+					"name": "set_network_peer_id",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15761,
+					"name": "get_network_peer_id",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 2,
+						"usage": 6
+					}
+				},
+				{
+					"args": [
+						{
+							"class_name": "",
+							"hint": 0,
+							"hint_string": "",
+							"name": "enabled",
+							"type": 1,
+							"usage": 6
+						}
+					],
+					"default_args": [],
+					"flags": 1,
+					"id": 15762,
+					"name": "set_enabled_in_editor",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 0,
+						"usage": 6
+					}
+				},
+				{
+					"args": [],
+					"default_args": [],
+					"flags": 5,
+					"id": 15763,
+					"name": "is_enabled_in_editor",
+					"return": {
+						"class_name": "",
+						"hint": 0,
+						"hint_string": "",
+						"name": "",
+						"type": 1,
+						"usage": 6
+					}
+				}
+			],
+			"present": true,
+			"properties": [
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "view_distance",
+					"type": 2,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "view_distance_vertical_ratio",
+					"type": 3,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "requires_visuals",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "requires_collisions",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "requires_data_block_notifications",
+					"type": 1,
+					"usage": 6
+				},
+				{
+					"class_name": "",
+					"hint": 0,
+					"hint_string": "",
+					"name": "enabled_in_editor",
+					"type": 1,
+					"usage": 6
+				}
+			],
+			"required_methods": {},
+			"signals": []
+		}
+	},
+	"display_server": "headless",
+	"engine": "4.7.1-stable (official)",
+	"failures": [],
+	"gpu_frame_verified": false,
+	"pass": true,
+	"schema": "voxel-native-api-qa/v1"
+}

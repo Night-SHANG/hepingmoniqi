@@ -1,0 +1,281 @@
+{
+  "schema": "voxel-native-qa-suite/v1",
+  "pass": true,
+  "positive_runs": [
+    {
+      "label": "terrain-16-1",
+      "mesh_size": 16,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.608,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.608,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.608,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 28.527,
+        "initial_first_mesh_ready_wall_ms": 28.527,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 28.527,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.8,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.8,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.8,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 13.454,
+        "single_cell_hole_first_mesh_ready_wall_ms": 13.454,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 13.454,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.448,
+        "single_restored_first_mesh_ready_wall_ms": 20.448,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.448
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    },
+    {
+      "label": "terrain-16-2",
+      "mesh_size": 16,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.717,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.717,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.717,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 28.528,
+        "initial_first_mesh_ready_wall_ms": 28.528,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 28.528,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.71,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.71,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.71,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 13.441,
+        "single_cell_hole_first_mesh_ready_wall_ms": 13.441,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 13.441,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.276,
+        "single_restored_first_mesh_ready_wall_ms": 20.276,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.276
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    },
+    {
+      "label": "terrain-16-3",
+      "mesh_size": 16,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.536,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.536,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.536,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 35.288,
+        "initial_first_mesh_ready_wall_ms": 35.288,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 35.288,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.722,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.722,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.722,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 20.221,
+        "single_cell_hole_first_mesh_ready_wall_ms": 20.221,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 20.221,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.627,
+        "single_restored_first_mesh_ready_wall_ms": 20.627,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.627
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    },
+    {
+      "label": "terrain-32-1",
+      "mesh_size": 32,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.732,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.732,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.732,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 28.522,
+        "initial_first_mesh_ready_wall_ms": 28.522,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 28.522,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.634,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.634,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.634,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 13.544,
+        "single_cell_hole_first_mesh_ready_wall_ms": 13.544,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 13.544,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.375,
+        "single_restored_first_mesh_ready_wall_ms": 20.375,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.375
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    },
+    {
+      "label": "terrain-32-2",
+      "mesh_size": 32,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.603,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.603,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.603,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 28.393,
+        "initial_first_mesh_ready_wall_ms": 28.393,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 28.393,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.818,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.818,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.818,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 13.562,
+        "single_cell_hole_first_mesh_ready_wall_ms": 13.562,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 13.562,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.396,
+        "single_restored_first_mesh_ready_wall_ms": 20.396,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.396
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    },
+    {
+      "label": "terrain-32-3",
+      "mesh_size": 32,
+      "timing": {
+        "hole_collider_update_first_collision_ready_physics_ticks": 1,
+        "hole_collider_update_first_collision_ready_wall_ms": 20.484,
+        "hole_collider_update_first_mesh_ready_wall_ms": 20.484,
+        "hole_collider_update_physics_ticks": 1,
+        "hole_collider_update_wall_ms": 20.484,
+        "initial_first_collision_ready_physics_ticks": 2,
+        "initial_first_collision_ready_wall_ms": 35.277,
+        "initial_first_mesh_ready_wall_ms": 35.277,
+        "initial_physics_ticks": 2,
+        "initial_wall_ms": 35.277,
+        "restored_collider_update_first_collision_ready_physics_ticks": 1,
+        "restored_collider_update_first_collision_ready_wall_ms": 13.657,
+        "restored_collider_update_first_mesh_ready_wall_ms": 13.657,
+        "restored_collider_update_physics_ticks": 1,
+        "restored_collider_update_wall_ms": 13.657,
+        "single_cell_hole_first_collision_ready_physics_ticks": 1,
+        "single_cell_hole_first_collision_ready_wall_ms": 20.401,
+        "single_cell_hole_first_mesh_ready_wall_ms": 20.401,
+        "single_cell_hole_physics_ticks": 1,
+        "single_cell_hole_wall_ms": 20.401,
+        "single_restored_first_collision_ready_physics_ticks": 1,
+        "single_restored_first_collision_ready_wall_ms": 20.574,
+        "single_restored_first_mesh_ready_wall_ms": 20.574,
+        "single_restored_physics_ticks": 1,
+        "single_restored_wall_ms": 20.574
+      },
+      "immediate_mesh_ready_but_stale_collision": [
+        "hole_collider_update",
+        "restored_collider_update",
+        "single_cell_hole",
+        "single_restored"
+      ]
+    }
+  ],
+  "positive_check_count": 342,
+  "adapter_runs": [
+    {
+      "label": "game-adapters-1",
+      "checks": 47,
+      "pass": true
+    },
+    {
+      "label": "game-adapters-2",
+      "checks": 47,
+      "pass": true
+    },
+    {
+      "label": "game-adapters-3",
+      "checks": 47,
+      "pass": true
+    }
+  ],
+  "adapter_check_count": 141,
+  "projectile_runs": [
+    {
+      "label": "projectile-hole-1",
+      "checks": 10,
+      "real_physics_ticks": 150
+    },
+    {
+      "label": "projectile-hole-2",
+      "checks": 10,
+      "real_physics_ticks": 150
+    },
+    {
+      "label": "projectile-hole-3",
+      "checks": 10,
+      "real_physics_ticks": 150
+    }
+  ],
+  "projectile_check_count": 30,
+  "negative_controls": [
+    {
+      "label": "skip-edit",
+      "expected_failure_count": 16
+    },
+    {
+      "label": "transparent-rgb",
+      "expected_failure_count": 10
+    },
+    {
+      "label": "projectile-solid",
+      "expected_failure_count": 3
+    }
+  ],
+  "gpu_frame_verified": false,
+  "scope": "Tiny static terrain integration, exact edits, real Jolt ray queries; not gameplay or city performance"
+}

@@ -1,0 +1,12 @@
+config_version=5
+[application]
+config/name="核平：原生城市验证片"
+run/main_scene="res://scenes/native_slice.tscn"
+[physics]
+3d/physics_engine="Jolt Physics"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=800

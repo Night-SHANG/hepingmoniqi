@@ -1,0 +1,25 @@
+{
+  "schema": "heping-independent-native-table-check/v1",
+  "passed": true,
+  "checks": {
+    "schemaAndStrides": true,
+    "allFileLengthsAndHashes": true,
+    "allNumericValuesFinite": true,
+    "exactNumericArrayLengths": true,
+    "integralInRangeOffsetsAndTokens": true,
+    "denselyPackedOffsetsNoDroppedData": true,
+    "allRegionFieldsExactlyPreserved": true,
+    "allContactsExactlyPreserved": true,
+    "negativeTerrainIdsRemainSigned": true,
+    "cellBytesUnchanged": true
+  },
+  "regionCount": 18447,
+  "boxCount": 23339,
+  "contactPairCount": 390489,
+  "negativeCellIdCount": 401800,
+  "binaryTableBytes": 10166900,
+  "physicsWorldsCreated": 0,
+  "limitations": [
+    "File decoding is not Godot physics, rendered meshes, GPU timing, or runtime memory validation."
+  ]
+}

@@ -1,0 +1,59 @@
+name: Godot native validation
+on:
+  push:
+    branches: [godot-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: godot-native-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  linux-visual:
+    if: ${{ github.event.repository.private == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify disk and official dependencies
+        run: |
+          df -h .
+          python3 tools/ci-bootstrap.py
+      - name: Verify software display dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri mesa-utils
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B
+      - name: Import resources
+        run: '"$GODOT" --headless --path . --editor --import'
+      - name: Actual software-rendered interaction and screenshots
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a -s '-screen 0 1280x800x24' "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-visual/run.gd
+  windows-start:
+    if: ${{ github.event.repository.private == false }}
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify official dependencies
+        run: python tools/ci-bootstrap.py
+      - name: Import and export Windows release
+        shell: pwsh
+        run: |
+          & $env:GODOT --headless --path . --editor --import
+          if ($LASTEXITCODE -ne 0) { throw 'Import failed' }
+          New-Item -ItemType Directory -Force build/windows | Out-Null
+          & $env:GODOT --headless --path . --export-release 'Windows Desktop' build/windows/nuclear-native-slice.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Export failed' }
+      - name: Execute actual Windows package and extension
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "$PWD/build/windows/nuclear-native-slice.exe" -ArgumentList '--headless','--max-fps','120','--quit-after','600' -RedirectStandardOutput native-stdout.txt -RedirectStandardError native-stderr.txt -PassThru
+          if (!$p.WaitForExit(180000)) { $p.Kill(); throw 'Windows startup timeout' }
+          Get-Content native-stdout.txt
+          Get-Content native-stderr.txt
+          if ($p.ExitCode -ne 0) { throw "Windows exit $($p.ExitCode)" }
+          if (!(Select-String -Path native-stdout.txt -Pattern 'NATIVE_SESSION_READY.*hashes_verified=true.*voxel_extension=true')) { throw 'No verified city/extension startup' }
+          if (Select-String -Path native-stdout.txt,native-stderr.txt -Pattern 'SCRIPT ERROR:|^ERROR:') { throw 'Runtime error' }
+          Get-FileHash build/windows/* -Algorithm SHA256

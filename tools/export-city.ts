@@ -1,0 +1,8 @@
+import {createScaleCityFixture} from '../../hepingmoniqi-v09/src/scale-slice/fixture.ts';
+import {mkdirSync,writeFileSync} from 'node:fs';import {createHash} from 'node:crypto';import {fileURLToPath} from 'node:url';import {packCityCells} from './export-format.mjs';
+const t=performance.now(),f=createScaleCityFixture(),dst=fileURLToPath(new URL('../data/',import.meta.url));mkdirSync(dst,{recursive:true});
+const cells=Array.from({length:f.cellCount},(_,i)=>({id:f.cellIds[i],x:f.x[i],y:f.y[i],z:f.z[i],region:f.regionIndexByOrdinal[i],hp:f.initialHp[i],maxHp:f.maxHp[i],color:f.source.colorOf(f.cellIds[i]),flags:f.objective[i]|(f.anchors[i]<<1)}));
+const data=packCityCells(cells);writeFileSync(dst+'city-cells.bin',data);
+const regions=JSON.stringify({regions:f.regions.map(r=>({...r,cellOrdinals:Array.from(r.cellOrdinals)})),contacts:f.contacts.map(c=>({...c,pairs:Array.from(c.pairs)}))});writeFileSync(dst+'city-regions.json',regions);
+const hash=(b:any)=>createHash('sha256').update(b).digest('hex');
+const manifest={schema:'godot-city-fixture/v1',sourceSignature:f.signature,cellCount:f.cellCount,structureCount:f.structureCount,terrainCount:f.terrainCount,buildingCount:f.buildingCount,regionCount:f.regions.length,boxCount:f.diagnostics.boxCount,contactPairs:f.diagnostics.contactPairs,objectiveWeight:f.objectiveWeight,bounds:f.bounds,recordBytes:35,littleEndian:true,files:[{name:'city-cells.bin',bytes:data.length,sha256:hash(data)},{name:'city-regions.json',bytes:Buffer.byteLength(regions),sha256:hash(regions)}],exportMs:performance.now()-t};writeFileSync(dst+'manifest.json',JSON.stringify(manifest,null,2));console.log(JSON.stringify(manifest));

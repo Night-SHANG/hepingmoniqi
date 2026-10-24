@@ -1,0 +1,149 @@
+{
+  "reviewed_utc": "2026-10-24",
+  "upstream_commit": "75d3c6d996ed2331c80edcd8c3ebc947afc0f041",
+  "godot_cpp_supplemental_commit": "8070599885b6df675fcad033dd032ce44be2b850",
+  "pcg_supplemental_commit": "bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3",
+  "transvoxel_supplemental_commit": "51a494f03c5b024cd153b596bcc7152eb3cc93a6",
+  "entries": [
+    {
+      "local_path": "VOXEL-TOOLS-LICENSE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/LICENSE.md",
+      "source_git_blob_sha1": "c6df5f9b42179cfc6245605f893de66e1c04c530",
+      "extraction": "full file",
+      "source_key": "LICENSE.md"
+    },
+    {
+      "local_path": "LZ4-LICENSE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/lz4/LICENSE",
+      "source_git_blob_sha1": "488491695a6b6984aa3a49a8392b192ed2bcac1d",
+      "extraction": "full file",
+      "source_key": "thirdparty/lz4/LICENSE"
+    },
+    {
+      "local_path": "LZ4-C-SOURCE-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/lz4/lz4.c",
+      "source_git_blob_sha1": "a2f7abee19fb9a5c768f2a6c266acf5b571f0855",
+      "extraction": "opening comment",
+      "source_key": "thirdparty/lz4/lz4.c"
+    },
+    {
+      "local_path": "LZ4-HEADER-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/lz4/lz4.h",
+      "source_git_blob_sha1": "80e3e5ca04d22db9ec4980dfc43672a13984aa15",
+      "extraction": "opening comment",
+      "source_key": "thirdparty/lz4/lz4.h"
+    },
+    {
+      "local_path": "MESHOPTIMIZER-LICENSE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/meshoptimizer/LICENSE.md",
+      "source_git_blob_sha1": "a5c3b1ccca7bbe958d17644bde2ec1fc6f14c19d",
+      "extraction": "full file",
+      "source_key": "thirdparty/meshoptimizer/LICENSE.md"
+    },
+    {
+      "local_path": "FASTNOISELITE-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/fast_noise/FastNoiseLite.h",
+      "source_git_blob_sha1": "3d8d06aada6bcb6b9ea8f64205b2872c2e3a4154",
+      "extraction": "opening MIT notice before ASCII art",
+      "source_key": "thirdparty/fast_noise/FastNoiseLite.h"
+    },
+    {
+      "local_path": "GODOT-RANDOM-PCG-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/util/godot/core/random_pcg.cpp",
+      "source_git_blob_sha1": "ec94e5d460ac684622abf7490ad9c6ba666883b3",
+      "extraction": "opening MIT notice and upstream modification note",
+      "source_key": "util/godot/core/random_pcg.cpp"
+    },
+    {
+      "local_path": "PCG-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/util/godot/core/pcg.cpp",
+      "source_git_blob_sha1": "914a353874d79802ed6ce024f28e77e5968bc85c",
+      "extraction": "opening copyright/Apache notice",
+      "source_key": "util/godot/core/pcg.cpp"
+    },
+    {
+      "local_path": "APACHE-2.0.txt",
+      "source_url": "https://github.com/imneme/pcg-c-basic/blob/bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3/LICENSE.txt",
+      "source_git_blob_sha1": "8dada3edaf50dbc082c9a125058f25def75e625a",
+      "extraction": "full file from separately pinned PCG upstream",
+      "source_key": "pcg-license-pinned"
+    },
+    {
+      "local_path": "SQLITE-PUBLIC-DOMAIN-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/sqlite/sqlite3.h",
+      "source_git_blob_sha1": "70a4a1b1a5e9900dd4ab6b34337f1a411d781ee1",
+      "extraction": "opening header comment",
+      "source_key": "sqlite"
+    },
+    {
+      "local_path": "TRANSVOXEL-PINNED-NOTICE.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/meshers/transvoxel/transvoxel_tables.cpp",
+      "source_git_blob_sha1": "d1764da93ff24e4e2a553395291caac9387a5dc5",
+      "extraction": "opening pinned permission/credit header",
+      "source_key": "meshers/transvoxel/transvoxel_tables.cpp"
+    },
+    {
+      "local_path": "supplemental/TRANSVOXEL-CURRENT-UPSTREAM-LICENSE.txt",
+      "source_url": "https://github.com/EricLengyel/Transvoxel/blob/51a494f03c5b024cd153b596bcc7152eb3cc93a6/LICENSE",
+      "source_git_blob_sha1": "791c429c79b58efb0379353c78881f26114b39a4",
+      "extraction": "full current official upstream file; does not silently replace pinned header",
+      "source_key": "transvoxel-current-license"
+    },
+    {
+      "local_path": "supplemental/GODOT-CPP-UPSTREAM-LICENSE.txt",
+      "source_url": "https://github.com/godotengine/godot-cpp/blob/8070599885b6df675fcad033dd032ce44be2b850/LICENSE.md",
+      "source_git_blob_sha1": "eb446fe72ce5c705f70413394200f10f67a123cd",
+      "extraction": "full file from a separately verified current upstream commit, not an established binary dependency commit",
+      "source_key": "godot-cpp-license-pinned"
+    },
+    {
+      "local_path": "evidence/SConstruct.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/SConstruct",
+      "source_git_blob_sha1": "4b53ed59acd25231962ec2cb595dd109d8849b21",
+      "extraction": "full pinned build entrypoint; text only, not executed",
+      "source_key": "SConstruct"
+    },
+    {
+      "local_path": "evidence/common.py.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/common.py",
+      "source_git_blob_sha1": "be321d742b34ad6489d958d39511291ee54ee7cd",
+      "extraction": "full pinned build options; text only, not executed",
+      "source_key": "common.py"
+    },
+    {
+      "local_path": "evidence/extension_builds.yml.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/.github/workflows/extension_builds.yml",
+      "source_git_blob_sha1": "acfd3de5b733e73524029fbc2596d7502202d436",
+      "extraction": "full pinned build workflow; text only, not executed",
+      "source_key": ".github/workflows/extension_builds.yml"
+    },
+    {
+      "local_path": "evidence/extension_release.yml.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/.github/workflows/extension_release.yml",
+      "source_git_blob_sha1": "36ee7434b8ac91dddcca74fa78792e6721881ed4",
+      "extraction": "full pinned package workflow; text only, not executed",
+      "source_key": ".github/workflows/extension_release.yml"
+    },
+    {
+      "local_path": "evidence/LZ4-VERSION.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/lz4/VERSION.txt",
+      "source_git_blob_sha1": "5c60a5d240d161b06030fe784a1cea8d0a394349",
+      "extraction": "full pinned version record",
+      "source_key": "thirdparty/lz4/VERSION.txt"
+    },
+    {
+      "local_path": "evidence/MESHOPTIMIZER-VERSION.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/meshoptimizer/VERSION.txt",
+      "source_git_blob_sha1": "2c03cab991d9e2d23bfbc9c8f03927693c6276e0",
+      "extraction": "full pinned version record",
+      "source_key": "thirdparty/meshoptimizer/VERSION.txt"
+    },
+    {
+      "local_path": "evidence/SQLITE-VERSION.txt",
+      "source_url": "https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/thirdparty/sqlite/VERSION.txt",
+      "source_git_blob_sha1": "fd0553d0dc0f12346bb40aa479ba5b6ff6e5ad3e",
+      "extraction": "full pinned version record",
+      "source_key": "thirdparty/sqlite/VERSION.txt"
+    }
+  ]
+}

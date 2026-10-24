@@ -1,0 +1,71 @@
+# Voxel Tools 1.7 GDExtension: third-party notice and provenance audit
+
+Reviewed: 2026-10-24 UTC. Scope: the approved official `GodotVoxelExtension.zip` for `Zylann/godot_voxel` tag `v1.7x`, and the source pinned at `75d3c6d996ed2331c80edcd8c3ebc947afc0f041`.
+
+## Result and limits
+
+The archive identity is verified, and the known source-component notices have been collected in [`vendor-notices/`](../vendor-notices/). **The shipped archive is not MIT-only, and this audit is not a complete redistribution clearance, an exhaustive SBOM, a security certification, or legal advice.**
+
+The archive contains only the Voxel Tools main MIT licence. It does not contain separate LZ4, meshoptimizer, FastNoiseLite, PCG, Godot-derived-code, godot-cpp, or compiler-runtime licence files. The supplementary notice files preserve the inspected upstream text; they have not been injected into the addon or into any exported game.
+
+The known source notices are now available locally. The exact godot-cpp revision and all platform compiler-runtime obligations remain unresolved. A game export also needs its own Godot engine and other dependency notices; those are outside this extension-only review. Local compatibility testing and legal/provenance completion are different gates.
+
+## Verified artifact
+
+- Official [release](https://github.com/Zylann/godot_voxel/releases/tag/v1.7x) and [asset](https://github.com/Zylann/godot_voxel/releases/download/v1.7x/GodotVoxelExtension.zip).
+- Local file: `vendor-downloads/GodotVoxelExtension.zip`.
+- Size: **54,457,774 bytes**.
+- Locally computed SHA-256: `600737572a5e25541ba6f503e842a3717ba19afafa5474510a6ceff995a1d2d8`, matching the approved publisher digest.
+- 34 archive files, including 14 native shared-library files and 2 Windows import archives. All 34 installed files matched their archive bytes during this audit.
+- Only one archive path contains a licence/notice file: `addons/zylann.voxel/LICENSE.md`. Its bytes also match the pinned main licence.
+
+The checksum establishes identity with the approved publisher asset, not independent trustworthiness or proof that every binary was built from the pinned source.
+
+## Enabled dependency inventory
+
+“Source-enabled” below means the pinned extension build includes the source under its defaults and the checked-in workflow does not disable that feature. It is not equivalent to a recovered build log or exact binary-to-source attestation. Read-only binary markers provide additional corroboration where available. Stripped symbols and inlining can hide a compiled dependency, so an absent string or symbol is not evidence of absence.
+
+| Component | Pinned source and enabled condition | Binary corroboration and notice |
+| --- | --- | --- |
+| Voxel Tools | Root MIT, Marc Gilleron, 2016–2024. | Packaged main licence. Preserve [`VOXEL-TOOLS-LICENSE.txt`](../vendor-notices/VOXEL-TOOLS-LICENSE.txt). |
+| LZ4 1.10.0 | `common.py` unconditionally includes `thirdparty/lz4/*.c`. Version record identifies upstream `ebb370ca83af193212df4dcbadcc5d87bc0de2f0`. | ELF libraries expose `LZ4_versionNumber` and `LZ4_compress_default`. Preserve the BSD-2-Clause [`LICENSE`](../vendor-notices/LZ4-LICENSE.txt), plus exact [`C source`](../vendor-notices/LZ4-C-SOURCE-NOTICE.txt) and [`header`](../vendor-notices/LZ4-HEADER-NOTICE.txt) notices: the LICENSE says 2011–2020, while the compiled source/header say 2011–2023. Binary redistribution explicitly requires the notice, conditions and disclaimer in accompanying material. |
+| FastNoiseLite 1.1.1 | `util/noise/fast_noise_lite/*.cpp` is unconditional; vendored header has MIT notices for Jordan Peck and contributors, 2023. | All 14 shared-library files contain `ZN_FastNoiseLite` type markers. Preserve [`FASTNOISELITE-NOTICE.txt`](../vendor-notices/FASTNOISELITE-NOTICE.txt). |
+| meshoptimizer 0.25 | `voxel_smooth_meshing=True`; includes `thirdparty/meshoptimizer/*.cpp`. Version record names upstream `6daea4695c48338363b08022d2fb15deaef6ac09`. The Transvoxel mesher includes and calls meshoptimizer. | Source-enabled; a distinct meshoptimizer symbol/name was not recovered in the inspected Linux libraries. Do not remove its notice merely because this game selects cube meshing. Preserve [`MESHOPTIMIZER-LICENSE.txt`](../vendor-notices/MESHOPTIMIZER-LICENSE.txt), MIT, Arseny Kapoulkine, 2016–2025. |
+| SQLite 3.51.0 | `voxel_sqlite=True`; extension `SConstruct` includes `thirdparty/sqlite/sqlite3.c`, and `common.py` includes the SQLite stream. | All 14 files contain `VoxelStreamSQLite` and the exact SQLite source ID `2025-11-04 19:38:17 fb2c931ae597f8d00a37574ff67aeed3eced4e5547f9120744ae4bfa8e74527b`. [`SQLITE-PUBLIC-DOMAIN-NOTICE.txt`](../vendor-notices/SQLITE-PUBLIC-DOMAIN-NOTICE.txt) preserves the copyright disclaimer/blessing as provenance, not a fabricated MIT licence or attribution obligation. |
+| Minimal PCG32 | `SConstruct` explicitly compiles `util/godot/core/pcg.cpp`; its header and implementation identify M. E. O’Neill, 2014, Apache License 2.0. | Source-enabled; individual PCG symbols were not recovered from stripped Linux libraries. Preserve [`PCG-NOTICE.txt`](../vendor-notices/PCG-NOTICE.txt) and full [`APACHE-2.0.txt`](../vendor-notices/APACHE-2.0.txt). The full licence was obtained from the official PCG basic repository, pinned independently below. No separate NOTICE file appears in the inspected Voxel Tools tree or that PCG tree. This audit did not modify PCG code. Future source changes require appropriate change notices and retained attributions. |
+| Godot-derived RandomPCG | `SConstruct` explicitly compiles `random_pcg.cpp`; the source and header retain Godot MIT notices and Zylann’s adaptation note. | Preserve [`GODOT-RANDOM-PCG-NOTICE.txt`](../vendor-notices/GODOT-RANDOM-PCG-NOTICE.txt), including Juan Linietsky/Ariel Manzur 2007–2022 and Godot contributors 2014–2022. This is distinct from the PCG generator’s Apache licence. Other Godot-derived utility code and the engine’s full distribution are not comprehensively covered by this one header. |
+| godot-cpp | Required by `SConstruct`; the release workflow selects moving `master`, not an exact revision. | All 14 files contain godot-cpp paths or diagnostics. A separately verified current upstream MIT licence is preserved as [`supplemental/GODOT-CPP-UPSTREAM-LICENSE.txt`](../vendor-notices/supplemental/GODOT-CPP-UPSTREAM-LICENSE.txt). Its source commit is **not** established as the dependency used to build this release. Exact binding version and transitive notice verification remain open. |
+| Transvoxel tables | Smooth meshing defaults on; `meshers/transvoxel/*.cpp` is included. Pinned tables carry Eric Lengyel’s 2009 custom permission/credit header. | All 14 files contain `VoxelMesherTransvoxel` type markers; Linux editor also names `transvoxel_tables.cpp`. Preserve the full [`TRANSVOXEL-PINNED-NOTICE.txt`](../vendor-notices/TRANSVOXEL-PINNED-NOTICE.txt), not a shortened or silently replaced MIT label. Current official upstream MIT evidence is discussed below. |
+
+Primary pinned build sources: [SConstruct](https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/SConstruct), [common.py](https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/common.py), [extension builds](https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/.github/workflows/extension_builds.yml), and [release packaging](https://github.com/Zylann/godot_voxel/blob/75d3c6d996ed2331c80edcd8c3ebc947afc0f041/.github/workflows/extension_release.yml). Text-only snapshots are retained in `vendor-notices/evidence/`; none were run.
+
+### Not the same as FastNoise2
+
+FastNoise2/FastSIMD is not enabled by the inspected GDExtension build path: its option is registered only for non-extension builds and its sources are not added by this extension source list. The archive still contains `FastNoise2.svg`, and editor binaries contain FastNoise2 documentation strings. These do **not** establish that FastNoise2 executable code is linked. No FastSIMD marker was found in any of the 14 library files. This is source-path/marker evidence, not a symbol-level proof of absence.
+
+## Transvoxel: retain old notice and record newer official evidence
+
+The pinned header grants use of the data in Transvoxel implementations, requests source credit, explicitly requires source credit for commercial products distributed with source, appreciates but does not require end-user credit, and prohibits claiming the entire implementation as one’s own. It also contains a final sentence restricting public reproduction without permission. The complete original header is preserved so this nuance is not erased.
+
+The [author’s official site](https://transvoxel.org/) now links [EricLengyel/Transvoxel](https://github.com/EricLengyel/Transvoxel). At verified commit `51a494f03c5b024cd153b596bcc7152eb3cc93a6`, its [LICENSE](https://github.com/EricLengyel/Transvoxel/blob/51a494f03c5b024cd153b596bcc7152eb3cc93a6/LICENSE) is MIT, copyright Eric Lengyel 2009. That exact file is preserved in [`supplemental/TRANSVOXEL-CURRENT-UPSTREAM-LICENSE.txt`](../vendor-notices/supplemental/TRANSVOXEL-CURRENT-UPSTREAM-LICENSE.txt).
+
+A read-only comparison found identical ordered integer data in all seven named table initializers in the pinned Voxel Tools file and the author’s current file: 7,565 integer tokens in total. The comparison ignores C++ formatting, wrappers and empty-initializer representation; it does not claim the complete C++ files are identical. See [`transvoxel-table-comparison.json`](../vendor-notices/evidence/transvoxel-table-comparison.json). This is useful evidence for a release review, not an automatic relicensing of all Voxel Tools modifications. Preserve both notices and do not remove the source credit. Review the source-distribution route before publishing a source package.
+
+## Remaining provenance and distribution gates
+
+1. **Exact godot-cpp build revision is unknown.** The inspected release wrapper uses `master` and a reusable workflow also referenced at `master`. The commit-workflow-runs lookup returned an empty list; it did not establish a matching build log. The saved supplemental MIT licence is from verified current commit `8070599885b6df675fcad033dd032ce44be2b850`, blob `eb446fe72ce5c705f70413394200f10f67a123cd`, not a claim about the release’s dependency revision. Obtain the actual checkout/build record, an upstream dependency attestation, or a separately authorized reproducible pinned build before claiming complete source provenance.
+2. **Compiler runtimes are real additional dependencies.** The workflow requests `use_static_cpp=yes`. Linux x86-64 binaries identify GCC 13.2.0/Buildroot; Linux arm64 identifies GCC 11.4.0/Ubuntu. Linux ELF dependencies list libc/libm/loader, not a dynamic libstdc++, while GNU C++ runtime markers are present. The Windows DLLs identify MinGW GCC 15.2.0 and contain GNU runtime markers, despite the checked-in setup asking for `windows-compiler: msvc`; Windows imports UCRT/system DLLs. This discrepancy prevents treating the workflow as an exact build attestation, but is not evidence of tampering. Android identifies NDK r28b/Clang 19 and LLVM C++ markers. Review the actual GCC runtime exception, MinGW and LLVM/libc++/NDK notice requirements for the platforms being redistributed; macOS/iOS runtime coverage also remains open. Do not describe runtime exception-covered GCC material simply as an ordinary copyleft requirement on the game. [Official libstdc++ licence/exception explanation](https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html).
+3. **This is a bounded notice audit, not every source header.** The main build lists, vendored dependency directory, named source notices, selected Godot utility sources, and all shipped library files were inspected. Every one of the 937 C/C++ source/header files and all transitive godot-cpp/runtime code were not individually audited. Additional attribution in those layers remains possible.
+4. **Delivery must actually include the notices.** Before a public or third-party binary/source delivery, copy the applicable notice bundle into accompanying user-accessible documentation and verify the final archive contains it. An unused runtime feature is not a reason to omit a compiled component’s notice. The current files have not been exported, uploaded, published, or pushed anywhere by this audit.
+5. **Keep export scope explicit.** A Windows-only export need not ship the addon’s Android, iOS, macOS and Linux binaries, but any packaging reduction or native rebuild is a separate implementation decision. No binaries, addon settings, production files, or build flags were changed here.
+
+## Audit evidence and integrity
+
+- [`binary-inspection.json`](../vendor-notices/evidence/binary-inspection.json): archive membership, SHA-256 per file, installed-byte comparison, native file types, representative strings, compiler strings, ELF dependencies and Windows imports.
+- [`notice-source-manifest.json`](../vendor-notices/evidence/notice-source-manifest.json): exact source URLs, Git blob SHA-1s, extraction boundaries and separate upstream commits for supplementary licences.
+- [`transvoxel-table-comparison.json`](../vendor-notices/evidence/transvoxel-table-comparison.json): numeric-table identity check with both pinned source URLs/blobs.
+- [`SHA256SUMS`](../vendor-notices/SHA256SUMS): local notice/evidence file hashes, excluding the checksum file itself.
+
+Read-only methods used: ZIP inspection and hashing, `file`, `strings`, `nm`, `readelf`, `objdump`, and official upstream file/API reads. No downloaded source was executed, no extension library was loaded by this audit, and no new software was installed. The audit’s own data-extraction/hash scripts ran only in the approved cloud workspace.
+
+The collected PCG Apache licence is pinned to [imneme/pcg-c-basic at bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3](https://github.com/imneme/pcg-c-basic/blob/bc39cd76ac3d541e618606bcc6e1e5ba5e5e6aa3/LICENSE.txt), blob `8dada3edaf50dbc082c9a125058f25def75e625a`. Its link from [the author’s download page](https://www.pcg-random.org/download.html) corroborates the minimal-PCG attribution in the pinned Voxel Tools source.

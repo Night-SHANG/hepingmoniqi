@@ -1,0 +1,35 @@
+{
+  "schema": "godot-city-fixture/v1",
+  "sourceSignature": "scale-regional/v1:structural-game:v09:city:soil-8:454913:2453488501",
+  "cellCount": 454913,
+  "structureCount": 53113,
+  "terrainCount": 401800,
+  "buildingCount": 36,
+  "regionCount": 18447,
+  "boxCount": 23339,
+  "contactPairs": 390489,
+  "objectiveWeight": 102256.79999997237,
+  "bounds": {
+    "minX": -122,
+    "maxX": 122,
+    "minY": -8,
+    "maxY": 35,
+    "minZ": -102,
+    "maxZ": 102
+  },
+  "recordBytes": 35,
+  "littleEndian": true,
+  "files": [
+    {
+      "name": "city-cells.bin",
+      "bytes": 15921955,
+      "sha256": "da1492c3b63a7b60cc354c106852c2842f61d85d538340dc7a3eaf8b500ef5ff"
+    },
+    {
+      "name": "city-regions.json",
+      "bytes": 19275887,
+      "sha256": "b3e46586dd0f154908c5c2e897ae3af779ddb8aeea6c5ba7e9e25432697bd734"
+    }
+  ],
+  "exportMs": 2999.353137
+}

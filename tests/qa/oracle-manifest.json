@@ -1,0 +1,232 @@
+{
+  "schema": "heping-independent-inventory-oracle/v1",
+  "provenance": {
+    "baselineCommit": "df77c90faa5c190a8cbbed7aa94d71d780b0cf89",
+    "baselineRun": "https://github.com/Night-SHANG/hepingmoniqi/actions/runs/40087965996",
+    "sourceFiles": {
+      "src/compact/fixture.ts": "e0c1fc7a2fc09220422b8ebc2425c762ed77dcf676385bcf4c1f32c6f981edb4",
+      "src/scale-slice/fixture.ts": "70fde7f249087b4a9e7ac503cfc2d5d0b69dad6ff08cf72b42b948fc8c1ea43e",
+      "src/content-catalog.ts": "f68a8f8090c66b0972f515cddc764a36cbb788f30821251b932b4e566227e105",
+      "src/world-layout.ts": "6e8e90d370e6b2762a93b79bbbf2e24c3bdf873400650e91c2b95abd536fca81",
+      "src/structural/game-fixtures.ts": "8a1ad9291bcd0a1a26243735ad80d96016ef15ce840ce570bdcc1bc590586bb6",
+      "src/domain.ts": "d90616a35af2674a6bdecdb8949e155483208d9ff38389a11992a077694f9cd5",
+      "artifacts/scale-ci-40087965996/summary.json": "eb9aba4a89025aa9711c0cdf10697d05a2bf396246854870969b354b81262a56"
+    }
+  },
+  "scope": {
+    "oracleOnly": true,
+    "livePhysicsWorldsCreatedByOracle": 0,
+    "sameCentersAsHistoricalBrowserProven": false,
+    "notes": "Fixed native shots follow the existing native profile algorithm. Historical browser picks were surface-dependent and are not recorded by the supplied summary; do not claim paired browser centers."
+  },
+  "fixture": {
+    "id": "structural-game:v09:city:soil-8",
+    "recipeId": "heping-v09:compact-game:1:city:warm-recipe-1:soil-8",
+    "cellCount": 454913,
+    "structureCount": 53113,
+    "terrainCount": 401800,
+    "buildingCount": 36,
+    "bounds": {
+      "minX": -122,
+      "maxX": 122,
+      "minY": -8,
+      "maxY": 35,
+      "minZ": -102,
+      "maxZ": 102
+    },
+    "terrainLayers": [
+      -8,
+      -7,
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1
+    ],
+    "inventorySha256": "5977a78ec720f3a31a3e9c4ee6e482dd758e7db9f401d8ee9c766228959f9022",
+    "canonicalEncoding": "heping-independent-cell-inventory/v1",
+    "objectiveCount": 49296,
+    "objectiveWeight": 102256.79999997237,
+    "anchorCount": 896,
+    "duplicatePositions": 0,
+    "duplicateIds": 0,
+    "perBuilding": {
+      "warm:city:building-04": 1376,
+      "warm:city:building-22": 1376,
+      "warm:city:building-19": 345,
+      "warm:city:building-01": 345,
+      "warm:city:building-23": 1014,
+      "warm:city:building-02": 760,
+      "warm:city:building-05": 1014,
+      "warm:city:building-20": 760,
+      "warm:city:building-24": 2184,
+      "warm:city:building-06": 2184,
+      "warm:city:building-03": 433,
+      "warm:city:building-21": 433,
+      "warm:city:building-07": 1547,
+      "warm:city:building-25": 1547,
+      "warm:city:building-28": 345,
+      "warm:city:building-10": 345,
+      "warm:city:building-08": 1728,
+      "warm:city:building-11": 760,
+      "warm:city:building-29": 760,
+      "warm:city:building-26": 1728,
+      "warm:city:building-09": 2937,
+      "warm:city:building-27": 2937,
+      "warm:city:building-12": 433,
+      "warm:city:building-30": 433,
+      "warm:city:building-16": 1547,
+      "warm:city:building-13": 1376,
+      "warm:city:building-34": 1547,
+      "warm:city:building-31": 1376,
+      "warm:city:building-14": 1014,
+      "warm:city:building-17": 1728,
+      "warm:city:building-32": 1014,
+      "warm:city:building-35": 1728,
+      "warm:city:building-15": 2184,
+      "warm:city:building-18": 2937,
+      "warm:city:building-33": 2184,
+      "warm:city:building-36": 2937
+    },
+    "perMaterial": {
+      "soil": 401800,
+      "road": 3198,
+      "wood": 36243,
+      "stone": 1788,
+      "glass": 3472,
+      "foliage": 486,
+      "metal": 42,
+      "roof": 7884
+    },
+    "perLayer": {
+      "-8": 50225,
+      "-7": 50225,
+      "-6": 50225,
+      "-5": 50225,
+      "-4": 50225,
+      "-3": 50225,
+      "-2": 50225,
+      "-1": 50225
+    },
+    "baselineRegionalSignature": "scale-regional/v1:structural-game:v09:city:soil-8:454913:2453488501",
+    "baselineRegionCount": 18447,
+    "baselineBoxCount": 23339
+  },
+  "nativeShots": [
+    {
+      "id": "native-city-nova-1",
+      "sequence": 1,
+      "position": {
+        "x": -48,
+        "y": 3,
+        "z": 42.5
+      },
+      "radius": 48,
+      "damage": 20,
+      "impulse": 12,
+      "power": 1,
+      "objectId": "warm:city:building-24",
+      "regionId": "region:[\"building\",\"glass\",\"warm:city:building-24\",1,-12,0,10]:-48,3,42",
+      "pristineCandidateCellCount": 63742
+    },
+    {
+      "id": "native-city-nova-2",
+      "sequence": 2,
+      "position": {
+        "x": 49,
+        "y": 3,
+        "z": 41.5
+      },
+      "radius": 48,
+      "damage": 20,
+      "impulse": 12,
+      "power": 1,
+      "objectId": "warm:city:building-34",
+      "regionId": "region:[\"building\",\"glass\",\"warm:city:building-34\",1,12,0,10]:49,3,41",
+      "pristineCandidateCellCount": 66478
+    },
+    {
+      "id": "native-city-nova-3",
+      "sequence": 3,
+      "position": {
+        "x": 0,
+        "y": 3,
+        "z": -42
+      },
+      "radius": 48,
+      "damage": 20,
+      "impulse": 12,
+      "power": 1,
+      "objectId": "warm:city:building-08",
+      "regionId": "region:[\"building\",\"glass\",\"warm:city:building-08\",1,0,0,-11]:0,3,-42",
+      "pristineCandidateCellCount": 64942
+    }
+  ],
+  "historicalBrowserObservations": [
+    {
+      "shot": 1,
+      "damageCommitMs": 58.099853515625,
+      "inputP95Ms": 209.199951171875,
+      "allDirectStaticVisibleMs": 869.2001953125,
+      "naturalRecoveryWallMs": 5169.300048828125,
+      "gates": {
+        "trustedInputObserved": true,
+        "input": false,
+        "mainLongTasks": true,
+        "damageCommit": true,
+        "staticVisible": false,
+        "completeVisible": false,
+        "actualRender": true,
+        "naturalRecovery": true
+      }
+    },
+    {
+      "shot": 2,
+      "damageCommitMs": 87.5,
+      "inputP95Ms": 220.60009765625,
+      "allDirectStaticVisibleMs": 888.39990234375,
+      "naturalRecoveryWallMs": 9159.89990234375,
+      "gates": {
+        "trustedInputObserved": true,
+        "input": false,
+        "mainLongTasks": true,
+        "damageCommit": true,
+        "staticVisible": false,
+        "completeVisible": false,
+        "actualRender": true,
+        "naturalRecovery": true
+      }
+    },
+    {
+      "shot": 3,
+      "damageCommitMs": 33.800048828125,
+      "inputP95Ms": 175.599853515625,
+      "allDirectStaticVisibleMs": 486.800048828125,
+      "naturalRecoveryWallMs": 1695.699951171875,
+      "gates": {
+        "trustedInputObserved": true,
+        "input": false,
+        "mainLongTasks": true,
+        "damageCommit": true,
+        "staticVisible": true,
+        "completeVisible": true,
+        "actualRender": true,
+        "naturalRecovery": true
+      }
+    }
+  ],
+  "targets": {
+    "inputP95MsExclusive": 100,
+    "maxMainThreadStallMsExclusive": 100,
+    "damagePlusCollisionMsExclusive": 250,
+    "allDirectStaticRenderedMsExclusive": 500,
+    "completeVisibleMsExclusive": 500,
+    "finalDebtMsExclusive": 100
+  },
+  "limitations": [
+    "Historical browser software-rendered timings and headless Godot CPU timings are different measurement surfaces.",
+    "Equal inventory does not imply identical physics trajectory or exact old per-cell damage semantics.",
+    "No native GPU/display or trusted input evidence is created by this oracle."
+  ]
+}

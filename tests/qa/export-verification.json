@@ -1,0 +1,27 @@
+{
+  "schema": "heping-independent-export-check/v1",
+  "passed": true,
+  "checks": {
+    "inventorySha256": true,
+    "cellCount": true,
+    "uniqueOccupiedPositions": true,
+    "structureCount": true,
+    "terrainCount": true,
+    "buildingCount": true,
+    "perBuilding": true,
+    "perMaterial": true,
+    "terrainLayers": true,
+    "anchorCount": true,
+    "bounds": true,
+    "regionMembership": true,
+    "exactOccupiedBoxCoverage": true,
+    "initialRegionsFaceConnected": true,
+    "completeRealContactPairs": true,
+    "neighborListsMatchContacts": true
+  },
+  "inventorySha256": "5977a78ec720f3a31a3e9c4ee6e482dd758e7db9f401d8ee9c766228959f9022",
+  "expectedInventorySha256": "5977a78ec720f3a31a3e9c4ee6e482dd758e7db9f401d8ee9c766228959f9022",
+  "cellCount": 454913,
+  "regionCount": 18447,
+  "physicsWorldsCreated": 0
+}

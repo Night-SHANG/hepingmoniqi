@@ -1,0 +1,54 @@
+name: Compact city representation A/B
+on:
+  push:
+    branches: [perf/compact-city-ab]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - name: Existing game and isolated representation regressions
+        run: |
+          npm test
+          node --import tsx --test --test-concurrency=1 performance/*/*.test.ts
+      - name: Compile deterministic browser support artifact
+        run: node --import tsx performance/browser-support/generate.ts
+      - name: Build real preview and browser-native support proof
+        run: |
+          node node_modules/vite/bin/vite.js build performance/preview --outDir dist --emptyOutDir
+          node node_modules/vite/bin/vite.js build --config performance/browser-support/vite.demo.config.ts
+      - run: google-chrome --version
+      - name: Serve isolated experiments
+        run: |
+          python3 -m http.server 5193 --bind 127.0.0.1 --directory performance/preview/dist >/tmp/compact-preview.log 2>&1 &
+          python3 -m http.server 5194 --bind 127.0.0.1 --directory performance/browser-support/dist-demo >/tmp/compact-support.log 2>&1 &
+          python3 - <<'PYREADY'
+          import time, urllib.request
+          for port in (5193, 5194):
+              for attempt in range(50):
+                  try:
+                      urllib.request.urlopen(f'http://127.0.0.1:{port}/',timeout=1)
+                      break
+                  except OSError:
+                      time.sleep(.1)
+              else:
+                  raise RuntimeError(f'Experiment server {port} did not start')
+          PYREADY
+      - name: Actual browser preview A/B (not whole-game acceptance)
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          GAME_URL: http://127.0.0.1:5193/
+        run: node performance/qa/preview-browser-check.mjs
+      - name: Actual browser Web Crypto support parity (not full physics)
+        env:
+          QA_BROWSER_CHANNEL: chrome
+          GAME_URL: http://127.0.0.1:5194/
+        run: node performance/qa/support-browser-check.mjs

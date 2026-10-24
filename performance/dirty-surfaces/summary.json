@@ -1,0 +1,178 @@
+{
+  "16": {
+    "chunkSize": 16,
+    "initial": {
+      "chunks": 438,
+      "queriedCells": 1782002,
+      "coreCells": 1190280,
+      "outputBytes": 19083692,
+      "peakTemporaryBytes": 29160,
+      "msMedian": 167.91228999999998,
+      "msRange": [
+        167.434331,
+        173.69705700000003
+      ],
+      "occupancyMsMedian": 120.78189400000008,
+      "occupancyMsRange": [
+        120.00847700000008,
+        125.43506700000137
+      ],
+      "countMsMedian": 12.524631000000568,
+      "countMsRange": [
+        12.450104000001033,
+        13.422730000000172
+      ],
+      "emitMsMedian": 29.40292199999942,
+      "emitMsRange": [
+        29.020422000000565,
+        30.386397999998167
+      ]
+    },
+    "one": {
+      "chunks": 2,
+      "queriedCells": 9072,
+      "coreCells": 6144,
+      "outputBytes": 53016,
+      "peakTemporaryBytes": 29160,
+      "msMedian": 1.501213000000007,
+      "msRange": [
+        1.3995129999999563,
+        1.5384070000000065
+      ],
+      "occupancyMsMedian": 1.2981329999998934,
+      "occupancyMsRange": [
+        1.2334680000000162,
+        1.3756369999999833
+      ],
+      "countMsMedian": 0.037013999999999214,
+      "countMsRange": [
+        0.03561200000001463,
+        0.04604800000004161
+      ],
+      "emitMsMedian": 0.07169699999997192,
+      "emitMsRange": [
+        0.07130499999993845,
+        0.12354199999992943
+      ],
+      "mutationAndInvalidationMsMedian": 0.8361919999999827
+    },
+    "twenty": {
+      "removed": 460,
+      "rebuiltChunkOperations": 36,
+      "distinctRebuiltChunks": 36,
+      "queriedCells": 147744,
+      "coreCells": 98304,
+      "outputBytes": 1769080,
+      "peakTemporaryBytes": 29160,
+      "msMedian": 14.672604999999862,
+      "msRange": [
+        13.745106999999848,
+        15.129445000000146
+      ],
+      "occupancyMsMedian": 11.374623000000497,
+      "occupancyMsRange": [
+        10.895356000000447,
+        11.879980999999816
+      ],
+      "countMsMedian": 0.7709099999998443,
+      "countMsRange": [
+        0.6832450000000563,
+        0.8060189999991962
+      ],
+      "emitMsMedian": 2.1694060000000945,
+      "emitMsRange": [
+        1.8603910000001633,
+        2.169838000000027
+      ],
+      "mutationAndInvalidationMsMedian": 2.268974999999955
+    }
+  },
+  "32": {
+    "chunkSize": 32,
+    "initial": {
+      "chunks": 105,
+      "queriedCells": 1844058,
+      "coreCells": 1440904,
+      "outputBytes": 19083692,
+      "peakTemporaryBytes": 196520,
+      "msMedian": 163.95303,
+      "msRange": [
+        163.637515,
+        174.29874900000004
+      ],
+      "occupancyMsMedian": 119.19705299999953,
+      "occupancyMsRange": [
+        117.75021700000048,
+        129.3968379999996
+      ],
+      "countMsMedian": 13.205730999999844,
+      "countMsRange": [
+        12.245373000000143,
+        13.656565999999998
+      ],
+      "emitMsMedian": 29.238921999999548,
+      "emitMsRange": [
+        28.234823999999946,
+        29.47886200000022
+      ]
+    },
+    "one": {
+      "chunks": 2,
+      "queriedCells": 50864,
+      "coreCells": 40960,
+      "outputBytes": 318472,
+      "peakTemporaryBytes": 196520,
+      "msMedian": 4.72009300000002,
+      "msRange": [
+        4.67826500000001,
+        6.742367000000058
+      ],
+      "occupancyMsMedian": 4.069735000000151,
+      "occupancyMsRange": [
+        4.022668999999951,
+        5.732376999999929
+      ],
+      "countMsMedian": 0.24206699999990633,
+      "countMsRange": [
+        0.2022380000000794,
+        0.35293000000001484
+      ],
+      "emitMsMedian": 0.39230699999995977,
+      "emitMsRange": [
+        0.35558400000002166,
+        0.5928740000000516
+      ],
+      "mutationAndInvalidationMsMedian": 0.8554209999999784
+    },
+    "twenty": {
+      "removed": 460,
+      "rebuiltChunkOperations": 36,
+      "distinctRebuiltChunks": 36,
+      "queriedCells": 749088,
+      "coreCells": 589824,
+      "outputBytes": 7913202,
+      "peakTemporaryBytes": 196520,
+      "msMedian": 59.896889000000215,
+      "msRange": [
+        59.495068000000174,
+        61.627775999999926
+      ],
+      "occupancyMsMedian": 47.22413500000005,
+      "occupancyMsRange": [
+        46.31599000000028,
+        48.348368999999934
+      ],
+      "countMsMedian": 3.7121139999999286,
+      "countMsRange": [
+        3.4702330000003485,
+        3.92975899999999
+      ],
+      "emitMsMedian": 8.768930999999384,
+      "emitMsRange": [
+        8.349777000000017,
+        9.052169999999819
+      ],
+      "mutationAndInvalidationMsMedian": 2.0808349999998654
+    }
+  }
+}

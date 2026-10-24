@@ -42,7 +42,7 @@ export function createVoxelInstanceRenderer(scene:THREE.Scene,geometry:THREE.Buf
     e.voxel=v;e.immutable=Object.isFrozen(v)&&Object.isFrozen(p)&&(!r||Object.isFrozen(r))&&(!s||Object.isFrozen(s));allImmutable=allImmutable&&e.immutable;
     const sx=s?.x??.965,sy=s?.y??.965,sz=s?.z??.965,qx=r?.x??0,qy=r?.y??0,qz=r?.z??0,qw=r?.w??1;
     if(e.x!==p.x||e.y!==p.y||e.z!==p.z||e.sx!==sx||e.sy!==sy||e.sz!==sz||e.qx!==qx||e.qy!==qy||e.qz!==qz||e.qw!==qw||e.state!==v.structuralState){
-     if(e.key!==null){occupied.delete(e.key);adjacent(e);}
+     if(e.key!==null){if(occupied.get(e.key)===e)occupied.delete(e.key);adjacent(e);}
      e.x=p.x;e.y=p.y;e.z=p.z;e.sx=sx;e.sy=sy;e.sz=sz;e.qx=qx;e.qy=qy;e.qz=qz;e.qw=qw;e.state=v.structuralState;
      const lattice=(v.structuralState===undefined||v.structuralState==='static')&&sx===1&&sy===1&&sz===1&&qx===0&&qy===0&&qz===0&&Math.abs(qw)===1&&Number.isSafeInteger(p.x)&&Number.isSafeInteger(p.y)&&Number.isSafeInteger(p.z);
      e.key=lattice?key(p.x,p.y,p.z):null;
@@ -51,7 +51,7 @@ export function createVoxelInstanceRenderer(scene:THREE.Scene,geometry:THREE.Buf
     }
     if(e.color!==v.color||e.hp!==v.hp||e.maxHp!==v.maxHp){e.color=v.color;e.hp=v.hp;e.maxHp=v.maxHp;e.colorDirty=true;dirty.add(e);}
    }
-   if(reordered)for(const [id,e] of entries)if(e.stamp!==revision){if(e.key!==null){occupied.delete(e.key);adjacent(e);}removeSlot(e);entries.delete(id);dirty.delete(e);}
+   if(reordered)for(const [id,e] of entries)if(e.stamp!==revision){if(e.key!==null){if(occupied.get(e.key)===e)occupied.delete(e.key);adjacent(e);}removeSlot(e);entries.delete(id);dirty.delete(e);}
    ordered=nextOrdered;lastSnapshot=voxels;immutableSnapshot=allImmutable&&Object.isFrozen(voxels);
    for(const e of dirty){
     if(e.stamp!==revision)continue;

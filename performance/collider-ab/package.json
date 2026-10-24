@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --import tsx --test --test-concurrency=1 compact-colliders.test.ts"
+  },
+  "type": "module"
+}

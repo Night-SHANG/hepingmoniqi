@@ -1,0 +1,426 @@
+{
+  "scope": "Isolated unchanged samecity topology, no Rapier/browser/render/gameplay performance claim",
+  "kind": "oracle",
+  "node": "v24.19.0",
+  "platform": "linux",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36,
+    "initialUnsupported": 0
+  },
+  "exactOrderedCityOutputsMatchOracleAfterEveryCut": true,
+  "timings": {
+    "descriptorSetupMs": 9.091579999999993,
+    "structureSourceAndStoreMs": 59.29778299999998,
+    "storePackingMs": 0,
+    "supportBuildMs": 20.283547999999996,
+    "initialSupportMs": 63.765984,
+    "removals": {
+      "count": 20,
+      "totalMs": 3.4042779999999198,
+      "medianMs": 0.14993100000003778,
+      "p95Ms": 0.3859390000000076,
+      "maxMs": 0.4168250000000171
+    },
+    "supportQueries": {
+      "count": 20,
+      "totalMs": 839.3815839999996,
+      "medianMs": 41.78827599999988,
+      "p95Ms": 44.70398799999998,
+      "maxMs": 46.146503999999936
+    }
+  },
+  "memory": {
+    "gcAvailable": true,
+    "baseline": {
+      "rss": 86224896,
+      "heapUsed": 14003544,
+      "arrayBuffers": 212355,
+      "external": 4348117
+    },
+    "descriptorMemory": {
+      "rss": 95367168,
+      "heapUsed": 14072840,
+      "arrayBuffers": 614155,
+      "external": 4580368
+    },
+    "sourceMemory": {
+      "rss": 124997632,
+      "heapUsed": 26342648,
+      "arrayBuffers": 614155,
+      "external": 4530143
+    },
+    "afterBuild": {
+      "rss": 130187264,
+      "heapUsed": 17959320,
+      "arrayBuffers": 6461101,
+      "external": 10377089
+    },
+    "afterCuts": {
+      "rss": 134213632,
+      "heapUsed": 18154528,
+      "arrayBuffers": 6461101,
+      "external": 10407296
+    },
+    "descriptorDelta": {
+      "rss": 9142272,
+      "heapUsed": 69296,
+      "arrayBuffers": 401800,
+      "external": 232251
+    },
+    "sourceDelta": {
+      "rss": 29630464,
+      "heapUsed": 12269808,
+      "arrayBuffers": 0,
+      "external": -50225
+    },
+    "supportDelta": {
+      "rss": 5189632,
+      "heapUsed": -8383328,
+      "arrayBuffers": 5846946,
+      "external": 5846946
+    },
+    "combinedRetainedDelta": {
+      "rss": 47988736,
+      "heapUsed": 4150984,
+      "arrayBuffers": 6248746,
+      "external": 6059179
+    },
+    "note": "Source Cell specs are released before afterBuild GC in both modes. Incremental packs full compact structure state, oracle retains its topology-only snapshot instead. No ground Cell calls permitted. Post-GC process values, not peak RSS or exact allocations; delta from sourceMemory includes release of oracle specs."
+  },
+  "diagnostics": {
+    "groundCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "liveCells": 436576,
+    "buffers": {
+      "present": 454913,
+      "seen": 1819652,
+      "queue": 1819652,
+      "structureIds": 424904,
+      "structureCoordinates": 1274712,
+      "structureAnchors": 53113
+    },
+    "typedBufferBytes": 5846946,
+    "terrainDescriptorBytes": 401800,
+    "allocations": {
+      "groundCellObjects": 0,
+      "neighborObjects": 0,
+      "traversalQueueArrays": 1,
+      "typedArrays": 6,
+      "structurePositionMapEntries": 53113,
+      "structureIdMapEntries": 53113,
+      "cumulativeReturnedDisconnectedIds": 31353
+    },
+    "supportQueries": 21
+  },
+  "sourceAllocations": {
+    "groundCellObjects": 0,
+    "structureCellObjects": 53113,
+    "uniqueLegacyColumnRecordsAtFinish": 16446
+  },
+  "steps": [
+    {
+      "step": 1,
+      "at": {
+        "x": -102.5,
+        "y": -1,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 0.4168250000000171,
+      "supportMs": 41.66483499999998,
+      "pieces": 0,
+      "disconnectedCells": 0,
+      "exactOrderedMembershipSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "step": 2,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 886,
+      "removeMs": 0.26984799999996767,
+      "supportMs": 40.190068,
+      "pieces": 1,
+      "disconnectedCells": 580,
+      "exactOrderedMembershipSha256": "ddea3c1b6468b3266c24ef8d1f4dd11f114f61a51497f991f5f6468d36eaba10"
+    },
+    {
+      "step": 3,
+      "at": {
+        "x": -24.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1314,
+      "removeMs": 0.3859390000000076,
+      "supportMs": 41.34542399999998,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 4,
+      "at": {
+        "x": 24.5,
+        "y": -5,
+        "z": 22.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 0.07904600000006212,
+      "supportMs": 40.793949999999995,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 5,
+      "at": {
+        "x": 77.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 0.1519540000000461,
+      "supportMs": 43.34986900000001,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 6,
+      "at": {
+        "x": 102.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 0.2609949999999799,
+      "supportMs": 40.37987999999996,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 7,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": -22.5
+      },
+      "radius": 5.5,
+      "removedCells": 489,
+      "removeMs": 0.09528999999997723,
+      "supportMs": 43.576314000000025,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 8,
+      "at": {
+        "x": -24.5,
+        "y": -5,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 0.09550999999999021,
+      "supportMs": 39.979378,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 9,
+      "at": {
+        "x": 23.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 0.3304679999999962,
+      "supportMs": 42.8772019999999,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 10,
+      "at": {
+        "x": 54.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 0.14993100000003778,
+      "supportMs": 40.41193700000008,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 11,
+      "at": {
+        "x": 101.5,
+        "y": -1,
+        "z": 22.5
+      },
+      "radius": 6.7,
+      "removedCells": 854,
+      "removeMs": 0.11811399999999139,
+      "supportMs": 44.70398799999998,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 12,
+      "at": {
+        "x": -77.5,
+        "y": -5,
+        "z": -46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1523,
+      "removeMs": 0.11599100000000817,
+      "supportMs": 46.146503999999936,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 13,
+      "at": {
+        "x": -23.5,
+        "y": -1,
+        "z": -46.5
+      },
+      "radius": 5.5,
+      "removedCells": 481,
+      "removeMs": 0.08150000000000546,
+      "supportMs": 40.26682299999993,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 14,
+      "at": {
+        "x": 0.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 882,
+      "removeMs": 0.16062699999997676,
+      "supportMs": 42.24119500000006,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 15,
+      "at": {
+        "x": 53.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1384,
+      "removeMs": 0.18581399999993664,
+      "supportMs": 41.78827599999988,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 16,
+      "at": {
+        "x": 101.5,
+        "y": -5,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 0.04775999999992564,
+      "supportMs": 43.370971000000054,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 17,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 0.11999700000001212,
+      "supportMs": 42.79649399999994,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 18,
+      "at": {
+        "x": -53.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 7.9,
+      "removedCells": 1332,
+      "removeMs": 0.18567400000006273,
+      "supportMs": 41.906790999999885,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 19,
+      "at": {
+        "x": -0.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 5.5,
+      "removedCells": 502,
+      "removeMs": 0.08076899999991838,
+      "supportMs": 40.05334700000003,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 20,
+      "at": {
+        "x": 54.5,
+        "y": -5,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 0.07222600000000057,
+      "supportMs": 41.53833800000007,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    }
+  ]
+}

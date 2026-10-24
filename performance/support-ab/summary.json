@@ -1,0 +1,40 @@
+{
+  "cityRuns": 3,
+  "exactSortedMembershipHashesMatchAll20Steps": true,
+  "unchangedCityCoverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "initialUnsupported": 0,
+    "allStructuresExactlyMatchProduction": "verified in compact-support.test.ts; production source is not invoked in this benchmark"
+  },
+  "supportBufferBytes": 5846946,
+  "terrainBufferBytes": 401800,
+  "combinedBufferBytes": 6248746,
+  "smallExactMembershipMatches": true,
+  "smallHasNonemptyDisconnectedOutput": true,
+  "descriptorSetupMs": {
+    "min": 9.112467999999978,
+    "max": 18.00107700000001
+  },
+  "sparseStructureGenerationMs": {
+    "min": 54.911054999999976,
+    "max": 87.013488
+  },
+  "supportBuildMs": {
+    "min": 22.437170999999978,
+    "max": 36.44548599999996
+  },
+  "initialSupportMs": {
+    "min": 68.67494799999997,
+    "max": 78.20241299999998
+  },
+  "citySupport_medianMs": {
+    "min": 42.00252499999988,
+    "max": 47.760718
+  },
+  "citySupport_p95Ms": {
+    "min": 44.40534200000002,
+    "max": 62.506153999999924
+  }
+}

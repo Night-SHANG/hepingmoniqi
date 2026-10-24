@@ -1,0 +1,310 @@
+{
+  "kind": "compiled-warm",
+  "scope": "Isolated fixed samecity topology, no Rapier/browser/render/gameplay latency claim",
+  "node": "v24.19.0",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36
+  },
+  "artifactBytes": 3857400,
+  "recipeSha256": "dce531bddd565432c03fd5f4ce31cac5c0399424430f8b51206fb8342f1e67e9",
+  "timings": {
+    "sourceAndCompactStoreMs": 101.06021600000003,
+    "packingMs": 23.429831999999976,
+    "warmupMs": 465.84614200000004,
+    "support": {
+      "totalMs": 485.2208810000001,
+      "ioMs": 2.292850000000044,
+      "decodeMs": 12.431390999999962,
+      "validateMs": 448.29383699999994,
+      "hydrateMs": 17.465250999999853
+    },
+    "initialQueryMs": 4.095385999999962,
+    "removal": {
+      "count": 20,
+      "totalMs": 79.88614900000016,
+      "medianMs": 3.5246839999999793,
+      "p95Ms": 7.511284999999816,
+      "maxMs": 7.687545999999884
+    },
+    "queries": {
+      "count": 20,
+      "totalMs": 43.81200299999955,
+      "medianMs": 1.9473100000000159,
+      "p95Ms": 3.3295069999999214,
+      "maxMs": 4.748849000000064
+    }
+  },
+  "exact20CutOracleHashes": true,
+  "memory": {
+    "gcAvailable": true,
+    "baseline": {
+      "rss": 86339584,
+      "heapUsed": 14345856,
+      "arrayBuffers": 212355,
+      "external": 4282581
+    },
+    "afterSource": {
+      "rss": 131072000,
+      "heapUsed": 14357360,
+      "arrayBuffers": 3110466,
+      "external": 7076679
+    },
+    "afterBuild": {
+      "rss": 182845440,
+      "heapUsed": 20706488,
+      "arrayBuffers": 5385031,
+      "external": 23423315
+    },
+    "afterCuts": {
+      "rss": 184156160,
+      "heapUsed": 20723344,
+      "arrayBuffers": 5385031,
+      "external": 9331226
+    },
+    "afterRelease": {
+      "rss": 175984640,
+      "heapUsed": 14834680,
+      "arrayBuffers": 3110466,
+      "external": 9331226
+    },
+    "supportDelta": {
+      "rss": 51773440,
+      "heapUsed": 6349128,
+      "arrayBuffers": 2274565,
+      "external": 16346636
+    },
+    "combinedRetainedDelta": {
+      "rss": 97816576,
+      "heapUsed": 6377488,
+      "arrayBuffers": 5172676,
+      "external": 5048645
+    },
+    "releasedGraphDelta": {
+      "rss": -8171520,
+      "heapUsed": -5888664,
+      "arrayBuffers": -2274565,
+      "external": 0
+    },
+    "note": "Post-GC retained memory, not peak memory. Decoded buffers are released before afterBuild. Runtime graph includes mutable JS member arrays/edge Maps; no Cell objects or full-city JSON. Release runs after the entire graph-owning function returns, retaining compact source stores for comparison. RSS is allocator-dependent; arrayBuffers also counted within external, do not sum."
+  },
+  "cacheNote": "Second load and hydration after discarding first graph in the same process",
+  "diagnostics": {
+    "cells": 454913,
+    "chunks": 3465,
+    "liveMembers": 436576,
+    "directedEdges": 19240,
+    "typedBufferBytes": 2274565,
+    "storedNeighborSlots": 0,
+    "retainedVoxelRecords": 0,
+    "groundCells": 401800,
+    "structureCells": 53113,
+    "structureStore": {
+      "cellCount": 53113,
+      "changedCells": 0,
+      "poseRecords": 0,
+      "internedObjectIds": 47,
+      "retainedCellObjects": 0,
+      "positionStringMapEntries": 0,
+      "typedBytes": 2496311
+    },
+    "terrainDescriptor": {
+      "cellCount": 401800,
+      "mutableChunks": 0,
+      "mutableBytes": 0,
+      "columnIndexBytes": 401800,
+      "changedCells": 0,
+      "movingPoseRecords": 0
+    },
+    "setup": {
+      "groupMs": 0,
+      "cutMs": 0,
+      "edgesMs": 0,
+      "cutObjects": []
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "removedCells": 478,
+      "removeMs": 7.511284999999816,
+      "queryMs": 2.9203339999999116,
+      "pieces": 0,
+      "disconnectedCells": 0,
+      "exactOrderedMembershipSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "step": 2,
+      "removedCells": 886,
+      "removeMs": 5.761261999999988,
+      "queryMs": 3.3295069999999214,
+      "pieces": 1,
+      "disconnectedCells": 580,
+      "exactOrderedMembershipSha256": "ddea3c1b6468b3266c24ef8d1f4dd11f114f61a51497f991f5f6468d36eaba10"
+    },
+    {
+      "step": 3,
+      "removedCells": 1314,
+      "removeMs": 7.687545999999884,
+      "queryMs": 2.542547999999897,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 4,
+      "removedCells": 604,
+      "removeMs": 2.5635480000000825,
+      "queryMs": 1.9473100000000159,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 5,
+      "removedCells": 880,
+      "removeMs": 4.187752000000046,
+      "queryMs": 2.962546000000202,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 6,
+      "removedCells": 1363,
+      "removeMs": 6.000483000000031,
+      "queryMs": 2.6579969999997957,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 7,
+      "removedCells": 489,
+      "removeMs": 2.6069420000001173,
+      "queryMs": 4.748849000000064,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 8,
+      "removedCells": 1020,
+      "removeMs": 3.5246839999999793,
+      "queryMs": 1.5719570000001113,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 9,
+      "removedCells": 1363,
+      "removeMs": 7.113094000000046,
+      "queryMs": 2.26357599999983,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 10,
+      "removedCells": 478,
+      "removeMs": 4.313576999999896,
+      "queryMs": 3.0660689999999704,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 11,
+      "removedCells": 854,
+      "removeMs": 3.410967000000028,
+      "queryMs": 1.2292019999999866,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 12,
+      "removedCells": 1523,
+      "removeMs": 3.8922070000000986,
+      "queryMs": 1.74321000000009,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 13,
+      "removedCells": 481,
+      "removeMs": 2.0184549999999035,
+      "queryMs": 1.3376619999999093,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 14,
+      "removedCells": 882,
+      "removeMs": 3.160086999999976,
+      "queryMs": 1.811329999999998,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 15,
+      "removedCells": 1384,
+      "removeMs": 3.5058870000000297,
+      "queryMs": 1.3037719999999808,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 16,
+      "removedCells": 604,
+      "removeMs": 1.5650470000000496,
+      "queryMs": 2.9711190000000443,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 17,
+      "removedCells": 880,
+      "removeMs": 2.1793420000001333,
+      "queryMs": 1.3234709999999268,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 18,
+      "removedCells": 1332,
+      "removeMs": 3.7130930000000717,
+      "queryMs": 1.4308579999999438,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 19,
+      "removedCells": 502,
+      "removeMs": 1.8508079999999154,
+      "queryMs": 1.4203130000000783,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 20,
+      "removedCells": 1020,
+      "removeMs": 3.320083000000068,
+      "queryMs": 1.2303729999998723,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "evidence": "Filesystem last-write timestamp of each final redirected JSON result. Final run command started approximately 2026-10-24T03:48:14Z.",
+  "samples": [
+    {
+      "file": "compiled-cold-result-1.json",
+      "completedAtUTC": "2026-10-24T03:48:22.945335+00:00"
+    },
+    {
+      "file": "compiled-cold-result-2.json",
+      "completedAtUTC": "2026-10-24T03:48:27.801286+00:00"
+    },
+    {
+      "file": "compiled-cold-result-3.json",
+      "completedAtUTC": "2026-10-24T03:48:32.809235+00:00"
+    },
+    {
+      "file": "compiled-warm-result-1.json",
+      "completedAtUTC": "2026-10-24T03:48:24.453320+00:00"
+    },
+    {
+      "file": "compiled-warm-result-2.json",
+      "completedAtUTC": "2026-10-24T03:48:29.269271+00:00"
+    },
+    {
+      "file": "compiled-warm-result-3.json",
+      "completedAtUTC": "2026-10-24T03:48:34.137222+00:00"
+    },
+    {
+      "file": "uncached-result-1.json",
+      "completedAtUTC": "2026-10-24T03:48:21.985344+00:00"
+    },
+    {
+      "file": "uncached-result-2.json",
+      "completedAtUTC": "2026-10-24T03:48:26.789296+00:00"
+    },
+    {
+      "file": "uncached-result-3.json",
+      "completedAtUTC": "2026-10-24T03:48:31.873245+00:00"
+    }
+  ],
+  "otherWorkerHeavyTaskReportedStartUTC": "2026-10-24T03:48:44Z",
+  "overlap": false
+}

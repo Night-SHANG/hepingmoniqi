@@ -1,0 +1,26 @@
+{
+  "scope": "Isolated compact source, native Web Crypto and graph only. No real browser, GPU, Rapier, frame latency or whole-game claim.",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36
+  },
+  "all60CutHashesMatch": true,
+  "medianMs": {
+    "sourceMs": 104.24878099999995,
+    "latticeMs": 6.499457000000007,
+    "ioMs": 2.9320540000000506,
+    "decodeMs": 15.221278999999981,
+    "validateMs": 489.459945,
+    "hydrateMs": 16.31201999999996,
+    "decodeValidateHydrateMs": 521.9813189999999,
+    "withIoMs": 524.884972
+  },
+  "topologyBufferBytes": 12738762,
+  "topologyEncodingTwoPassMedianMs": 148.07736499999987,
+  "topologyPublicDigestWithOwnershipCopyMedianMs": 17.425830000000133,
+  "artifactBytes": 3857632,
+  "revisionScope": "Three pre-helper/pre-review-hardening native samples; not exact final-reviewed-revision timing and not browser evidence.",
+  "subsequentHelperParity": "helper-parity-result.json: all20CutOracleHashes true; no new three-sample performance claim."
+}

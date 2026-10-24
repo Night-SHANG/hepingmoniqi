@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --import tsx --test --test-concurrency=1 dirty-surfaces.test.ts",
+    "profile": "node --expose-gc --import tsx profile.ts"
+  },
+  "type": "module"
+}

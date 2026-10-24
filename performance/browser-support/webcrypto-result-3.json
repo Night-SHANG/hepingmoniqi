@@ -1,0 +1,303 @@
+{
+  "kind": "node-native-webcrypto-fresh-process",
+  "scope": "Isolated compact source, native Web Crypto and graph only. No real browser, GPU, Rapier, frame latency or whole-game claim.",
+  "node": "v24.19.0",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36
+  },
+  "recipeSha256": "7e9b9abb38726a6808e938d1c96079ed8e1ac83a63e57ee4093e5911ac2c914d",
+  "artifactBytes": 3857632,
+  "exact20CutOracleHashes": true,
+  "timings": {
+    "sourceMs": 104.24878099999995,
+    "latticeMs": 6.499457000000007,
+    "ioMs": 3.290102999999988,
+    "decodeMs": 16.332675999999992,
+    "validateMs": 489.459945,
+    "hydrateMs": 16.31201999999996,
+    "decodeValidateHydrateMs": 522.1046409999999,
+    "withIoMs": 525.394744,
+    "initialQueryMs": 3.0381009999999833,
+    "removal": {
+      "count": 20,
+      "totalMs": 62.76786199999992,
+      "medianMs": 3.211106000000086,
+      "p95Ms": 5.3587440000000015,
+      "maxMs": 6.807380999999964
+    },
+    "queries": {
+      "count": 20,
+      "totalMs": 28.626416000000177,
+      "medianMs": 1.2816510000000108,
+      "p95Ms": 2.3915680000000066,
+      "maxMs": 3.221582000000012
+    }
+  },
+  "memory": {
+    "gcAvailable": true,
+    "baseline": {
+      "rss": 86917120,
+      "heapUsed": 14194720,
+      "arrayBuffers": 212355,
+      "external": 4282581
+    },
+    "afterSource": {
+      "rss": 128757760,
+      "heapUsed": 14507096,
+      "arrayBuffers": 3110466,
+      "external": 7076679
+    },
+    "beforeDecode": {
+      "rss": 135446528,
+      "heapUsed": 14511600,
+      "arrayBuffers": 7033634,
+      "external": 14872790
+    },
+    "afterDecode": {
+      "rss": 145387520,
+      "heapUsed": 14689480,
+      "arrayBuffers": 10822114,
+      "external": 18752745
+    },
+    "afterValidation": {
+      "rss": 184578048,
+      "heapUsed": 14866920,
+      "arrayBuffers": 15196547,
+      "external": 35927219
+    },
+    "afterHydrationWithDecodedBuffers": {
+      "rss": 172781568,
+      "heapUsed": 20920224,
+      "arrayBuffers": 13096679,
+      "external": 19199126
+    },
+    "decodeRetainedDelta": {
+      "rss": 9940992,
+      "heapUsed": 177880,
+      "arrayBuffers": 3788480,
+      "external": 3879955
+    },
+    "validationRetainedDelta": {
+      "rss": 39190528,
+      "heapUsed": 177440,
+      "arrayBuffers": 4374433,
+      "external": 17174474
+    },
+    "afterRoundRelease": {
+      "rss": 200044544,
+      "heapUsed": 20918600,
+      "arrayBuffers": 13096679,
+      "external": 17194985
+    },
+    "afterTopologyRelease": {
+      "rss": 213852160,
+      "heapUsed": 14971328,
+      "arrayBuffers": 3110482,
+      "external": 19947550
+    },
+    "note": "GC snapshots are retained memory, not peak. afterHydrationWithDecodedBuffers intentionally retains input/decoded buffers plus hydrated graph. Web Crypto may make additional native copies; snapshots do not establish browser peak. arrayBuffers is included in external: do not sum them."
+  },
+  "topologyBufferMeasurement": {
+    "topologyBytes": 12738762,
+    "encodingTwoPassMs": 145.76104599999985,
+    "digestWithPublicOwnershipCopyMs": 19.200158999999985,
+    "before": {
+      "rss": 199897088,
+      "heapUsed": 20940280,
+      "arrayBuffers": 13096679,
+      "external": 17194985
+    },
+    "withOwnedTopology": {
+      "rss": 204877824,
+      "heapUsed": 15065112,
+      "arrayBuffers": 18254849,
+      "external": 30065964
+    },
+    "afterDigest": {
+      "rss": 213852160,
+      "heapUsed": 14973080,
+      "arrayBuffers": 15849244,
+      "external": 32686312
+    },
+    "ownedTopologyRetainedDelta": {
+      "rss": 4980736,
+      "heapUsed": -5875168,
+      "arrayBuffers": 5158170,
+      "external": 12870979
+    }
+  },
+  "diagnostics": {
+    "cells": 454913,
+    "chunks": 3465,
+    "liveMembers": 436576,
+    "directedEdges": 19240,
+    "typedBufferBytes": 2274565,
+    "storedNeighborSlots": 0,
+    "retainedVoxelRecords": 0
+  },
+  "steps": [
+    {
+      "step": 1,
+      "removedCells": 478,
+      "removeMs": 4.083222999999975,
+      "queryMs": 2.3915680000000066,
+      "pieces": 0,
+      "exactOrderedMembershipSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "step": 2,
+      "removedCells": 886,
+      "removeMs": 3.456397999999922,
+      "queryMs": 1.6371840000000475,
+      "pieces": 1,
+      "exactOrderedMembershipSha256": "ddea3c1b6468b3266c24ef8d1f4dd11f114f61a51497f991f5f6468d36eaba10"
+    },
+    {
+      "step": 3,
+      "removedCells": 1314,
+      "removeMs": 5.3587440000000015,
+      "queryMs": 3.221582000000012,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 4,
+      "removedCells": 604,
+      "removeMs": 3.3719839999999976,
+      "queryMs": 1.6894419999999855,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 5,
+      "removedCells": 880,
+      "removeMs": 3.7488989999999376,
+      "queryMs": 2.236760000000004,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 6,
+      "removedCells": 1363,
+      "removeMs": 3.440364999999929,
+      "queryMs": 1.30733900000007,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 7,
+      "removedCells": 489,
+      "removeMs": 1.8319520000000011,
+      "queryMs": 1.1938109999999824,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 8,
+      "removedCells": 1020,
+      "removeMs": 2.064975000000004,
+      "queryMs": 1.2417910000000347,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 9,
+      "removedCells": 1363,
+      "removeMs": 6.807380999999964,
+      "queryMs": 1.3167419999999765,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 10,
+      "removedCells": 478,
+      "removeMs": 3.579078999999979,
+      "queryMs": 0.8455169999999725,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 11,
+      "removedCells": 854,
+      "removeMs": 2.754022999999961,
+      "queryMs": 0.8632030000001123,
+      "pieces": 2,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 12,
+      "removedCells": 1523,
+      "removeMs": 3.211106000000086,
+      "queryMs": 0.8538089999999556,
+      "pieces": 3,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 13,
+      "removedCells": 481,
+      "removeMs": 1.774487000000022,
+      "queryMs": 1.0303800000000365,
+      "pieces": 3,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 14,
+      "removedCells": 882,
+      "removeMs": 2.3764750000000276,
+      "queryMs": 1.343751999999995,
+      "pieces": 4,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 15,
+      "removedCells": 1384,
+      "removeMs": 2.9824990000000753,
+      "queryMs": 1.2756019999999353,
+      "pieces": 4,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 16,
+      "removedCells": 604,
+      "removeMs": 1.71512000000007,
+      "queryMs": 1.6201099999999542,
+      "pieces": 4,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 17,
+      "removedCells": 880,
+      "removeMs": 2.3840169999999716,
+      "queryMs": 1.0899780000000874,
+      "pieces": 4,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 18,
+      "removedCells": 1332,
+      "removeMs": 3.4523719999999685,
+      "queryMs": 1.1022660000000997,
+      "pieces": 5,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 19,
+      "removedCells": 502,
+      "removeMs": 1.4839190000000144,
+      "queryMs": 1.0839289999998982,
+      "pieces": 5,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 20,
+      "removedCells": 1020,
+      "removeMs": 2.8908440000000155,
+      "queryMs": 1.2816510000000108,
+      "pieces": 5,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    }
+  ]
+}

@@ -1,0 +1,522 @@
+{
+  "scope": "isolated static full-city topology only; no Rapier world, rendering, browser, startup or frame-rate claim",
+  "node": "v24.19.0",
+  "platform": "linux",
+  "buildings": 36,
+  "legacyColumns": 16446,
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "initialUnsupported": 0,
+    "allStructuresExactlyMatchProduction": "verified in compact-support.test.ts; production source is not invoked in this benchmark"
+  },
+  "timings": {
+    "descriptorSetupMs": 12.478248000000008,
+    "sparseStructureGenerationMs": 73.475998,
+    "supportBuildMs": 25.186544999999967,
+    "initialSupportMs": 74.65072900000001,
+    "removals": {
+      "count": 20,
+      "totalMs": 4.354337999999359,
+      "medianMs": 0.15975600000001577,
+      "p95Ms": 0.4872879999999782,
+      "maxMs": 0.7391699999999446
+    },
+    "supportQueries": {
+      "count": 20,
+      "totalMs": 970.3499120000004,
+      "medianMs": 47.760718,
+      "p95Ms": 57.97871000000009,
+      "maxMs": 61.014544000000114
+    }
+  },
+  "memory": {
+    "gcAvailable": true,
+    "baseline": {
+      "rss": 87130112,
+      "heapUsed": 13922840,
+      "arrayBuffers": 212355,
+      "external": 4348117
+    },
+    "descriptorMemory": {
+      "rss": 93396992,
+      "heapUsed": 13992936,
+      "arrayBuffers": 614155,
+      "external": 4580368
+    },
+    "sourceMemory": {
+      "rss": 125149184,
+      "heapUsed": 26248960,
+      "arrayBuffers": 614155,
+      "external": 4530143
+    },
+    "afterBuild": {
+      "rss": 131497984,
+      "heapUsed": 29997832,
+      "arrayBuffers": 6461101,
+      "external": 10377089
+    },
+    "afterCuts": {
+      "rss": 135163904,
+      "heapUsed": 30219552,
+      "arrayBuffers": 6461101,
+      "external": 10407296
+    },
+    "descriptorDelta": {
+      "rss": 6266880,
+      "heapUsed": 70096,
+      "arrayBuffers": 401800,
+      "external": 232251
+    },
+    "sparseStructureDelta": {
+      "rss": 31752192,
+      "heapUsed": 12256024,
+      "arrayBuffers": 0,
+      "external": -50225
+    },
+    "supportBuildDelta": {
+      "rss": 6348800,
+      "heapUsed": 3748872,
+      "arrayBuffers": 5846946,
+      "external": 5846946
+    },
+    "note": "Requested --expose-gc; process snapshots after global.gc when available, not exact JS allocation counts, not peak RSS. Sparse Cell specs remain held in the benchmark. Map and object overhead are excluded from exact typed-buffer accounting."
+  },
+  "sourceAllocations": {
+    "groundCellObjects": 0,
+    "structureCellObjects": 53113,
+    "uniqueLegacyColumnRecordsAtFinish": 16446,
+    "note": "Logical representation counts, not total JS/V8 allocations; duplicate column writes, local building Maps and temporary position records are not individually instrumented."
+  },
+  "diagnostics": {
+    "groundCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "liveCells": 436576,
+    "buffers": {
+      "present": 454913,
+      "seen": 1819652,
+      "queue": 1819652,
+      "structureIds": 424904,
+      "structureCoordinates": 1274712,
+      "structureAnchors": 53113
+    },
+    "typedBufferBytes": 5846946,
+    "terrainDescriptorBytes": 401800,
+    "allocations": {
+      "groundCellObjects": 0,
+      "neighborObjects": 0,
+      "traversalQueueArrays": 1,
+      "typedArrays": 6,
+      "structurePositionMapEntries": 53113,
+      "structureIdMapEntries": 53113,
+      "cumulativeReturnedDisconnectedIds": 31353
+    },
+    "supportQueries": 21
+  },
+  "steps": [
+    {
+      "step": 1,
+      "at": {
+        "x": -102.5,
+        "y": -1,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 0.4872879999999782,
+      "supportMs": 46.16040399999997,
+      "pieces": 0,
+      "disconnectedCells": 0,
+      "minimumMemberIds": [],
+      "exactOrderedMembershipSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "step": 2,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 886,
+      "removeMs": 0.31969100000003436,
+      "supportMs": 56.53493299999991,
+      "pieces": 1,
+      "disconnectedCells": 580,
+      "minimumMemberIds": [
+        2059539
+      ],
+      "exactOrderedMembershipSha256": "ddea3c1b6468b3266c24ef8d1f4dd11f114f61a51497f991f5f6468d36eaba10"
+    },
+    {
+      "step": 3,
+      "at": {
+        "x": -24.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1314,
+      "removeMs": 0.7391699999999446,
+      "supportMs": 53.162777000000006,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 4,
+      "at": {
+        "x": 24.5,
+        "y": -5,
+        "z": 22.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 0.11046299999998155,
+      "supportMs": 57.71724999999992,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 5,
+      "at": {
+        "x": 77.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 0.15385700000001634,
+      "supportMs": 51.107538999999974,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 6,
+      "at": {
+        "x": 102.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 0.25972300000000814,
+      "supportMs": 42.108924,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 7,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": -22.5
+      },
+      "radius": 5.5,
+      "removedCells": 489,
+      "removeMs": 0.07927700000004734,
+      "supportMs": 42.60395300000005,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 8,
+      "at": {
+        "x": -24.5,
+        "y": -5,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 0.09410800000000563,
+      "supportMs": 51.38156300000003,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 9,
+      "at": {
+        "x": 23.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 0.3702459999999519,
+      "supportMs": 48.89699200000007,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 10,
+      "at": {
+        "x": 54.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 0.15975600000001577,
+      "supportMs": 42.37627700000007,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 11,
+      "at": {
+        "x": 101.5,
+        "y": -1,
+        "z": 22.5
+      },
+      "radius": 6.7,
+      "removedCells": 854,
+      "removeMs": 0.13493899999991754,
+      "supportMs": 40.61688499999991,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "minimumMemberIds": [
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 12,
+      "at": {
+        "x": -77.5,
+        "y": -5,
+        "z": -46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1523,
+      "removeMs": 0.18984000000000378,
+      "supportMs": 41.412857999999915,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "minimumMemberIds": [
+        2054310,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 13,
+      "at": {
+        "x": -23.5,
+        "y": -1,
+        "z": -46.5
+      },
+      "radius": 5.5,
+      "removedCells": 481,
+      "removeMs": 0.08833099999992555,
+      "supportMs": 61.014544000000114,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "minimumMemberIds": [
+        2054310,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 14,
+      "at": {
+        "x": 0.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 882,
+      "removeMs": 0.19595799999979135,
+      "supportMs": 57.97871000000009,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 15,
+      "at": {
+        "x": 53.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1384,
+      "removeMs": 0.3348229999999148,
+      "supportMs": 42.402687000000014,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 16,
+      "at": {
+        "x": 101.5,
+        "y": -5,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 0.04832099999998718,
+      "supportMs": 47.760718,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 17,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 0.13948600000003353,
+      "supportMs": 51.47797000000014,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 18,
+      "at": {
+        "x": -53.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 7.9,
+      "removedCells": 1332,
+      "removeMs": 0.29760799999985466,
+      "supportMs": 46.15536700000007,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2062579,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 19,
+      "at": {
+        "x": -0.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 5.5,
+      "removedCells": 502,
+      "removeMs": 0.07549100000005637,
+      "supportMs": 45.80385799999999,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2062579,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 20,
+      "at": {
+        "x": 54.5,
+        "y": -5,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 0.0759619999998904,
+      "supportMs": 43.67570300000011,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "minimumMemberIds": [
+        2054310,
+        2055554,
+        2059539,
+        2062579,
+        2064265
+      ],
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    }
+  ],
+  "caveats": [
+    "Full-city MIT graph is deliberately not generated here; equivalence is exact on bounded tests and 20-cut bounded A/B, with identical full-city initial content coverage.",
+    "Typed flood scans O(total indexed capacity), plus sorting returned member IDs; it is not a hierarchical incremental optimization.",
+    "Cuts are occupancy spheres, not gameplay HP/impulse/chain-impact evaluation. Unsupported cells remain in static graph until explicit departure; this run only queries them.",
+    "No whole-city metadata array, render Entries, neighbor arrays, native bodies or native colliders are constructed.",
+    "JS Maps retain two entries per structure cell. Terrain descriptor and source generator still have column-scale/transient allocations, reported separately."
+  ]
+}

@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {writeFileSync} from 'node:fs';
+import {CompactLattice} from '../incremental-support/incremental-support.ts';
+import {IndexedStructure} from '../incremental-support/indexed-structure.ts';
+import {encodePristine,decodePristine} from './codec.ts';
+import {validatePristine} from './pristine-validation.ts';
+import {citySource,currentRecipe,timed} from './source.ts';
+const sourceBuild=timed(citySource),s=sourceBuild.value,source=new CompactLattice(s.store,s.input),recipe=currentRecipe();
+const build=timed(()=>new IndexedStructure(source,recipe.seed)),encoding=timed(()=>encodePristine(source,build.value,recipe));
+const again=timed(()=>encodePristine(source,new IndexedStructure(source,recipe.seed),recipe));assert.deepEqual(again.value.bytes,encoding.value.bytes);
+const decoded=decodePristine(encoding.value.bytes,encoding.value.manifest),hydrated=IndexedStructure.fromPristine(source,validatePristine(source,decoded));
+assert.deepEqual(hydrated.chunk,build.value.chunk);assert.deepEqual(hydrated.chunks,build.value.chunks);assert.deepEqual(hydrated.unsupported(),[]);
+writeFileSync(new URL('./city-seed-11.bin',import.meta.url),encoding.value.bytes);writeFileSync(new URL('./city-seed-11.manifest.json',import.meta.url),JSON.stringify(encoding.value.manifest,null,2)+'\n');
+const result={scope:'Offline asset preparation, independently costed; Node only, no production/browser integration',bytes:encoding.value.bytes.length,manifest:encoding.value.manifest,timing:{sourceMs:sourceBuild.ms,originalPartitionBuildMs:build.ms,encodeAndFullValidationMs:encoding.ms,independentRegenerationAndEncodeMs:again.ms},byteForByteReproducible:true,exactAllMembersRootsEdgeOrderRoundTrip:true,setup:build.value.setup,sourceAllocations:s.sourceAllocations};
+writeFileSync(new URL('./generation-result.json',import.meta.url),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify({bytes:result.bytes,timing:result.timing,recipeSha256:encoding.value.manifest.recipeSha256,chunkCount:hydrated.chunks.length}));

@@ -1,0 +1,125 @@
+{
+  "samples": 3,
+  "processOrder": "incremental1, oracle1, incremental2, oracle2, incremental3, oracle3, strictly serial fresh Node processes",
+  "exactOrderedHashParityAll120Queries": true,
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36,
+    "initialUnsupported": 0
+  },
+  "totalRemoved": 18337,
+  "finalDisconnected": 3172,
+  "incremental": {
+    "descriptorMs": [
+      9.94117399999999,
+      10.62331900000001
+    ],
+    "structureSourceAndStoreMs": [
+      92.58223600000002,
+      94.46671600000002
+    ],
+    "supportSetupMs": [
+      1846.829558,
+      1909.400861
+    ],
+    "initialQueryMs": [
+      2.8966020000002572,
+      3.3855140000000574
+    ],
+    "queryMedianMs": [
+      1.1047100000000682,
+      1.2760520000001634
+    ],
+    "queryP95Ms": [
+      2.1134170000000267,
+      2.493829000000005
+    ],
+    "queryMaxMs": [
+      2.300373000000036,
+      13.199268000000302
+    ],
+    "cutMedianMs": [
+      2.7134530000002997,
+      3.3067370000003393
+    ],
+    "cutP95Ms": [
+      3.992899000000307,
+      4.561649000000216
+    ],
+    "retainedHeapDelta": [
+      6660608,
+      6667016
+    ],
+    "retainedArrayBufferDelta": [
+      5172676,
+      5172676
+    ],
+    "rssDelta": [
+      151228416,
+      151699456
+    ]
+  },
+  "oracle": {
+    "descriptorMs": [
+      9.091579999999993,
+      11.756320000000017
+    ],
+    "structureSourceAndStoreMs": [
+      59.29778299999998,
+      72.31766900000002
+    ],
+    "supportSetupMs": [
+      20.283547999999996,
+      23.33402799999999
+    ],
+    "initialQueryMs": [
+      63.765984,
+      110.10513699999996
+    ],
+    "queryMedianMs": [
+      41.503205999999864,
+      42.55011000000002
+    ],
+    "queryP95Ms": [
+      44.70398799999998,
+      47.02237600000001
+    ],
+    "queryMaxMs": [
+      46.146503999999936,
+      48.933626000000004
+    ],
+    "cutMedianMs": [
+      0.12662699999998495,
+      0.14993100000003778
+    ],
+    "cutP95Ms": [
+      0.3859390000000076,
+      0.4505339999999478
+    ],
+    "retainedHeapDelta": [
+      4150984,
+      4160712
+    ],
+    "retainedArrayBufferDelta": [
+      6248746,
+      6248746
+    ],
+    "rssDelta": [
+      47988736,
+      52588544
+    ]
+  },
+  "seedCutMs": [
+    1680.55823,
+    1735.158086,
+    1701.7334199999998
+  ],
+  "geologySeedCutMs": [
+    1450.189157,
+    1495.145002,
+    1480.981147
+  ],
+  "exactIncrementalTypedBytes": 5172676
+}

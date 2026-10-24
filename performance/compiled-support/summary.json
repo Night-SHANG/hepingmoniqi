@@ -1,0 +1,178 @@
+{
+  "serialFreshProcessOrder": "uncached1, cold1, warm1, uncached2, cold2, warm2, uncached3, cold3, warm3",
+  "coldMeaning": "Fresh-process first read, OS filesystem cache not flushed",
+  "samplesPerMode": 3,
+  "all180OrderedOutputHashesMatchIndependentOracle": true,
+  "artifactBytes": 3857400,
+  "recipeSha256": "dce531bddd565432c03fd5f4ce31cac5c0399424430f8b51206fb8342f1e67e9",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36
+  },
+  "ranges": {
+    "uncached": {
+      "supportTotalMs": [
+        1810.8969169999998,
+        2014.211548
+      ],
+      "decodeMs": [
+        0,
+        0
+      ],
+      "fullValidateMs": [
+        0,
+        0
+      ],
+      "hydrateMs": [
+        0,
+        0
+      ],
+      "queryMedianMs": [
+        1.117757999999867,
+        1.4254110000001674
+      ],
+      "queryP95Ms": [
+        2.140404000000217,
+        2.499963999999636
+      ],
+      "queryMaxMs": [
+        2.183288000000175,
+        2.6065819999998894
+      ],
+      "cutMedianMs": [
+        2.7868600000001607,
+        3.006260999999995
+      ],
+      "retainedHeapBytes": [
+        6680872,
+        6686384
+      ],
+      "retainedTypedBytes": [
+        5172676,
+        5172676
+      ],
+      "retainedRSSDelta": [
+        153391104,
+        154873856
+      ],
+      "graphReleaseTypedBytes": [
+        -2274565,
+        -1819652
+      ],
+      "graphReleaseHeapBytes": [
+        -6018072,
+        -6009944
+      ]
+    },
+    "compiled-cold": {
+      "supportTotalMs": [
+        431.57620199999997,
+        491.728293
+      ],
+      "decodeMs": [
+        11.991665000000012,
+        14.090257000000008
+      ],
+      "fullValidateMs": [
+        395.10848300000004,
+        450.68846599999995
+      ],
+      "hydrateMs": [
+        16.201359000000025,
+        19.611283999999955
+      ],
+      "queryMedianMs": [
+        1.1865389999999252,
+        1.3364190000000917
+      ],
+      "queryP95Ms": [
+        2.020919000000049,
+        2.515286999999944
+      ],
+      "queryMaxMs": [
+        3.252222999999958,
+        3.6669840000000704
+      ],
+      "cutMedianMs": [
+        2.860116000000062,
+        3.2476070000000163
+      ],
+      "retainedHeapBytes": [
+        6602328,
+        6604688
+      ],
+      "retainedTypedBytes": [
+        5172676,
+        5172676
+      ],
+      "retainedRSSDelta": [
+        84324352,
+        86188032
+      ],
+      "graphReleaseTypedBytes": [
+        -2274565,
+        -2274565
+      ],
+      "graphReleaseHeapBytes": [
+        -5882344,
+        -5878656
+      ]
+    },
+    "compiled-warm": {
+      "supportTotalMs": [
+        446.62971400000004,
+        516.9502640000001
+      ],
+      "decodeMs": [
+        11.693444999999997,
+        12.431390999999962
+      ],
+      "fullValidateMs": [
+        415.74970199999996,
+        485.672245
+      ],
+      "hydrateMs": [
+        12.119873000000098,
+        17.465250999999853
+      ],
+      "queryMedianMs": [
+        1.0564369999999599,
+        1.9473100000000159
+      ],
+      "queryP95Ms": [
+        1.904988000000003,
+        3.3295069999999214
+      ],
+      "queryMaxMs": [
+        1.9883310000000165,
+        4.748849000000064
+      ],
+      "cutMedianMs": [
+        2.833797000000004,
+        3.5246839999999793
+      ],
+      "retainedHeapBytes": [
+        6377488,
+        6625952
+      ],
+      "retainedTypedBytes": [
+        5172676,
+        5172676
+      ],
+      "retainedRSSDelta": [
+        93696000,
+        97816576
+      ],
+      "graphReleaseTypedBytes": [
+        -2274565,
+        -2274565
+      ],
+      "graphReleaseHeapBytes": [
+        -5888664,
+        -5878824
+      ]
+    }
+  }
+}

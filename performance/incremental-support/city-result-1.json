@@ -1,0 +1,675 @@
+{
+  "scope": "Isolated unchanged samecity topology, no Rapier/browser/render/gameplay performance claim",
+  "kind": "incremental",
+  "node": "v24.19.0",
+  "platform": "linux",
+  "coverage": {
+    "terrainCells": 401800,
+    "structureCells": 53113,
+    "totalCells": 454913,
+    "buildings": 36,
+    "initialUnsupported": 0
+  },
+  "exactOrderedCityOutputsMatchOracleAfterEveryCut": true,
+  "timings": {
+    "descriptorSetupMs": 9.969356000000005,
+    "structureSourceAndStoreMs": 94.46671600000002,
+    "storePackingMs": 22.869777,
+    "supportBuildMs": 1846.829558,
+    "initialSupportMs": 3.3855140000000574,
+    "removals": {
+      "count": 20,
+      "totalMs": 55.81696299999976,
+      "medianMs": 2.9190550000002986,
+      "p95Ms": 4.055993000000399,
+      "maxMs": 4.20602400000007
+    },
+    "supportQueries": {
+      "count": 20,
+      "totalMs": 35.64167200000156,
+      "medianMs": 1.1047100000000682,
+      "p95Ms": 2.224941999999828,
+      "maxMs": 13.199268000000302
+    }
+  },
+  "memory": {
+    "gcAvailable": true,
+    "baseline": {
+      "rss": 122736640,
+      "heapUsed": 14112840,
+      "arrayBuffers": 343859,
+      "external": 4430453
+    },
+    "descriptorMemory": {
+      "rss": 130019328,
+      "heapUsed": 14180128,
+      "arrayBuffers": 745659,
+      "external": 4711856
+    },
+    "sourceMemory": {
+      "rss": 164122624,
+      "heapUsed": 14377592,
+      "arrayBuffers": 3241970,
+      "external": 7157942
+    },
+    "afterBuild": {
+      "rss": 272871424,
+      "heapUsed": 20700896,
+      "arrayBuffers": 5516535,
+      "external": 9432507
+    },
+    "afterCuts": {
+      "rss": 274370560,
+      "heapUsed": 20777648,
+      "arrayBuffers": 5516535,
+      "external": 9462714
+    },
+    "descriptorDelta": {
+      "rss": 7282688,
+      "heapUsed": 67288,
+      "arrayBuffers": 401800,
+      "external": 281403
+    },
+    "sourceDelta": {
+      "rss": 34103296,
+      "heapUsed": 197464,
+      "arrayBuffers": 2496311,
+      "external": 2446086
+    },
+    "supportDelta": {
+      "rss": 108748800,
+      "heapUsed": 6323304,
+      "arrayBuffers": 2274565,
+      "external": 2274565
+    },
+    "combinedRetainedDelta": {
+      "rss": 151633920,
+      "heapUsed": 6664808,
+      "arrayBuffers": 5172676,
+      "external": 5032261
+    },
+    "note": "Source Cell specs are released before afterBuild GC in both modes. Incremental packs full compact structure state, oracle retains its topology-only snapshot instead. No ground Cell calls permitted. Post-GC process values, not peak RSS or exact allocations; delta from sourceMemory includes release of oracle specs."
+  },
+  "diagnostics": {
+    "cells": 454913,
+    "chunks": 3465,
+    "liveMembers": 436576,
+    "directedEdges": 19240,
+    "typedBufferBytes": 2274565,
+    "storedNeighborSlots": 0,
+    "retainedVoxelRecords": 0,
+    "groundCells": 401800,
+    "structureCells": 53113,
+    "structureStore": {
+      "cellCount": 53113,
+      "changedCells": 0,
+      "poseRecords": 0,
+      "internedObjectIds": 47,
+      "retainedCellObjects": 0,
+      "positionStringMapEntries": 0,
+      "typedBytes": 2496311
+    },
+    "terrainDescriptor": {
+      "cellCount": 401800,
+      "mutableChunks": 0,
+      "mutableBytes": 0,
+      "columnIndexBytes": 401800,
+      "changedCells": 0,
+      "movingPoseRecords": 0
+    },
+    "setup": {
+      "groupMs": 13.761083999999983,
+      "cutMs": 1680.55823,
+      "edgesMs": 144.95445700000028,
+      "cutObjects": [
+        {
+          "objectId": "game:city:geology",
+          "cells": 401800,
+          "ms": 1450.189157
+        },
+        {
+          "objectId": "warm:city:road",
+          "cells": 3198,
+          "ms": 26.718177999999853
+        },
+        {
+          "objectId": "warm:city:tree-01",
+          "cells": 60,
+          "ms": 0.7912570000000869
+        },
+        {
+          "objectId": "warm:city:building-04",
+          "cells": 1376,
+          "ms": 9.279465000000073
+        },
+        {
+          "objectId": "warm:city:building-22",
+          "cells": 1376,
+          "ms": 5.074244000000363
+        },
+        {
+          "objectId": "warm:city:building-19",
+          "cells": 345,
+          "ms": 1.445071999999982
+        },
+        {
+          "objectId": "warm:city:building-01",
+          "cells": 345,
+          "ms": 1.6072810000000572
+        },
+        {
+          "objectId": "warm:city:tree-02",
+          "cells": 60,
+          "ms": 0.3483339999997952
+        },
+        {
+          "objectId": "warm:city:building-23",
+          "cells": 1014,
+          "ms": 3.740787999999611
+        },
+        {
+          "objectId": "warm:city:building-02",
+          "cells": 760,
+          "ms": 3.700578000000405
+        },
+        {
+          "objectId": "warm:city:building-05",
+          "cells": 1014,
+          "ms": 4.950572000000193
+        },
+        {
+          "objectId": "warm:city:building-20",
+          "cells": 760,
+          "ms": 5.601022000000285
+        },
+        {
+          "objectId": "warm:city:tree-03",
+          "cells": 60,
+          "ms": 0.7828150000000278
+        },
+        {
+          "objectId": "warm:city:building-24",
+          "cells": 2184,
+          "ms": 12.486231000000316
+        },
+        {
+          "objectId": "warm:city:building-06",
+          "cells": 2184,
+          "ms": 13.114282000000003
+        },
+        {
+          "objectId": "warm:city:building-03",
+          "cells": 433,
+          "ms": 1.9697559999999612
+        },
+        {
+          "objectId": "warm:city:building-21",
+          "cells": 433,
+          "ms": 1.7937859999997272
+        },
+        {
+          "objectId": "warm:city:building-07",
+          "cells": 1547,
+          "ms": 7.694368999999824
+        },
+        {
+          "objectId": "warm:city:building-25",
+          "cells": 1547,
+          "ms": 6.986594999999852
+        },
+        {
+          "objectId": "warm:city:building-28",
+          "cells": 345,
+          "ms": 1.1215539999998327
+        },
+        {
+          "objectId": "warm:city:building-10",
+          "cells": 345,
+          "ms": 1.1157359999997425
+        },
+        {
+          "objectId": "warm:city:tree-04",
+          "cells": 60,
+          "ms": 0.23786000000018248
+        },
+        {
+          "objectId": "warm:city:building-08",
+          "cells": 1728,
+          "ms": 5.974262000000181
+        },
+        {
+          "objectId": "warm:city:building-11",
+          "cells": 760,
+          "ms": 2.5354600000000573
+        },
+        {
+          "objectId": "warm:city:building-29",
+          "cells": 760,
+          "ms": 2.5159300000000258
+        },
+        {
+          "objectId": "warm:city:building-26",
+          "cells": 1728,
+          "ms": 5.8169990000001235
+        },
+        {
+          "objectId": "warm:city:bridge-01",
+          "cells": 79,
+          "ms": 0.2979000000000269
+        },
+        {
+          "objectId": "warm:city:tree-05",
+          "cells": 60,
+          "ms": 0.2469850000002225
+        },
+        {
+          "objectId": "warm:city:building-09",
+          "cells": 2937,
+          "ms": 11.089717000000292
+        },
+        {
+          "objectId": "warm:city:building-27",
+          "cells": 2937,
+          "ms": 10.108770000000277
+        },
+        {
+          "objectId": "warm:city:building-12",
+          "cells": 433,
+          "ms": 1.461815999999999
+        },
+        {
+          "objectId": "warm:city:building-30",
+          "cells": 433,
+          "ms": 1.547613000000183
+        },
+        {
+          "objectId": "warm:city:tree-06",
+          "cells": 60,
+          "ms": 0.2444510000000264
+        },
+        {
+          "objectId": "warm:city:building-16",
+          "cells": 1547,
+          "ms": 5.64828099999977
+        },
+        {
+          "objectId": "warm:city:building-13",
+          "cells": 1376,
+          "ms": 4.890503000000081
+        },
+        {
+          "objectId": "warm:city:building-34",
+          "cells": 1547,
+          "ms": 5.102625999999873
+        },
+        {
+          "objectId": "warm:city:building-31",
+          "cells": 1376,
+          "ms": 7.351822999999968
+        },
+        {
+          "objectId": "warm:city:tree-07",
+          "cells": 60,
+          "ms": 0.272132000000056
+        },
+        {
+          "objectId": "warm:city:building-14",
+          "cells": 1014,
+          "ms": 3.5820629999998346
+        },
+        {
+          "objectId": "warm:city:building-17",
+          "cells": 1728,
+          "ms": 6.123340999999982
+        },
+        {
+          "objectId": "warm:city:building-32",
+          "cells": 1014,
+          "ms": 3.4463529999998173
+        },
+        {
+          "objectId": "warm:city:building-35",
+          "cells": 1728,
+          "ms": 5.428987999999663
+        },
+        {
+          "objectId": "warm:city:tree-08",
+          "cells": 60,
+          "ms": 0.3235570000001644
+        },
+        {
+          "objectId": "warm:city:building-15",
+          "cells": 2184,
+          "ms": 7.881203999999798
+        },
+        {
+          "objectId": "warm:city:building-18",
+          "cells": 2937,
+          "ms": 10.662626999999702
+        },
+        {
+          "objectId": "warm:city:building-33",
+          "cells": 2184,
+          "ms": 7.01705899999979
+        },
+        {
+          "objectId": "warm:city:building-36",
+          "cells": 2937,
+          "ms": 9.784570999999687
+        },
+        {
+          "objectId": "warm:city:tree-09",
+          "cells": 60,
+          "ms": 0.26810500000010506
+        }
+      ]
+    }
+  },
+  "sourceAllocations": {
+    "groundCellObjects": 0,
+    "structureCellObjects": 53113,
+    "uniqueLegacyColumnRecordsAtFinish": 16446
+  },
+  "steps": [
+    {
+      "step": 1,
+      "at": {
+        "x": -102.5,
+        "y": -1,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 4.055993000000399,
+      "supportMs": 2.224941999999828,
+      "pieces": 0,
+      "disconnectedCells": 0,
+      "exactOrderedMembershipSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "step": 2,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 886,
+      "removeMs": 3.5875209999999242,
+      "supportMs": 1.3090310000002319,
+      "pieces": 1,
+      "disconnectedCells": 580,
+      "exactOrderedMembershipSha256": "ddea3c1b6468b3266c24ef8d1f4dd11f114f61a51497f991f5f6468d36eaba10"
+    },
+    {
+      "step": 3,
+      "at": {
+        "x": -24.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1314,
+      "removeMs": 3.6293930000001637,
+      "supportMs": 1.8640699999996286,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 4,
+      "at": {
+        "x": 24.5,
+        "y": -5,
+        "z": 22.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 2.198311999999987,
+      "supportMs": 1.5896150000003217,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 5,
+      "at": {
+        "x": 77.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 2.5794839999998658,
+      "supportMs": 13.199268000000302,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 6,
+      "at": {
+        "x": 102.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 3.6722359999998844,
+      "supportMs": 1.0120529999999235,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 7,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": -22.5
+      },
+      "radius": 5.5,
+      "removedCells": 489,
+      "removeMs": 2.003925999999865,
+      "supportMs": 0.8235249999997905,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 8,
+      "at": {
+        "x": -24.5,
+        "y": -5,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 2.0484510000001137,
+      "supportMs": 0.9409680000003391,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 9,
+      "at": {
+        "x": 23.5,
+        "y": -1,
+        "z": -45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1363,
+      "removeMs": 4.20602400000007,
+      "supportMs": 0.7970159999999851,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 10,
+      "at": {
+        "x": 54.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 5.5,
+      "removedCells": 478,
+      "removeMs": 3.5258499999999913,
+      "supportMs": 0.8084320000002663,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 11,
+      "at": {
+        "x": 101.5,
+        "y": -1,
+        "z": 22.5
+      },
+      "radius": 6.7,
+      "removedCells": 854,
+      "removeMs": 2.6120120000000497,
+      "supportMs": 0.8738690000000133,
+      "pieces": 2,
+      "disconnectedCells": 743,
+      "exactOrderedMembershipSha256": "396fd0e286e647b65079d656d458834819fb35b3b219a474ec0d41046218c5ec"
+    },
+    {
+      "step": 12,
+      "at": {
+        "x": -77.5,
+        "y": -5,
+        "z": -46.5
+      },
+      "radius": 7.9,
+      "removedCells": 1523,
+      "removeMs": 2.947276999999758,
+      "supportMs": 0.8855160000002797,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 13,
+      "at": {
+        "x": -23.5,
+        "y": -1,
+        "z": -46.5
+      },
+      "radius": 5.5,
+      "removedCells": 481,
+      "removeMs": 1.790780999999697,
+      "supportMs": 1.0548250000001644,
+      "pieces": 3,
+      "disconnectedCells": 1395,
+      "exactOrderedMembershipSha256": "28a9490a0cb84504d6ba47d29525eb94b23da18372928ad9f7c8d4e9e43925ea"
+    },
+    {
+      "step": 14,
+      "at": {
+        "x": 0.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 6.7,
+      "removedCells": 882,
+      "removeMs": 2.9190550000002986,
+      "supportMs": 1.48767399999997,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 15,
+      "at": {
+        "x": 53.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 7.9,
+      "removedCells": 1384,
+      "removeMs": 3.1552029999998012,
+      "supportMs": 1.189715000000433,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 16,
+      "at": {
+        "x": 101.5,
+        "y": -5,
+        "z": -21.5
+      },
+      "radius": 5.5,
+      "removedCells": 604,
+      "removeMs": 1.5353039999999964,
+      "supportMs": 1.052712000000156,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 17,
+      "at": {
+        "x": -78.5,
+        "y": -1,
+        "z": 46.5
+      },
+      "radius": 6.7,
+      "removedCells": 880,
+      "removeMs": 1.9528100000002269,
+      "supportMs": 1.1047100000000682,
+      "pieces": 4,
+      "disconnectedCells": 2945,
+      "exactOrderedMembershipSha256": "d1a66c2988971b990ec2279b66f9ad48ce18b559fa2fd7f62d0627f4f617cd21"
+    },
+    {
+      "step": 18,
+      "at": {
+        "x": -53.5,
+        "y": -1,
+        "z": 21.5
+      },
+      "radius": 7.9,
+      "removedCells": 1332,
+      "removeMs": 3.246718999999757,
+      "supportMs": 1.191968000000088,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 19,
+      "at": {
+        "x": -0.5,
+        "y": -1,
+        "z": 45.5
+      },
+      "radius": 5.5,
+      "removedCells": 502,
+      "removeMs": 1.4598329999998896,
+      "supportMs": 1.1346639999997024,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    },
+    {
+      "step": 20,
+      "at": {
+        "x": 54.5,
+        "y": -5,
+        "z": -45.5
+      },
+      "radius": 6.7,
+      "removedCells": 1020,
+      "removeMs": 2.6907790000000205,
+      "supportMs": 1.097099000000071,
+      "pieces": 5,
+      "disconnectedCells": 3172,
+      "exactOrderedMembershipSha256": "85d969c5ebf12b60bbc85b66fcc4fbd3b9ce29f71dbe9abfd8f5c075a8a4e02b"
+    }
+  ]
+}

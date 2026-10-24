@@ -34,3 +34,17 @@ Acceptance requires identical occupancy/color/collision and fresh reset state,
 real Windows CMD cache behavior, and actual Linux graphical entry/reset. A
 0.33-second packing improvement alone is not a claim that 8-second loading is
 fixed on the user's machine. Main and the previous game build remain intact.
+
+## First real runner results and order caveat
+
+Run 40111967962: both native jobs passed. Windows headless session CPU was
+1389.957 ms baseline versus 808.580 ms prebuilt; renderer preparation was
+630.385 versus 36.153 ms. Reset was 1369.137 versus 801.389 ms.
+Linux Mesa first ready draw was 4926.229 ms from engine start for the first
+baseline process versus 1905.371 ms for the subsequent prebuilt process.
+That end-to-end comparison is confounded by process order and shader/file cache
+warming and MUST NOT be advertised as a 3-second code improvement. The reset
+comparisons were 1585.856 versus 1357.709 ms from session entry. The next
+bounded runner sequence is A/B/B/A, separate processes, each with a real R reset.
+No hardware GPU cache isolation is claimed; shared warm-state results are
+reported separately from the first cold process.

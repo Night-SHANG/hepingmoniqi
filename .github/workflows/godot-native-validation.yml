@@ -39,6 +39,8 @@ jobs:
         run: |
           xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd -- --native-startup-baseline
           xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd
+          xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd
+          xvfb-run -a python3 tools/profile-startup-process.py -- "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/qa-startup/run.gd -- --native-startup-baseline
       - name: Actual software-rendered interaction and screenshots
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
@@ -68,6 +70,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Baseline startup probe failed' }
           python tools/profile-startup-process.py -- "$env:GODOT" --headless --path . --script tests/qa-startup/run.gd
           if ($LASTEXITCODE -ne 0) { throw 'Prebuilt startup probe failed' }
+          python tools/profile-startup-process.py -- "$env:GODOT" --headless --path . --script tests/qa-startup/run.gd
+          if ($LASTEXITCODE -ne 0) { throw 'Second prebuilt startup probe failed' }
+          python tools/profile-startup-process.py -- "$env:GODOT" --headless --path . --script tests/qa-startup/run.gd -- --native-startup-baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Second baseline startup probe failed' }
       - name: Execute actual Windows package and extension
         shell: pwsh
         run: |

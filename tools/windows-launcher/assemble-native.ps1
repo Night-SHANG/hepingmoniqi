@@ -46,6 +46,7 @@ $mergeTimer.Stop()
 function Get-VerifiedInventory {
     # Only read the manifest INSIDE the just-authenticated archive. A manifest
     # lying beside a cached EXE is not evidence that the EXE is authentic.
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [IO.Compression.ZipFile]::OpenRead($output)
     try {

@@ -140,6 +140,7 @@ foreach ($file in @(Get-ChildItem -LiteralPath $fixtureRoot -File)) {
 # Pin ZIP entry separators rather than depending on the runner's bundled
 # Compress-Archive module version (older Windows modules used backslashes).
 # Production still executes its real Expand-Archive operation.
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $fixtureArchive = [IO.Compression.ZipFile]::Open($fixtureZip, [IO.Compression.ZipArchiveMode]::Create)
 try {

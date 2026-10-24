@@ -14,15 +14,17 @@ try{
  await page.goto(process.env.GAME_URL??'http://127.0.0.1:5193/',{waitUntil:'networkidle',timeout:120000});
  await page.waitForFunction(()=>!!window.__previewAB);await heap('empty');
  // Two actual button selections per mode, then ten alternating switches.
- for(const [i,mode]of ['old','compact','old','compact',...Array.from({length:10},(_,i)=>i%2?'compact':'old')].entries()){
+ for(const [i,mode]of ['compact','compact','old','compact','old','old',...Array.from({length:8},(_,i)=>i%2?'compact':'old')].entries()){
   mark('select',{i,mode});const count=await page.evaluate(()=>window.__previewAB.records().length);
   await page.locator(`#${mode}`).click({timeout:120000});
   await page.waitForFunction(n=>window.__previewAB.active()&&window.__previewAB.records().length>n,count,{timeout:120000});
   const record=await page.evaluate(()=>window.__previewAB.records().at(-1));assert.equal(record.mode,mode);
   const triangles=mode==='old'?153715*12:203018*2;assert.equal(record.draw.triangles,triangles);
   assert.ok(Number.isFinite(record.cpuBuildMs)&&record.cpuBuildMs>=0);result.runs.push({index:i,...record});
-  if(i<2)await screenshot(mode);await heap(`selected-${i}-${mode}`);
+  assert.equal(record.quietFrameRenderCount,0,'timing callbacks must not queue additional city renders');await heap(`selected-${i}-${mode}`);
  }
+ // Screenshots are deliberately outside every timing sequence.
+ for(const mode of ['old','compact']){const count=await page.evaluate(()=>window.__previewAB.records().length);await page.locator(`#${mode}`).click();await page.waitForFunction(n=>window.__previewAB.records().length>n,count);await screenshot(mode);}
  await page.locator('#clear').click();assert.equal(await page.evaluate(()=>window.__previewAB.active()),false);
  await heap('cleared');await heap('cleared',true);
  assert.deepEqual(errors,[]);result.errors=errors;result.note='Screenshot review required. Timings report input dispatch, CPU construction, render submission and later rAF opportunity separately; no compositor/FPS inference.';

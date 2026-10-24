@@ -26,8 +26,8 @@ async function saved(){await wait(()=>!window.__heping.saveStatus().pending);con
 async function tools(ids){for(const id of ['charge','pulse','shock','echo','split','phase','heavy','nova']){const b=page.locator(`[data-free-tool="${id}"]`),selected=await b.getAttribute('aria-pressed')==='true';if(selected!==ids.includes(id)){await b.scrollIntoViewIfNeeded();await b.click();}}}
 async function aimSoil(map){
  const ids={courtyard:-1383,neighborhood:-4264,city:-4649},v=await page.evaluate(id=>window.__heping.voxels().find(v=>v.id===id),ids[map]);assert.ok(v?.role==='terrain','Native-proven soil ID must exist');
- const p=await page.evaluate(point=>window.__heping.project(point),v.position);assert.ok(p.visible);assert.ok(await page.evaluate(p=>document.elementFromPoint(p.x,p.y)?.tagName==='CANVAS',p),'Target must not be covered by UI');
- await page.mouse.click(p.x,p.y);assert.equal((await read()).surface?.voxelId,v.id,'Actual ray hit must match native preflight');return v;
+ const p=await page.evaluate(point=>window.__heping.project(point),{...v.position,y:v.position.y+.5});assert.ok(p.visible);assert.ok(await page.evaluate(p=>document.elementFromPoint(p.x,p.y)?.tagName==='CANVAS',p),'Target must not be covered by UI');
+ await page.mouse.click(p.x,p.y);const surface=(await read()).surface;assert.equal(surface?.voxelId,v.id,'Actual top-face ray hit must match native preflight');assert.ok(surface.normal.y>.99&&Math.abs(surface.position.x-v.position.x)<.1&&Math.abs(surface.position.z-v.position.z)<.1,'Aim must hit inside the soil top face, not a shared-cell boundary');return v;
 }
 
 try{

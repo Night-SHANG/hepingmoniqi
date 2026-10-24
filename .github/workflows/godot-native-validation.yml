@@ -2,6 +2,11 @@ name: Godot native validation
 on:
   push:
     branches: [godot-validation]
+    paths-ignore:
+      - 'tools/windows-launcher/**'
+      - 'tests/windows-launcher/**'
+      - '.github/workflows/godot-launcher-validation.yml'
+      - '.github/workflows/godot-native-validation.yml'
   workflow_dispatch:
 permissions:
   contents: read

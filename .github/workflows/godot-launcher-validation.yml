@@ -1,0 +1,25 @@
+name: Godot Windows launcher validation
+on:
+  push:
+    branches: [godot-validation]
+    paths:
+      - 'tools/windows-launcher/**'
+      - 'tests/windows-launcher/**'
+      - '.github/workflows/godot-launcher-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-launcher:
+    if: ${{ github.event.repository.private == false }}
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Actual CMD and Windows PowerShell launcher regression
+        shell: powershell
+        run: |
+          & .\tests\windows-launcher\test.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Launcher regression failed' }

@@ -93,13 +93,13 @@ test('independent formal: progression may seed free mode but a free-mode save ca
  }finally{main.suspend();free.suspend();}
 });
 
-test('independent formal: real camera grenade at the browser roof target earns research before settlement',async()=>{
+test('independent formal: real camera grenade at the browser wall ray surface earns research before settlement',async()=>{
  const THREE=await import('three'),{getEnvironmentSpec}=await import('../scene-environments.js'),{getSceneLaunchOrigin}=await import('../scene.js');
  const w=createStructuralGameWorld();let p:Awaited<ReturnType<typeof createProjectilePhysics>>|undefined;
  try{
-  await w.restore(legacy());await w.startRound('courtyard',stock());const roof=w.getVoxel(803)!;assert.equal(roof.group,'house');const spec=getEnvironmentSpec('courtyard',{authoritative:true});
+  await w.restore(legacy());await w.startRound('courtyard',stock());const roof=w.getVoxel(360)!;assert.equal(roof.group,'house');const spec=getEnvironmentSpec('courtyard',{authoritative:true});
   const camera=new THREE.PerspectiveCamera(42,1440/900,spec.camera.near,spec.camera.far);camera.position.set(...spec.camera.position);camera.lookAt(new THREE.Vector3(...spec.camera.target));camera.updateMatrixWorld();
-  const target={...roof.position,y:roof.position.y+.5};p=await createProjectilePhysics({host:w.physicsHost!,onDetonation:e=>w.damage({id:e.id,epoch:e.epoch,target:e.position,weapon:e.weapon,power:e.power})});
+  const {createVoxelInstanceRenderer}=await import('../voxel-renderer.js');const renderer=createVoxelInstanceRenderer(new THREE.Scene(),new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial());renderer.set(w.getVoxels());renderer.mesh.updateMatrixWorld();const projected=new THREE.Vector3(roof.position.x,roof.position.y,roof.position.z).project(camera);const pixel={x:(projected.x+1)*720,y:(1-projected.y)*450},ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(pixel.x/720-1,1-pixel.y/450),camera);const hit=ray.intersectObject(renderer.mesh)[0];assert.equal(renderer.getVoxel(hit.instanceId!)?.id,360);const target={x:hit.point.x,y:hit.point.y,z:hit.point.z};assert.ok(Math.abs(target.z-5.5)<1e-6);renderer.dispose();p=await createProjectilePhysics({host:w.physicsHost!,onDetonation:e=>w.damage({id:e.id,epoch:e.epoch,target:e.position,weapon:e.weapon,power:e.power})});
   w.recordShot('charge');assert.ok(p.launch({id:'main-ui-grenade',epoch:w.epoch,origin:getSceneLaunchOrigin(camera,target),target,weapon:'charge',power:1}));
   for(let i=0;i<1800&&w.pending();i++)p.step(1/120);assert.equal(w.pending(),0);assert.ok(w.getResearch()>1400);assert.ok(w.finishRound().researchEarned>0);
  }finally{p?.dispose();w.suspend();}

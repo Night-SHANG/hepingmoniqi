@@ -18,7 +18,7 @@ export type AuthorityCommand=AuthorityCommandBase & (
  |{kind:'dispose'}
 );
 export interface AuthorityClock {
- foregroundEligibleMs:number;requestedSimulationMs:number;processedSimulationMs:number;simulationDebtMs:number;
+ foregroundEligibleMs:number;requestedSimulationMs:number;processedSimulationMs:number;simulationDebtMs:number;peakSimulationDebtMs:number;
  /** Idle quanta do not invoke Rapier: the existing kernel deliberately sleeps an idle world. */
  processedQuanta:number;solverSteps:number;discardedSimulationMs:number;discardedByResetMs:number;
  transitionWallMs:number;pausedWallMs:number;hiddenWallMs:number;backpressureWallMs:number;paused:boolean;hidden:boolean;timeScale:number;

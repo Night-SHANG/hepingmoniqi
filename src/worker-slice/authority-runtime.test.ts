@@ -32,7 +32,7 @@ test('five seconds of foreground overload is retained across bounded fixed-step 
  assert.equal(state!.clock.foregroundEligibleMs,5000);assert.ok(state!.clock.processedSimulationMs<100);
  assert.ok(state!.clock.simulationDebtMs>4900);assert.equal(state!.clock.discardedSimulationMs,0);
  for(let i=0;i<75;i++)state=h.runtime.pump();
- assert.ok(Math.abs(state!.clock.processedSimulationMs-5000)<1e-6);assert.ok(state!.clock.simulationDebtMs<1e-6);
+ assert.ok(Math.abs(state!.clock.processedSimulationMs-5000)<1e-6);assert.ok(state!.clock.simulationDebtMs<1e-6);assert.equal(state!.clock.peakSimulationDebtMs,5000);
  const paused=await h.send({kind:'clock',paused:true});assert.equal(paused.status,'accepted');h.setWall(6000);state=h.runtime.pump();
  assert.equal(state!.clock.foregroundEligibleMs,5000);assert.equal(state!.clock.pausedWallMs,1000);
  await h.send({kind:'clock',paused:false,hidden:true});h.setWall(7000);state=h.runtime.pump();

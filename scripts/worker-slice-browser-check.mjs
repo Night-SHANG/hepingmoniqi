@@ -20,7 +20,9 @@ const evidence={
  thresholds:{inputP95Ms:100,mainLongTaskMaxMs:100,acceptanceP95Ms:100,damageAfterTriggerMs:250,geometryAfterCommitMs:500,maxEligibleDebtMs:500,recoveredDebtMs:100,recoveryAfterLastComputationMs:2000},
  interpretation:{input:'Trusted input handler to submitted renderer feedback, not physical monitor or GPU completion.',
   authority:'An ack is counted only after the worker reports accepted and committed. Button highlight is not acceptance.',
+  upload:'Presentation drain measures CPU geometry installation only; render timing covers JavaScript WebGL submission and possible driver waits, not a GPU completion timer.',
   geometry:'Full queue drainage is a conservative visible-geometry observation, not per-affected-chunk revision-age proof.',
+  collision:'Sequential launch proves a real impact, but does not prove the selected building was the authoritative collision host: the damage event exposes no hit voxel ID.',
   measurement:'Software renderer and diagnostic observation costs must be reported. UI response is never a substitute for authority or mesh freshness.'},
  browserWorkers:[],shots:[],probes:[],commandRows:[],samples:[],errors:[],screenshots:[],gaps:[
   'No baseline synchronous browser A/B measurement in this harness.',
@@ -93,10 +95,27 @@ try{
  };
  const accepted=async(sent)=>{const row=await acknowledged(sent);assert.equal(row.ack.status,'accepted',`${sent.kind} must be accepted by authority, not merely highlighted`);assert.equal(row.ack.committed,true);return row;};
  const click=async(kind,selector=`#${kind}`)=>accepted(await issue(kind,selector));
- const aim=async(used,attempted=new Set())=>{
-  for(const candidate of candidates){
+ // Native immutable-recipe ray prefilter: no world, physics, or fixture arrays
+ // enter the browser. Trusted canvas picking remains the actual aim authority.
+ const nativeVisible=(candidate,camera)=>{
+  const p=candidate.point,delta={x:p.x-camera.x,y:p.y-camera.y,z:p.z-camera.z};
+  const cell={x:Math.floor(camera.x+.5),y:Math.floor(camera.y+.5),z:Math.floor(camera.z+.5)},step={},next={},stride={};
+  for(const axis of ['x','y','z']){step[axis]=Math.sign(delta[axis]);stride[axis]=delta[axis]?Math.abs(1/delta[axis]):Infinity;next[axis]=delta[axis]?(cell[axis]+step[axis]*.5-camera[axis])/delta[axis]:Infinity;}
+  for(let count=0;count<5000;count++){
+   const id=fixture.idAt(cell.x,cell.y,cell.z);if(id!==null)return id===candidate.id;
+   const axis=next.x<=next.y&&next.x<=next.z?'x':next.y<=next.z?'y':'z';if(next[axis]>1)return false;
+   cell[axis]+=step[axis];next[axis]+=stride[axis];
+  }
+  throw new Error('Native candidate ray exceeded its finite traversal bound');
+ };
+ const aim=async(used,attempted=new Set(),pool=candidates)=>{
+  const camera=await page.evaluate(()=>window.__workerSlice.diagnostics().renders.at(-1).camera);
+  for(const candidate of pool){
+   deadline();
    const token=[candidate.id,candidate.point.x,candidate.point.y,candidate.point.z].join(':');
-   if(used.has(candidate.objectId)||attempted.has(token))continue;deadline();
+   // After sequential destruction the immutable recipe cannot establish which
+   // occluders remain, so only intact-scene preflight uses this native filter.
+   if(used.has(candidate.objectId)||attempted.has(token)||((stress||used.size===0)&&!nativeVisible(candidate,camera)))continue;
    const pixel=await page.evaluate(point=>window.__workerSlice.project(point),candidate.point);
    if(!pixel.visible||!await page.evaluate(p=>document.elementFromPoint(p.x,p.y)?.tagName==='CANVAS',pixel))continue;
    await page.mouse.click(pixel.x,pixel.y);const d=await read(),actual=d.target?.position;
@@ -108,24 +127,74 @@ try{
   // Both are actual trusted UI inputs. The button is reversible and independent
   // of authority, so its response is reported separately from command latency.
   const beforeText=await page.locator('#probe-output').textContent();
-  const before=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),point:window.__workerSlice.project({x:0,y:5,z:0}),render:window.__workerSlice.diagnostics().renders.at(-1)}));
+  const before=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),render:window.__workerSlice.diagnostics().renders.at(-1)}));
   await page.locator('#probe').click();assert.notEqual(await page.locator('#probe-output').textContent(),beforeText,'Actual probe text must change');
+  const dragBefore=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),render:window.__workerSlice.diagnostics().renders.at(-1)}));
   await page.mouse.move(800,280);await page.mouse.down();await page.mouse.move(825,292,{steps:4});await page.mouse.up();
-  await page.waitForFunction(renderNo=>window.__workerSlice.diagnostics().renders.at(-1).renderNo>renderNo,before.render.renderNo);
-  const after=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),point:window.__workerSlice.project({x:0,y:5,z:0}),render:window.__workerSlice.diagnostics().renders.at(-1)}));
-  assert.ok(Math.hypot(after.point.x-before.point.x,after.point.y-before.point.y)>.1,'Actual camera projection must change, not just a button highlight');
-  evidence.probes.push({before,after,textChanged:true});
+  await page.waitForFunction(prior=>{const row=window.__workerSlice.diagnostics().renders.at(-1),p=row.camera,c=prior.render.camera;return row.at>=prior.at&&row.renderNo>prior.render.renderNo&&Math.hypot(p.x-c.x,p.y-c.y,p.z-c.z)>.01;},dragBefore);
+  const after=await page.evaluate(()=>({at:performance.timeOrigin+performance.now(),render:window.__workerSlice.diagnostics().renders.at(-1)}));
+  evidence.probes.push({before,dragBefore,after,textChanged:true,cameraTransformChanged:true});
  };
  await page.locator('#map').selectOption(map);const initialized=await click('initialize');
  const ready=await wait('actual initial mesh installation',d=>d.ready===true&&d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0);
  assert.equal(evidence.browserWorkers.length,1,'The isolated visual scenario must create one actual browser Worker');assert.equal(ready.summary.mapId,map);assert.equal(ready.summary.mode,'free');
  evidence.initialize={command:initialized,readyAt:ready.at};await capture('initial-actual-scene');
  evidence.browser=await page.evaluate(()=>({userAgent:navigator.userAgent,hardwareConcurrency:navigator.hardwareConcurrency,longTaskAPI:PerformanceObserver.supportedEntryTypes.includes('longtask')}));
- const used=new Set();let cadenceOrigin=null;
- for(let index=0;index<shotCount;index++){
+ const used=new Set();
+ if(stress){
+  // Select/verify every target before pressure. Later blast deletion is a real
+  // failed placement, never permission to search, retry, or move a deadline.
+  const preselected=[];
+  const spread=[...candidates].sort((a,b)=>Math.hypot(b.point.x,b.point.z)-Math.hypot(a.point.x,a.point.z)||a.score-b.score);
+  for(let index=0;index<shotCount;index++){
+   // Keep the requested central-building first blast. Only later shots choose
+   // distant zones; inability to find three intact targets is a preflight fail.
+   const pool=index===0?candidates:spread.filter(c=>preselected.every(s=>Math.hypot(c.point.x-s.candidate.point.x,c.point.y-s.candidate.point.y,c.point.z-s.candidate.point.z)>64));
+   const aimed=await aim(used,new Set(),pool);used.add(aimed.candidate.objectId);preselected.push(aimed);
+  }
+  const buttons={};for(const id of ['place','detonate','probe']){const box=await page.locator(`#${id}`).boundingBox();assert.ok(box);buttons[id]={x:box.x+box.width/2,y:box.y+box.height/2};}
+  const baseline=await read(),knownCommands=new Set(baseline.commands.map(c=>c.id));
+  const clickAt=point=>page.mouse.click(point.x,point.y);
+  const prepare=async aimed=>{await clickAt(aimed.pixel);await clickAt(buttons.place);};
+  await prepare(preselected[0]);
+  const clock=await page.evaluate(()=>performance.timeOrigin+performance.now());
+  const nodeOrigin=performance.now()+500,browserOrigin=clock+500,scheduled=[];
+  evidence.pressure={startedAt:baseline.at,plannedFirstTriggerAt:browserOrigin,requestedSpacingMs:2000,preselected,dispatches:scheduled,observation:'No screenshots, candidate search, camera drag, acknowledgement wait, or settlement wait during scheduled input dispatch.'};
+  for(let index=0;index<shotCount;index++){
+   if(index>0)await prepare(preselected[index]);
+   const remaining=nodeOrigin+index*2000-performance.now();if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));
+   const row={index:index+1,plannedTriggerAt:browserOrigin+index*2000,dispatchStartedAt:browserOrigin+performance.now()-nodeOrigin};scheduled.push(row);
+   await clickAt(buttons.detonate);row.dispatchFinishedAt=browserOrigin+performance.now()-nodeOrigin;
+   await clickAt(buttons.probe);
+  }
+  // Only now inspect acknowledgements. Interleaved clock/event acks do not
+  // change ordered place/detonate pairs. Every trigger must consume one charge.
+  const completed=await wait('all fixed-deadline commands accepted and committed',d=>{const rows=d.commands.filter(c=>!knownCommands.has(c.id)&&['place','detonate'].includes(c.kind));return rows.length===6&&rows.every(c=>c.ack);});
+  const commandRows=completed.commands.filter(c=>!knownCommands.has(c.id)&&['place','detonate'].includes(c.kind));
+  assert.deepEqual(commandRows.map(c=>c.kind),['place','detonate','place','detonate','place','detonate']);
+  evidence.commandRows.push(...commandRows);
+  let previousDestroyed=baseline.summary.objective.destroyed;
+  for(let index=0;index<shotCount;index++){
+   const aimed=preselected[index],launch=commandRows[index*2],trigger=commandRows[index*2+1];
+   for(const row of [launch,trigger]){assert.equal(row.ack.status,'accepted',`${row.kind} ${index+1}: fixed target/deadline must not be silently retried`);assert.equal(row.ack.committed,true);}
+   const actualId=launch.ack.surface?.voxelId;assert.ok(Number.isSafeInteger(actualId),'Worker must return the actual accepted host cell ID');
+   const confirmedBuilding=fixture.objectIdOf(actualId);assert.equal(confirmedBuilding,aimed.candidate.objectId,'Selected and actual authoritative host buildings must match');
+   const damageId=`placed-${launch.id.slice('cmd-'.length)}`;
+   const damaged=await wait(`matching damage for ${damageId}`,d=>d.events.some(batch=>batch.events.some(e=>e.kind==='damage'&&e.detonation.id===damageId)));
+   const batch=damaged.events.find(batch=>batch.events.some(e=>e.kind==='damage'&&e.detonation.id===damageId));
+   const damage=batch.events.find(e=>e.kind==='damage'&&e.detonation.id===damageId);
+   assert.equal(batch.events.filter(e=>e.kind==='damage').length,1,'A trigger must not accumulate multiple remotely attached charges');
+   assert.equal(damage.detonation.weapon,'nova');assert.equal(damage.detonation.power,1);assert.equal(damage.detonation.reason,'remote');assert.equal(damage.result.accepted,true);
+   assert.ok(Math.hypot(damage.detonation.position.x-aimed.candidate.point.x,damage.detonation.position.y-aimed.candidate.point.y,damage.detonation.position.z-aimed.candidate.point.z)<1.5,'The selected building must be the actual detonation location');
+   assert.ok(trigger.ack.summary.objective.destroyed>previousDestroyed,'Every real shot must cause additional building destruction');previousDestroyed=trigger.ack.summary.objective.destroyed;
+   const plannedTriggerAt=scheduled[index].plannedTriggerAt;
+   evidence.shots.push({index:index+1,aimed,confirmedBuilding,launch,trigger,damageBatch:batch,damageObservedAt:batch.receivedAt,settledAt:null,summary:trigger.ack.summary,plannedTriggerAt,cadenceErrorMs:trigger.sentAt-plannedTriggerAt,geometryDrainAfterCommitMs:null,authorityDamageLatencyMs:batch.committedAtMs-trigger.sentAt,triggerToDamageObservedMs:batch.receivedAt-trigger.sentAt});
+  }
+  await persist();
+ }else for(let index=0;index<shotCount;index++){
   const attempted=new Set();let aimed=await aim(used,attempted);const before=await read(),known=new Set(before.events.flatMap(batch=>batch.events).filter(e=>e.kind==='damage').map(e=>e.detonation.id));
   let launch,trigger,confirmedBuilding=null,plannedTriggerAt=null,cadenceErrorMs=null;
-  if(index===0||stress){
+  if(index===0){
    while(true){
     attempted.add(aimed.token);launch=await acknowledged(await issue('place'));
     if(launch.ack.status==='accepted'){assert.equal(launch.ack.committed,true);break;}
@@ -134,25 +203,19 @@ try{
    }
    const actualId=launch.ack.surface?.voxelId;assert.ok(Number.isSafeInteger(actualId),'Worker must return the actual accepted host cell ID');
    confirmedBuilding=fixture.objectIdOf(actualId);assert.equal(confirmedBuilding,aimed.candidate.objectId,'Worker-authoritative hit must belong to the distinct selected building');
-   if(stress&&cadenceOrigin!==null){
-    plannedTriggerAt=cadenceOrigin+index*2000;
-    const current=await read();if(plannedTriggerAt>current.at)await page.waitForTimeout(plannedTriggerAt-current.at);
-   }
    const issued=await issue('detonate');
-   if(stress){cadenceOrigin??=issued.sentAt;plannedTriggerAt??=cadenceOrigin;cadenceErrorMs=issued.sentAt-plannedTriggerAt;}
    // Exercise UI while the costly remote-damage acknowledgement is outstanding.
-   const capturing=index===0?capture('response-during-real-blast'):Promise.resolve();await probe();await capturing;trigger=await accepted(issued);
+   await probe();trigger=await accepted(issued);
   }else{const issued=await issue('launch');await probe();launch=await accepted(issued);} 
   used.add(aimed.candidate.objectId);
   const damaged=await wait('real worker detonation',d=>d.events.some(batch=>batch.events.some(e=>e.kind==='damage'&&!known.has(e.detonation.id))));
   const batch=damaged.events.find(batch=>batch.events.some(e=>e.kind==='damage'&&!known.has(e.detonation.id))),damage=batch.events.find(e=>e.kind==='damage'&&!known.has(e.detonation.id));
   assert.equal(damage.detonation.weapon,'nova');assert.equal(damage.detonation.power,1);assert.equal(damage.result.accepted,true);
-  assert.equal(damage.detonation.reason,index===0||stress?'remote':'impact');
-  if(stress)assert.ok(Math.hypot(damage.detonation.position.x-aimed.candidate.point.x,damage.detonation.position.y-aimed.candidate.point.y,damage.detonation.position.z-aimed.candidate.point.z)<1.5,'The distinct selected building must be the actual detonation location');
-  const geometry=stress?null:await wait('actual geometry queue drainage',d=>d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0&&d.meshStats?.queue?.inFlightPatches===0&&d.meshStats.epoch===batch.epoch&&d.meshStats.at>=batch.committedAtMs&&d.meshStats.authority>=batch.authorityRevision&&d.summary.authorityRevision>=batch.authorityRevision);
-  const settled=stress?damaged:await wait('natural authority settlement and actual geometry installation',d=>d.summary.pendingWork===0&&d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0&&d.meshStats?.queue?.inFlightPatches===0&&d.meshStats.epoch===batch.epoch&&d.meshStats.at>=batch.committedAtMs&&d.meshStats.authority>=batch.authorityRevision&&d.summary.authorityRevision>=batch.authorityRevision);
+  assert.equal(damage.detonation.reason,index===0?'remote':'impact');
+  const geometry=await wait('actual geometry queue drainage',d=>d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0&&d.meshStats?.queue?.inFlightPatches===0&&d.meshStats.epoch===batch.epoch&&d.meshStats.at>=batch.committedAtMs&&d.meshStats.authority>=batch.authorityRevision&&d.summary.authorityRevision>=batch.authorityRevision);
+  const settled=await wait('natural authority settlement and actual geometry installation',d=>d.summary.pendingWork===0&&d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0&&d.meshStats?.queue?.inFlightPatches===0&&d.meshStats.epoch===batch.epoch&&d.meshStats.at>=batch.committedAtMs&&d.meshStats.authority>=batch.authorityRevision&&d.summary.authorityRevision>=batch.authorityRevision);
   assert.ok(settled.summary.objective.destroyed>before.summary.objective.destroyed,'Every real shot must cause additional building destruction');
-  const row={index:index+1,aimed,confirmedBuilding,launch,trigger:trigger??null,damageBatch:batch,damageObservedAt:damaged.at,settledAt:stress?null:settled.at,summary:settled.summary,plannedTriggerAt,cadenceErrorMs,
+  const row={index:index+1,aimed,confirmedBuilding,launch,trigger:trigger??null,damageBatch:batch,damageObservedAt:damaged.at,settledAt:settled.at,summary:settled.summary,plannedTriggerAt,cadenceErrorMs,
    geometryDrainAfterCommitMs:geometry?geometry.at-batch.committedAtMs:null,
    authorityDamageLatencyMs:trigger?batch.committedAtMs-trigger.sentAt:null,
    triggerToDamageObservedMs:trigger?damaged.at-trigger.sentAt:null};
@@ -165,18 +228,30 @@ try{
   const recovered=await wait('eligible debt recovery and final natural settlement',d=>d.summary.pendingWork===0&&d.summary.clock.simulationDebtMs<=100&&d.presentation.pending===0&&d.meshStats?.queue?.pendingDirty===0&&d.meshStats?.queue?.inFlightPatches===0&&d.meshStats.epoch===lastBatch.epoch&&d.meshStats.at>=lastCommit&&d.meshStats.authority>=lastBatch.authorityRevision&&d.summary.authorityRevision>=lastBatch.authorityRevision);
   const recovery=evidence.samples.find(row=>row.at>=lastCommit&&row.summary?.epoch===lastBatch.epoch&&row.summary?.authorityRevision>=lastBatch.authorityRevision&&row.summary?.clock.simulationDebtMs<=100);
   evidence.stress={requestedSpacingMs:2000,actualSpacingMs:evidence.shots.slice(1).map((row,i)=>row.trigger.sentAt-evidence.shots[i].trigger.sentAt),cadenceErrorsMs:evidence.shots.map(row=>row.cadenceErrorMs),
+   triggerSentAt:evidence.shots.map(row=>row.trigger.sentAt),authorityTriggerStartedAt:evidence.shots.map(row=>row.trigger.ack.startedAtMs),damageCommittedAt:evidence.shots.map(row=>row.damageBatch.committedAtMs),
+   authorityStartSpacingMs:evidence.shots.slice(1).map((row,i)=>row.trigger.ack.startedAtMs-evidence.shots[i].trigger.ack.startedAtMs),damageCommitSpacingMs:evidence.shots.slice(1).map((row,i)=>row.damageBatch.committedAtMs-evidence.shots[i].damageBatch.committedAtMs),
    distinctBuildings:new Set(evidence.shots.map(row=>row.confirmedBuilding)).size,actualDetonationPositions:evidence.shots.map(row=>row.damageBatch.events.find(e=>e.kind==='damage').detonation.position),
    lastComputationCommitAt:lastCommit,recoveredDebtAt:recovery?.at??null,recoveryMs:recovery?recovery.at-lastCommit:null,settledAt:recovered.at};
+  evidence.pressure.finishedAt=recovered.at;
   evidence.gaps.push('Per-shot affected geometry freshness remains unmeasured in overlapping stress; final queue drainage is not a substitute.');
+  // Camera drag is intentionally outside fixed-cadence pressure and followed
+  // through a render that actually has a different camera transform.
+  await probe();
  }
  const saved=await click('save');assert.equal(saved.ack.status,'accepted');assert.ok(saved.ack.saveTextBytes>0);const savedState=await read();assert.equal(savedState.saveTextBytes,saved.ack.saveTextBytes);evidence.savedBytes=saved.ack.saveTextBytes;
  const final=await read(),observer=await page.evaluate(()=>window.__workerSliceObserver);assert.equal(observer.overflow,false);
  const inputRows=final.inputs.filter(row=>row.id==='probe'&&Number.isFinite(row.eventAt)&&Number.isFinite(row.renderAt));
  const inputs=measurements(inputRows.map(row=>row.renderAt-row.eventAt));
- const commands=measurements(evidence.commandRows.filter(row=>row.ack&&['place','launch','detonate','clock','save','end'].includes(row.kind)).map(row=>row.ackAt-row.sentAt));
- const maxDebt=Math.max(0,...evidence.samples.map(row=>row.summary?.clock.simulationDebtMs??0));
+ const measuredCommands=evidence.commandRows.filter(row=>row.ack&&['place','launch','detonate','clock','save','end'].includes(row.kind));
+ const commands=measurements(measuredCommands.map(row=>row.ackAt-row.sentAt));
+ const commandLatencyStages={authorityReceipt:measurements(measuredCommands.map(row=>row.ack.receivedAtMs-row.sentAt)),executionQueue:measurements(measuredCommands.map(row=>row.ack.startedAtMs-row.ack.receivedAtMs)),commit:measurements(measuredCommands.map(row=>row.ack.committedAtMs-row.sentAt)),observedCommittedAck:commands,boundary:'The commandAcceptance gate remains the conservative committed-ACK roundtrip. Early receipt is neither committed acceptance nor visible feedback.'};
+ const maxDebt=Math.max(0,...evidence.samples.map(row=>row.summary?.clock.peakSimulationDebtMs??0));
  const longTasks=observer.longTasks.filter(row=>row.at>=ready.at),maxLongTask=Math.max(0,...longTasks.map(row=>row.duration));
- evidence.observations={inputs,commands,maxDebtMs:maxDebt,longTasks,maxLongTaskMs:maxLongTask,trustedInputs:observer.trustedInputs,final};
+ const aggregateMainCosts=predicate=>Object.fromEntries(['render','mesh-install','effects','controls','pose-apply','ray-pick'].map(kind=>[kind,measurements((final.mainCosts??[]).filter(row=>row.kind===kind&&predicate(row)).map(row=>row.ms))]));
+ const mainCosts=aggregateMainCosts(row=>row.at>=ready.at);
+ const inPressure=row=>row.at>=evidence.pressure.startedAt&&row.at<=evidence.pressure.finishedAt;
+ const pressureObservations=stress?{mainCosts:aggregateMainCosts(inPressure),longTasks:longTasks.filter(inPressure),maxLongTaskMs:Math.max(0,...longTasks.filter(inPressure).map(row=>row.duration))}:null;
+ evidence.observations={inputs,commands,commandLatencyStages,maxDebtMs:maxDebt,longTasks,maxLongTaskMs:maxLongTask,mainCosts,pressureObservations,mainCostsBoundary:'Bounded retained post-ready CPU samples, not complete history or GPU completion timings. Pressure-only costs exclude initial screenshots and target preflight; the conservative main-long-task gate still uses all post-ready observations.',trustedInputs:observer.trustedInputs,final};
  evidence.componentGates={probeInputFeedback:inputs.count>0&&inputs.p95<100,mainLongTasks:maxLongTask<=100,cameraInputFeedback:null,commandAcceptance:commands.count>0&&commands.p95<100,
   remoteDamage:evidence.shots.filter(row=>row.trigger).every(row=>row.authorityDamageLatencyMs<250),conservativeFullGeometryDrain:stress?null:evidence.shots.every(row=>row.geometryDrainAfterCommitMs<500),eligibleDebt:maxDebt<=500,
   ...(stress?{fixedCadence:evidence.stress.cadenceErrorsMs.every(value=>Math.abs(value)<100)&&evidence.stress.distinctBuildings===3,debtRecovery:evidence.stress.recoveryMs!==null&&evidence.stress.recoveryMs<=2000}:{})};
@@ -189,8 +264,8 @@ try{
 }catch(error){evidence.status='failed-or-incomplete';evidence.verdict='not-passed';evidence.failure=String(error?.stack??error);await persist();throw error;}
 finally{
  console.log('WORKER_SLICE_RESULT '+JSON.stringify({scenario,status:evidence.status,verdict:evidence.verdict,componentGates:evidence.componentGates??null,browserWorkers:evidence.browserWorkers,
-  shots:evidence.shots.map(row=>({index:row.index,confirmedBuilding:row.confirmedBuilding,position:row.damageBatch.events.find(e=>e.kind==='damage')?.detonation.position,authorityDamageLatencyMs:row.authorityDamageLatencyMs,geometryDrainAfterCommitMs:row.geometryDrainAfterCommitMs,settledAt:row.settledAt})),
-  stress:evidence.stress??null,inputs:evidence.observations?.inputs??null,commandAcceptance:evidence.observations?.commands??null,maxObservedDebtMs:evidence.observations?.maxDebtMs??null,maxMainLongTaskMs:evidence.observations?.maxLongTaskMs??null,
+  shots:evidence.shots.map(row=>({index:row.index,selectedBuilding:row.aimed.candidate.objectId,confirmedBuilding:row.confirmedBuilding,authoritativeHitBuildingVerified:row.confirmedBuilding!==null,position:row.damageBatch.events.find(e=>e.kind==='damage')?.detonation.position,authorityDamageLatencyMs:row.authorityDamageLatencyMs,geometryDrainAfterCommitMs:row.geometryDrainAfterCommitMs,settledAt:row.settledAt})),
+  stress:evidence.stress??null,inputs:evidence.observations?.inputs??null,commandAcceptance:evidence.observations?.commands??null,commandLatencyStages:evidence.observations?.commandLatencyStages??null,maxObservedDebtMs:evidence.observations?.maxDebtMs??null,maxMainLongTaskMs:evidence.observations?.maxLongTaskMs??null,mainCosts:evidence.observations?.mainCosts??null,pressureMainCosts:evidence.observations?.pressureObservations?.mainCosts??null,pressureMainLongTaskMaxMs:evidence.observations?.pressureObservations?.maxLongTaskMs??null,mainCostsBoundary:evidence.observations?.mainCostsBoundary??null,
   screenshots:evidence.screenshots,gaps:evidence.gaps,failure:evidence.failure?.slice(0,1500)??null}));
  await browser?.close();
 }

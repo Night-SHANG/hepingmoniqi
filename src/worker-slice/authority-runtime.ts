@@ -28,7 +28,7 @@ export function createAuthorityRuntime(options:AuthorityRuntimeOptions){
  let disposed=false,transitioning=false,fault:string|null=null,chain=Promise.resolve(),lastWall=options.now(),lastPoseAt=-Infinity,poseSequence=0,poseInFlight=0;
  let eventSequence=0,eventCursor:StructuralEventCursor|undefined,pendingDamage:AuthorityGameplayEvent[]=[];
  const eventCredits=new Map<number,number>(),commandHistory=new Map<string,CommandReceipt>(),transportHistory=new Map<string,CommandReceipt>(),queued=new Map<AuthorityCommand,number>();
- const clock:AuthorityClock={foregroundEligibleMs:0,requestedSimulationMs:0,processedSimulationMs:0,simulationDebtMs:0,processedQuanta:0,solverSteps:0,discardedSimulationMs:0,discardedByResetMs:0,transitionWallMs:0,pausedWallMs:0,hiddenWallMs:0,backpressureWallMs:0,paused:false,hidden:false,timeScale:1,lastPumpSteps:0,lastPumpDurationMs:0};
+ const clock:AuthorityClock={foregroundEligibleMs:0,requestedSimulationMs:0,processedSimulationMs:0,simulationDebtMs:0,peakSimulationDebtMs:0,processedQuanta:0,solverSteps:0,discardedSimulationMs:0,discardedByResetMs:0,transitionWallMs:0,pausedWallMs:0,hiddenWallMs:0,backpressureWallMs:0,paused:false,hidden:false,timeScale:1,lastPumpSteps:0,lastPumpDurationMs:0};
  const envelope=():AuthorityEnvelope=>({worldId,epoch,sequence,mapRecipeHash:recipe});
  const readBinding=()=>disposed?null:world?.getRenderBinding()??null;
  const pressure=()=>eventCredits.size>=maxEvents;
@@ -39,7 +39,7 @@ export function createAuthorityRuntime(options:AuthorityRuntimeOptions){
   if(clock.hidden)clock.hiddenWallMs+=elapsed;
   else if(clock.paused||world.getRound().settled)clock.pausedWallMs+=elapsed;
   else{clock.foregroundEligibleMs+=elapsed;clock.requestedSimulationMs+=elapsed*clock.timeScale;if(pressure()||fault)clock.backpressureWallMs+=elapsed;}
-  clock.simulationDebtMs=Math.max(0,clock.requestedSimulationMs-clock.processedSimulationMs-clock.discardedByResetMs);
+  clock.simulationDebtMs=Math.max(0,clock.requestedSimulationMs-clock.processedSimulationMs-clock.discardedByResetMs);clock.peakSimulationDebtMs=Math.max(clock.peakSimulationDebtMs,clock.simulationDebtMs);
  }
  function summary():AuthoritySummary|null{
   if(!world)return null;
@@ -199,7 +199,7 @@ export function createAuthorityRuntime(options:AuthorityRuntimeOptions){
    while(clock.simulationDebtMs+1e-8>=STEP_MS&&clock.lastPumpSteps<maxSteps){
     if(clock.lastPumpSteps&&options.now()-started>=maxPumpMs)break;
     world.step(1/120);clock.processedQuanta++;clock.processedSimulationMs+=STEP_MS;clock.lastPumpSteps++;
-    clock.simulationDebtMs=Math.max(0,clock.requestedSimulationMs-clock.processedSimulationMs-clock.discardedByResetMs);
+    clock.simulationDebtMs=Math.max(0,clock.requestedSimulationMs-clock.processedSimulationMs-clock.discardedByResetMs);clock.peakSimulationDebtMs=Math.max(clock.peakSimulationDebtMs,clock.simulationDebtMs);
     // Capture each fixed step before the existing finite history can wrap across a long pump.
     const events=collectEvents();if(events.length){pendingDamage.push(...events);break;}
    }

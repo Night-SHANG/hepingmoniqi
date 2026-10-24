@@ -1,3 +1,0 @@
-All runtime WAV files in this folder are CC0 1.0.
-https://creativecommons.org/publicdomain/zero/1.0/
-See SOURCES.json for per-file author, source, processing and hashes, and source-evidence for supplied source licenses. Attribution is not required but appreciated.

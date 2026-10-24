@@ -1,4 +1,4 @@
-name: Draft archive exact v0.7 user baseline
+name: Draft original v0.7 ZIP on current archive container
 on:
   push:
     branches: [archive-v07-original-package]
